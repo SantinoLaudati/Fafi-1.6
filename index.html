@@ -268,7 +268,6 @@
             right: 30px;
         }
 
-        /* MIRA SNIPER MEJORADA */
         #sniper-scope {
             display: none;
             position: absolute;
@@ -491,14 +490,10 @@
 
     <script type="module">
         import * as THREE from 'three';
-
         let scene, camera, renderer, weaponGroup;
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, isSprinting = false;
         let canJump = true, isReloading = false, isAiming = false, isStabbing = false, isThrowing = false;
-
-        // VARIABLES PARA INSPECCIÓN
         let isInspecting = false, inspectTime = 0;
-
         let velocity = new THREE.Vector3(), direction = new THREE.Vector3(), obstacles = [];
         let stamina = 100, health = 100, ammo = 30, adsLerp = 0;
         let stabAnimProgress = 0, throwAnimProgress = 0;
@@ -509,6 +504,8 @@
         let gameMode = 'online';
         let aimTargets = [];
 
+        // VARIABLE: Shake de cámara al recibir daño
+        let damageShake = 0;
         // ESTADÍSTICAS
         const weaponStats = {
         'vandal':  { ammo: 25, head: 85, body: 40, spread: 0.02, recoil: 0.015, fireRate: 120 },
@@ -519,17 +516,15 @@
         'knife':   { ammo: 0,  head: 40, body: 40, spread: 0, recoil: 0, fireRate: 500 },
         'grenade': { ammo: 1,  head: 0, body: 0, spread: 0, recoil: 0, fireRate: 1000 }
         };
-
         const maxAmmo = { 'vandal': 25, 'ak47': 30, 'deagle': 7, 'sniper': 5, 'pistol': 12, 'knife': 0, 'grenade': 1 };
         const bullets = [];
         let currentWeapon = 'vandal';
         let autoShootInterval = null;
         let isWeaponMenuOpen = false;
 
-        // SISTEMA DE CONEXIONES MULTIJUGADOR TIPO MESH
         let peer;
-        let connections = {}; // Diccionario con todas las conexiones activas
-        let remotePlayers = {}; // Diccionario con los modelos 3D de cada jugador
+        let connections = {};
+        let remotePlayers = {};
 
         window.updateSensDisplay = (val) => {
         document.getElementById('sens-val').innerText = val;
@@ -560,7 +555,6 @@
         toggleWeaponMenu();
         };
 
-        // ENVIAR DATA A TODOS LOS CONECTADOS
         function broadcast(data) {
         for(let id in connections) {
         if(connections[id] && connections[id].open) connections[id].send(data);
@@ -571,15 +565,10 @@
         peer = new Peer();
         peer.on('open', (id) => { document.getElementById('my-id').innerText = id; });
         peer.on('error', (err) => { console.error("PeerJS Error:", err); document.getElementById('my-id').innerText = "ERROR DE RED"; });
-
-        // EVENTO: ALGUIEN SE CONECTA A MI
         peer.on('connection', (c) => {
-        // Avisamos a los demas que hay un nuevo jugador para que armen malla
         for(let id in connections) {
         if(connections[id].open) connections[id].send({type: 'new_peer', peerId: c.peer});
         }
-
-        // Le pasamos al recien llegado la lista de todos para que se conecte
         const existingPeers = Object.keys(connections);
         if(existingPeers.length > 0) {
         c.on('open', () => { c.send({type: 'existing_peers', peers: existingPeers}); });
@@ -587,6 +576,7 @@
 
         connections[c.peer] = c;
         setupDataListener(c);
+
         if(gameMode !== 'online') {
         gameMode = 'online';
         startGameNetwork();
@@ -594,7 +584,6 @@
         createRemotePlayer(c.peer);
         }
         });
-
         document.getElementById('start-btn').onclick = () => {
         const joinId = document.getElementById('join-id').value;
         if(joinId) {
@@ -615,9 +604,7 @@
         createRemotePlayer(c.peer);
         c.send({type: 'init-request'});
         });
-
         c.on('data', (data) => {
-        // LOGICA DE MESH NETWORK
         if (data.type === 'new_peer') {
         if(data.peerId !== peer.id && !connections[data.peerId]) {
         const newC = peer.connect(data.peerId);
@@ -638,24 +625,39 @@
         if (data.type === 'init-request') { createRemotePlayer(c.peer); c.send({type: 'init-confirm'}); }
         if (data.type === 'init-confirm') createRemotePlayer(c.peer);
 
-        // JUGABILIDAD
+        // ACTUALIZACIÓN: Recibir datos de movimiento y arma
         if (data.type === 'move' && remotePlayers[c.peer]) {
-        remotePlayers[c.peer].position.set(data.pos.x, data.pos.y, data.pos.z);
-        remotePlayers[c.peer].rotation.y = data.rot;
+        let rp = remotePlayers[c.peer];
+
+        // Calcular si se está moviendo comparando distancias
+        let newPos = new THREE.Vector3(data.pos.x, data.pos.y, data.pos.z);
+        rp.userData.isMoving = rp.userData.lastPos.distanceTo(newPos) > 0.02;
+        rp.userData.lastPos.copy(newPos);
+        rp.userData.isSprinting = data.sprint;
+
+        rp.position.copy(newPos);
+        rp.rotation.y = data.rot;
+        // Cambiar el tamaño del arma enemiga para simular si es cuchillo, pistola o principal
+        if (data.weapon === 'knife') rp.userData.weaponMesh.scale.set(1, 1, 0.3);
+        else if (data.weapon === 'pistol' || data.weapon === 'deagle') rp.userData.weaponMesh.scale.set(0.8, 1, 0.5);
+        else rp.userData.weaponMesh.scale.set(1, 1, 1);
         }
+
         if (data.type === 'shoot') {
         const bulletColor = data.weapon === 'grenade' ? 0xffffff : 0xff0000;
         spawnBullet(new THREE.Vector3(data.pos.x, data.pos.y, data.pos.z), new THREE.Vector3(data.dir.x, data.dir.y, data.dir.z), bulletColor, data.weapon === 'grenade', true, data.weapon);
         }
+
         if (data.type === 'damage') {
         health -= data.amount;
+        damageShake = 0.4; // APLICAR SHAKE DE CÁMARA (TIEMPO)
         if(health <= 0) {
         health = 100;
-        // Reaparecer en un lugar aleatorio
         camera.position.set((Math.random() - 0.5) * 40, 1.6, (Math.random() - 0.5) * 40);
         }
         document.getElementById('hp-fill').style.width = health + "%";
         }
+
         if (data.type === 'flash_event') triggerFlash();
         });
 
@@ -691,9 +693,7 @@
         sun.position.set(10, 20, 10);
         scene.add(sun);
 
-        // LOGICA PARA GENERAR EL MAPA DEPENDIENDO DEL MODO
         if (gameMode === 'aim') {
-        // ESCENARIO AIM LAB
         scene.background = new THREE.Color(0x1a1a24);
         scene.fog = new THREE.Fog(0x1a1a24, 0, 80);
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x333340, roughness: 1.0 }));
@@ -713,7 +713,6 @@
         }
         camera.position.set(0, 1.6, 5);
         } else {
-        // ESCENARIO CLÁSICO ONLINE (Base)
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.2 }));
         floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
@@ -740,21 +739,75 @@
         });
         }
 
+        // ACTUALIZACIÓN: Sistema procedural de cuerpo humanoide REPARADO (Pies en el suelo y Cabeza distinguible)
         function createRemotePlayer(id) {
         if (remotePlayers[id] || !scene) return;
         const rp = new THREE.Group();
 
-        // Variedad de colores para diferenciar jugadores
         const colors = [0xff4655, 0x00ccff, 0x00ffcc, 0xffcc00, 0xcc00ff, 0xffffff];
         const pColor = colors[Object.keys(remotePlayers).length % colors.length];
 
-        const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.7, 1.8, 4, 16), new THREE.MeshStandardMaterial({ color: pColor, roughness: 0.5 }));
-        body.position.y = 0.9;
-        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 0.2), new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x222222 }));
-        visor.position.set(0, 1.5, -0.6);
-        rp.add(body, visor);
-        scene.add(rp);
+        // Material para el cuerpo y material diferenciado para la cabeza
+        const mat = new THREE.MeshStandardMaterial({ color: pColor, roughness: 0.5 });
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xffe0c2, roughness: 0.5 }); // Color "piel" claro para resaltar
+
+        // Cabeza (Ahora distintiva y a la altura exacta de la cámara: y=0 relativo a rp)
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), headMat);
+        head.position.y = 0;
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.1, 0.1), new THREE.MeshStandardMaterial({ color: 0x000 }));
+        visor.position.set(0, 0.05, -0.18);
+        head.add(visor);
+        rp.add(head);
+
+        // Torso (Bajado para conectar con la cabeza y piernas)
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.3), mat);
+        torso.position.y = -0.55; // El centro del torso
+        rp.add(torso);
+
+        // Función creadora de extremidades (Punto de rotación arriba en la articulación)
+        function createLimb(w, h, d, yOffset) {
+        const group = new THREE.Group();
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+        mesh.position.y = yOffset; // Desplaza la malla para que rote desde la raíz (group)
+        group.add(mesh);
+        return group;
+        }
+
+        // Piernas (Articuladas desde la cadera en y = -0.9)
+        // La cámara está a 1.6, la cadera a -0.9 significa que la cadera global está a 0.7
+        // La pierna mide 0.7 de largo, por lo que llega exactamente a y = 0.0 (El suelo)
+        const leftLeg = createLimb(0.2, 0.7, 0.2, -0.35);
+        leftLeg.position.set(-0.15, -0.9, 0);
+        rp.add(leftLeg);
+
+        const rightLeg = createLimb(0.2, 0.7, 0.2, -0.35);
+        rightLeg.position.set(0.15, -0.9, 0);
+        rp.add(rightLeg);
+
+        // Brazos (Articulados desde el hombro)
+        const leftArm = createLimb(0.15, 0.7, 0.15, -0.35);
+        leftArm.position.set(-0.35, -0.25, 0);
+        rp.add(leftArm);
+
+        const rightArm = createLimb(0.15, 0.7, 0.15, -0.35);
+        rightArm.position.set(0.35, -0.25, 0);
+        rp.add(rightArm);
+
+        // Arma equipada visual en el brazo derecho
+        const weaponMat = new THREE.MeshStandardMaterial({color: 0x333333});
+        const weaponMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.6), weaponMat);
+        weaponMesh.position.set(0, -0.4, -0.2); // Sostenida hacia adelante
+        rightArm.add(weaponMesh);
+
+        // Data interna del modelo para las animaciones
+        rp.userData = {
+        leftLeg, rightLeg, leftArm, rightArm, weaponMesh,
+        walkTime: 0, isMoving: false, isSprinting: false,
+        lastPos: new THREE.Vector3()
+        };
+
         remotePlayers[id] = rp;
+        scene.add(rp);
         }
 
         function setupWeapon() {
@@ -888,7 +941,7 @@
 
         function shoot() {
         if(isReloading || isWeaponMenuOpen || !scene) return;
-        isInspecting = false; // Cancelar inspeccion al disparar
+        isInspecting = false;
 
         const now = performance.now();
         const stats = weaponStats[currentWeapon];
@@ -898,7 +951,6 @@
 
         const dir = new THREE.Vector3();
         camera.getWorldDirection(dir);
-
         let currentSpread = isAiming ? stats.spread * 0.4 : stats.spread;
         dir.x += (Math.random() - 0.5) * currentSpread;
         dir.y += (Math.random() - 0.5) * currentSpread;
@@ -906,13 +958,12 @@
         dir.normalize();
 
         const spawnPos = camera.position.clone();
-
         if(currentWeapon !== 'knife' && currentWeapon !== 'grenade') {
-        if(ammo <= 0) { reload(); return; }
+        if(ammo <= 0) { reload();
+        return; }
         ammo--;
         document.getElementById('ammo-count').innerText = ammo;
         spawnBullet(spawnPos, dir, 0x00ffcc, false, false, currentWeapon);
-
         weaponGroup.position.z += 0.08;
         weaponGroup.rotation.x += currentWeapon === 'sniper' ? 0.15 : 0.05;
 
@@ -925,7 +976,6 @@
         isStabbing = true;
         stabAnimProgress = 0;
 
-        // Lógica de daño multi-jugador para Cuchillo
         for(let id in remotePlayers) {
         if(camera.position.distanceTo(remotePlayers[id].position) < 3) {
         if(connections[id]) connections[id].send({ type: 'damage', amount: weaponStats.knife.body });
@@ -980,7 +1030,7 @@
         function showDamage(amount, isHeadshot, target) {
         if(!target) return;
         const vector = target.position.clone();
-        vector.y += 1.8;
+        vector.y += 0.5; // Ajustado para que el popup salga cerca de la cabeza real
         vector.project(camera);
         const x = (vector.x * .5 + .5) * window.innerWidth;
         const y = (vector.y * -.5 + .5) * window.innerHeight;
@@ -995,8 +1045,10 @@
         }
 
         function spawnBullet(pos, dir, color, isFlash, isRemote, weaponType) {
-        const geo = isFlash ? new THREE.CylinderGeometry(0.06, 0.06, 0.15, 8) : new THREE.SphereGeometry(0.04);
-        const mat = isFlash ? new THREE.MeshStandardMaterial({color: 0x2e3b2c}) : new THREE.MeshBasicMaterial({ color: color });
+        const geo = isFlash ?
+        new THREE.CylinderGeometry(0.06, 0.06, 0.15, 8) : new THREE.SphereGeometry(0.04);
+        const mat = isFlash ?
+        new THREE.MeshStandardMaterial({color: 0x2e3b2c}) : new THREE.MeshBasicMaterial({ color: color });
 
         const bullet = new THREE.Mesh(geo, mat);
         bullet.position.copy(pos).add(dir.clone().multiplyScalar(1));
@@ -1011,23 +1063,38 @@
         scene.add(bullet);
         bullets.push(bullet);
 
-        // LOGICA DE DAÑO MULTIJUGADOR ACTUALIZADA (MESH)
+        // ACTUALIZACIÓN: Lógica de detección de impacto (Cuerpo vs Cabeza mejorada)
         if(!isRemote && Object.keys(remotePlayers).length > 0 && !isFlash && gameMode !== 'aim') {
         const stats = weaponStats[weaponType];
+
         const checkInterval = setInterval(() => {
         let hitId = null;
+        let isHeadshot = false;
 
-        // Chequeamos colision con CADA jugador en la sala
         for(let id in remotePlayers) {
-        if(bullet.position.distanceTo(remotePlayers[id].position) < 1.5) {
+        let rpRootPos = remotePlayers[id].position; // Posición raíz del jugador (coincide con la cabeza en nuestro nuevo modelo, Y=1.6)
+
+        // Hitbox Cabeza (esfera pequeña alrededor de la posición origen)
+        let headDist = bullet.position.distanceTo(rpRootPos);
+
+        // Hitbox Cuerpo (esfera más grande más abajo)
+        let bodyCenter = rpRootPos.clone();
+        bodyCenter.y -= 0.6; // Centro aproximado del torso
+        let bodyDist = bullet.position.distanceTo(bodyCenter);
+
+        if(headDist < 0.35) { // Impacto en la cabeza
         hitId = id;
+        isHeadshot = true;
+        break;
+        } else if(bodyDist < 0.8) { // Impacto en el cuerpo
+        hitId = id;
+        isHeadshot = false;
         break;
         }
         }
 
         if(hitId) {
         let targetPlayer = remotePlayers[hitId];
-        let isHeadshot = (bullet.position.y > targetPlayer.position.y + 1.3);
         let finalDamage = isHeadshot ? stats.head : stats.body;
 
         if(connections[hitId]) connections[hitId].send({ type: 'damage', amount: finalDamage });
@@ -1040,7 +1107,6 @@
         setTimeout(() => clearInterval(checkInterval), 1000);
         }
 
-        // LOGICA AIM LAB
         if(!isFlash && gameMode === 'aim') {
         const checkTarget = setInterval(() => {
         aimTargets.forEach((t) => {
@@ -1048,7 +1114,8 @@
         scene.remove(bullet);
         t.position.set((Math.random() - 0.5) * 30, 2 + Math.random() * 8, -19);
         document.getElementById('crosshair').style.filter = "drop-shadow(0 0 5px red)";
-        setTimeout(()=> document.getElementById('crosshair').style.filter = "none", 100);
+        setTimeout(()=>
+        document.getElementById('crosshair').style.filter = "none", 100);
         clearInterval(checkTarget);
         }
         });
@@ -1058,7 +1125,6 @@
 
         setTimeout(() => {
         if(isFlash) {
-        // La logica de flash a todos
         for(let id in remotePlayers) {
         if(!isRemote && remotePlayers[id] && bullet.position.distanceTo(remotePlayers[id].position) < 30) {
         if(connections[id]) connections[id].send({ type: 'flash_event' });
@@ -1066,6 +1132,7 @@
         }
         if(bullet.position.distanceTo(camera.position) < 30) triggerFlash();
         }
+
         scene.remove(bullet);
         const idx = bullets.indexOf(bullet);
         if(idx > -1) bullets.splice(idx, 1);
@@ -1090,7 +1157,6 @@
         if(e.code === 'KeyB') toggleWeaponMenu();
         if(isWeaponMenuOpen) return;
 
-        // Inspeccionar Arma - Estilo CS2
         if(e.code === 'KeyF' && !isReloading && !isStabbing && !isThrowing && !isAiming) {
         isInspecting = true;
         inspectTime = 0;
@@ -1106,7 +1172,8 @@
 
         if(e.code.startsWith('Digit')) changeWeapon(parseInt(e.code.replace('Digit','')));
         if(e.code === 'Space' && canJump && stamina >= 15) {
-        velocity.y = 8; canJump = false; stamina -= 15;
+        velocity.y = 8; canJump = false;
+        stamina -= 15;
         isInspecting = false;
         }
         });
@@ -1117,6 +1184,7 @@
         if(e.code === 'KeyD') moveLeft = false;
         if(e.code === 'ShiftLeft') isSprinting = false;
         });
+
         document.addEventListener('mousedown', (e) => {
         if(isWeaponMenuOpen || !document.pointerLockElement) return;
         if(e.button === 0) {
@@ -1131,6 +1199,7 @@
         if(currentWeapon === 'sniper') document.getElementById('sniper-scope').style.display = "block";
         }
         });
+
         document.addEventListener('mouseup', (e) => {
         if (e.button === 0) clearInterval(autoShootInterval);
         if (e.button === 2) {
@@ -1138,6 +1207,7 @@
         document.getElementById('sniper-scope').style.display = "none";
         }
         });
+
         document.addEventListener('mousemove', (e) => {
         if (isWeaponMenuOpen || !document.pointerLockElement) return;
         let currentSens = isAiming ? sensitivity * adsMultiplier : sensitivity;
@@ -1154,6 +1224,19 @@
         const time = performance.now();
         const delta = (time - lastTime) / 1000;
         lastTime = time;
+
+        // Shake de cámara temporal
+        let shakeRotX = 0;
+        let shakeRotZ = 0;
+        if (damageShake > 0) {
+        const intensity = damageShake * 0.1;
+        shakeRotX = Math.sin(time * 0.04) * intensity;
+        shakeRotZ = Math.cos(time * 0.05) * intensity;
+        camera.rotation.x += shakeRotX;
+        camera.rotation.z += shakeRotZ;
+        damageShake -= delta;
+        if (damageShake < 0) damageShake = 0;
+        }
 
         let targetFov = (isAiming && currentWeapon === 'sniper') ? 20 : 75;
         if (Math.abs(camera.fov - targetFov) > 0.5) {
@@ -1178,14 +1261,12 @@
 
         let currentSpeed = isSprinting ? 60.0 : 30.0;
         if (isAiming) currentSpeed = 15.0;
-
         if (moveForward || moveBackward) velocity.z -= direction.z * currentSpeed * delta;
         if (moveLeft || moveRight) velocity.x -= direction.x * currentSpeed * delta;
 
         camera.translateX(velocity.x * delta);
         camera.translateY(velocity.y * delta);
         camera.translateZ(velocity.z * delta);
-
         if (camera.position.y < 1.6) {
         velocity.y = 0;
         camera.position.y = 1.6;
@@ -1198,14 +1279,12 @@
         document.getElementById('stamina-fill').style.width = stamina + '%';
         if (stamina === 0) isSprinting = false;
 
-        // ANIMACIÓN DE INSPECCIÓN (F)
         if (isInspecting) {
         inspectTime += delta * 1.5;
         if (inspectTime >= Math.PI) {
         isInspecting = false;
         } else {
         const animVal = Math.sin(inspectTime);
-        // Rota el arma en 3 ejes para mostrar el lado al jugador
         weaponGroup.rotation.y = THREE.MathUtils.lerp(weaponGroup.rotation.y, -0.2 + (animVal * 1.5), 0.15);
         weaponGroup.rotation.x = THREE.MathUtils.lerp(weaponGroup.rotation.x, (animVal * 0.4), 0.15);
         weaponGroup.rotation.z = THREE.MathUtils.lerp(weaponGroup.rotation.z, (animVal * -0.2), 0.15);
@@ -1213,7 +1292,6 @@
         }
         }
 
-        // --- ANIMACIÓN AL CAMINAR (BOBBING) ---
         if ((moveForward || moveBackward || moveLeft || moveRight) && !isReloading && canJump && !isStabbing && !isInspecting) {
         weaponGroup.position.y = -0.35 + Math.sin(time * 0.01) * 0.02;
         weaponGroup.position.x = 0.35 + Math.cos(time * 0.005) * 0.02;
@@ -1222,7 +1300,6 @@
         weaponGroup.position.x = THREE.MathUtils.lerp(weaponGroup.position.x, 0.35, 0.1);
         }
 
-        // --- ANIMACIÓN DE APUÑALADA ---
         if (isStabbing) {
         stabAnimProgress += delta * 3.5;
         if (stabAnimProgress > 1) stabAnimProgress = 1;
@@ -1233,7 +1310,6 @@
         weaponGroup.rotation.y = -0.2 + (animVal * 0.3);
         }
 
-        // RECUPERACIÓN DE RECOIL / RESTAURACION BASE
         if(weaponGroup && !isReloading && !isStabbing && !isInspecting) {
         weaponGroup.position.z = THREE.MathUtils.lerp(weaponGroup.position.z, -0.5, 0.1);
         weaponGroup.rotation.x = THREE.MathUtils.lerp(weaponGroup.rotation.x, 0, 0.1);
@@ -1245,7 +1321,6 @@
         }
         }
 
-        // FÍSICAS DE BALAS Y GRANADAS (Rebote)
         bullets.forEach((b) => {
         b.position.add(b.velocity.clone().multiplyScalar(delta));
 
@@ -1264,16 +1339,45 @@
         }
         });
 
-        // ENVIAR MOVIMIENTO AL MESH
+        // ACTUALIZACIÓN: Lógica de animaciones para correr/caminar en los muñecos adaptada al nuevo esqueleto
+        for (let id in remotePlayers) {
+        let rp = remotePlayers[id];
+        if (rp.userData.isMoving) {
+        let moveSpeed = rp.userData.isSprinting ? 16 : 9;
+        rp.userData.walkTime += delta * moveSpeed;
+        let wt = rp.userData.walkTime;
+
+        // Mover piernas y brazo izquierdo
+        rp.userData.leftLeg.rotation.x = Math.sin(wt) * 0.6;
+        rp.userData.rightLeg.rotation.x = Math.sin(wt + Math.PI) * 0.6;
+        rp.userData.leftArm.rotation.x = Math.sin(wt + Math.PI) * 0.5;
+        // El brazo derecho apunta con el arma hacia adelante un poco movido por el paso
+        rp.userData.rightArm.rotation.x = Math.sin(wt) * 0.05;
+        } else {
+        // Posición de reposo
+        rp.userData.leftLeg.rotation.x = 0;
+        rp.userData.rightLeg.rotation.x = 0;
+        rp.userData.leftArm.rotation.x = 0;
+        // El brazo derecho mantiene el arma apuntando al frente
+        rp.userData.rightArm.rotation.x = 0;
+        }
+        }
+
+        // Enviamos también el arma actual y si corremos a los demás
         if (Object.keys(connections).length > 0) {
         broadcast({
         type: 'move',
         pos: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
-        rot: camera.rotation.y
+        rot: camera.rotation.y,
+        sprint: isSprinting,
+        weapon: currentWeapon
         });
         }
 
         renderer.render(scene, camera);
+        // Revertir shake de cámara para que vuelva a la normalidad en el siguiente frame
+        if (shakeRotX !== 0) camera.rotation.x -= shakeRotX;
+        if (shakeRotZ !== 0) camera.rotation.z -= shakeRotZ;
         }
 
         initNetwork();
