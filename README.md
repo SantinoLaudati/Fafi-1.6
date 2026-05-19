@@ -106,16 +106,8 @@ Tecnologías Utilizadas
 Tecnología	Uso
 
 Base del juego HTML5
-
-
----
-
-Estructura del Proyecto
-
-fafi-1.6/
-│
-├── index.html
-└── README.md
+Online y servidor Java
+Estilo de la pagina CSS
 
 
 ---
@@ -174,6 +166,10 @@ Autor
 
 Desarrollado por TeamT estudio independiente.
 
+Integrado por 
+Dante Iglesias 
+Santino Laudati
+Ian Quiroga
 
 ---
 
