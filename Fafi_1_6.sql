@@ -104,3 +104,87 @@ CREATE TABLE logros_desbloqueados (
     fecha_desbloqueo TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (usuario_id, logro_id)
 );
+-- Igualar los tipos de datos en las tablas
+ALTER TABLE configuraciones_jugador MODIFY usuario_id BIGINT UNSIGNED;
+ALTER TABLE progreso_campana MODIFY usuario_id BIGINT UNSIGNED;
+ALTER TABLE estadisticas_jugador MODIFY usuario_id BIGINT UNSIGNED;
+ALTER TABLE monedas_jugador MODIFY usuario_id BIGINT UNSIGNED;
+ALTER TABLE skins_armas MODIFY articulo_id BIGINT UNSIGNED;
+ALTER TABLE skins_soldados MODIFY articulo_id BIGINT UNSIGNED;
+ALTER TABLE inventario_jugador MODIFY usuario_id BIGINT UNSIGNED, MODIFY articulo_id BIGINT UNSIGNED;
+ALTER TABLE historial_compras MODIFY usuario_id BIGINT UNSIGNED, MODIFY articulo_id BIGINT UNSIGNED;
+ALTER TABLE lista_amigos MODIFY usuario_id BIGINT UNSIGNED, MODIFY amigo_id BIGINT UNSIGNED;
+ALTER TABLE logros_desbloqueados MODIFY usuario_id BIGINT UNSIGNED, MODIFY logro_id BIGINT UNSIGNED;
+
+-- Relaciones
+ALTER TABLE configuraciones_jugador 
+    ADD CONSTRAINT fk_config_user FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE;
+
+ALTER TABLE progreso_campana 
+    ADD CONSTRAINT fk_progreso_user FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE;
+
+ALTER TABLE estadisticas_jugador 
+    ADD CONSTRAINT fk_stats_user FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE;
+
+ALTER TABLE monedas_jugador 
+    ADD CONSTRAINT fk_monedas_user FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE;
+
+ALTER TABLE skins_armas 
+    ADD CONSTRAINT fk_skins_armas_art FOREIGN KEY (articulo_id) REFERENCES articulos_tienda(id) ON DELETE CASCADE;
+
+ALTER TABLE skins_soldados 
+    ADD CONSTRAINT fk_skins_soldados_art FOREIGN KEY (articulo_id) REFERENCES articulos_tienda(id) ON DELETE CASCADE;
+
+ALTER TABLE inventario_jugador 
+    ADD CONSTRAINT fk_inv_user FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    ADD CONSTRAINT fk_inv_art FOREIGN KEY (articulo_id) REFERENCES articulos_tienda(id) ON DELETE CASCADE;
+
+ALTER TABLE historial_compras 
+    ADD CONSTRAINT fk_compra_user FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+    ADD CONSTRAINT fk_compra_art FOREIGN KEY (articulo_id) REFERENCES articulos_tienda(id) ON DELETE SET NULL;
+
+ALTER TABLE lista_amigos 
+    ADD CONSTRAINT fk_amigo_user FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    ADD CONSTRAINT fk_amigo_amigo FOREIGN KEY (amigo_id) REFERENCES usuarios(id) ON DELETE CASCADE;
+
+ALTER TABLE logros_desbloqueados 
+    ADD CONSTRAINT fk_logros_user FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    ADD CONSTRAINT fk_logros_logro FOREIGN KEY (logro_id) REFERENCES logros(id) ON DELETE CASCADE;
+--Consultas para cargar los datos del perfil principal al hacer Login
+SELECT 
+    u.username, 
+    u.estado,
+    e.bajas, 
+    e.muertes, 
+    m.moneda_gratuita, 
+    m.moneda_premium
+FROM usuarios u
+JOIN estadisticas_jugador e ON u.id = e.usuario_id
+JOIN monedas_jugador m ON u.id = m.usuario_id
+WHERE u.id = 1;
+--Ver el Inventario de un Jugador (Skins de armas que posee)
+SELECT 
+    art.nombre AS nombre_skin, 
+    art.descripcion, 
+    sa.arma_base, 
+    sa.rareza
+FROM inventario_jugador ij
+JOIN articulos_tienda art ON ij.articulo_id = art.id
+JOIN skins_armas sa ON art.id = sa.articulo_id
+WHERE ij.usuario_id = 1;
+--Tabla de Clasificación (Leaderboard - Top 5 jugadores con más bajas)
+SELECT 
+    u.username, 
+    e.bajas, 
+    e.partidas_ganadas
+FROM estadisticas_jugador e
+JOIN usuarios u ON e.usuario_id = u.id
+ORDER BY e.bajas DESC
+LIMIT 5;
+--Ver la lista de amigos aceptados de un jugador
+SELECT 
+    u.username AS nombre_amigo, 
+    la.fecha_solicitud
+FROM lista_amigos la
+JOIN usuarios u ON la.amigo_id = u.id
+WHERE la.usuario_id = 1 AND la.estado = 'aceptada';
