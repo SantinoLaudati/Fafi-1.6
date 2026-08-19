@@ -1,0 +1,113 @@
+
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; user-select: none; background: #000; }
+        canvas { display: block; }
+
+        #login-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1e2328 0%, #0a0c0f 100%); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(10px); }
+        .auth-box { width: 350px; background: rgba(20, 25, 30, 0.8); padding: 40px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .auth-logo { color: #fff; font-size: 36px; letter-spacing: 5px; margin-bottom: 30px; font-weight: 900; }
+        .auth-logo span { color: #d69f0f; }
+
+        #menus { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(30, 35, 40, 0.75) 0%, rgba(10, 12, 15, 0.98) 100%); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 100; display: flex; flex-direction: column; color: #e0e0e0; }
+
+        .fafi16-header { display: flex; align-items: center; background: rgba(0, 0, 0, 0.6); height: 75px; padding: 0 40px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 4px 25px rgba(0,0,0,0.8); }
+        .fafi16-logo { font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #fff; margin-right: 60px; text-transform: uppercase; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .fafi16-logo span { color: #d69f0f; } 
+        .fafi16-nav-tabs { display: flex; gap: 40px; height: 100%; }
+        .fafi16-tab-btn { display: flex; align-items: center; height: 100%; font-size: 16px; font-weight: bold; color: #888; text-transform: uppercase; cursor: pointer; border-bottom: 3px solid transparent; transition: color 0.2s ease-in-out; letter-spacing: 1px; }
+        .fafi16-tab-btn:hover { color: #fff; }
+        .fafi16-tab-btn.active { color: #fff; border-bottom: 3px solid #d69f0f; text-shadow: 0 0 10px rgba(214, 159, 15, 0.3); }
+        .fafi16-header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+        .fafi16-coins { font-family: 'Courier New', Courier, monospace; font-size: 15px; color: #d69f0f; background: rgba(214, 159, 15, 0.1); padding: 8px 15px; border-radius: 4px; border: 1px solid rgba(214, 159, 15, 0.2); font-weight: bold; letter-spacing: 1px; }
+
+        .fafi16-content-area { flex: 1; display: flex; justify-content: center; align-items: center; padding: 40px; }
+        .fafi16-panel { display: none; flex-direction: column; width: 550px; background: rgba(20, 25, 30, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); max-height: 70vh; overflow-y: auto; }
+        .fafi16-panel.active { display: flex; }
+        .fafi16-panel-title { font-size: 24px; font-weight: 300; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; color: #fff; }
+
+        .fafi16-btn-standard { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); color: #ccc; padding: 15px; font-size: 14px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; border-radius: 4px; width: 100%; margin-bottom: 15px; letter-spacing: 1px; text-align: center; }
+        .fafi16-btn-standard:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: #888; }
+        .fafi16-btn-success { background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.4); color: #4ade80; }
+        .fafi16-btn-success:hover { background: #4ade80; color: #000; box-shadow: 0 0 15px rgba(74, 222, 128, 0.3); border-color: #4ade80; }
+        
+        .fafi16-btn-campaign { background: rgba(214, 159, 15, 0.1); border: 1px solid rgba(214, 159, 15, 0.4); color: #d69f0f; }
+        .fafi16-btn-campaign:hover { background: #d69f0f; color: #000; box-shadow: 0 0 15px rgba(214, 159, 15, 0.3); border-color: #d69f0f; }
+
+        .fafi16-input { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; font-size: 14px; width: 100%; box-sizing: border-box; border-radius: 4px; margin-bottom: 15px; outline: none; text-align: center; letter-spacing: 2px; transition: 0.2s; }
+        .fafi16-input:focus { border-color: #d69f0f; background: rgba(0,0,0,0.8); }
+        .fafi16-label { font-size: 11px; color: #777; text-transform: uppercase; margin-bottom: 8px; display: block; letter-spacing: 1px; font-weight: bold; }
+
+        #ingame-menu { display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 15, 20, 0.9); backdrop-filter: blur(10px); z-index: 1000; position: absolute; top:0; left:0; width:100%; height:100%; }
+
+        .overlay-menu { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 15, 20, 0.95); z-index: 200; color: white; padding: 50px; box-sizing: border-box; overflow-y: hidden; }
+        .overlay-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #d69f0f; padding-bottom: 20px; margin-bottom: 30px; }
+        .overlay-title { font-size: 32px; font-weight: 900; text-transform: uppercase; letter-spacing: 4px; margin: 0; }
+        .close-btn { background: transparent; color: #d69f0f; border: 1px solid #d69f0f; padding: 10px 20px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .close-btn:hover { background: #d69f0f; color: #000; }
+        .boxes-container { display: flex; justify-content: center; gap: 30px; margin-top: 50px; }
+        .loot-box { background: #1a252e; border: 2px solid #333; width: 250px; padding: 30px; text-align: center; transition: 0.3s; position: relative; }
+        .loot-box:hover { transform: translateY(-10px); border-color: #fff; }
+        .box-title { font-size: 20px; font-weight: bold; margin-bottom: 15px; }
+        .box-price { font-size: 16px; color: #d69f0f; margin-bottom: 20px; font-family: monospace; }
+        .btn-buy { background: #d69f0f; border: none; color: #000; padding: 10px 20px; cursor: pointer; font-weight: bold; width: 100%; }
+        .btn-buy:hover { background: #e0a300; }
+        .box-basic { border-bottom: 4px solid #aaa; } .box-advanced { border-bottom: 4px solid #a335ee; } .box-legendary { border-bottom: 4px solid #d69f0f; }
+        
+        .inventory-layout { display: flex; gap: 20px; height: calc(100% - 100px); }
+        .inventory-list-container { flex: 1; overflow-y: auto; padding-right: 10px; }
+        #inventory-preview-container { width: 450px; background: rgba(0,0,0,0.5); border: 2px solid #333; position: relative; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); }
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .skin-card { background: #111; border: 1px solid #333; padding: 15px; text-align: center; transition: transform 0.2s; }
+        .skin-card:hover { border-color: #d69f0f; transform: translateY(-3px); }
+        .skin-name { font-weight: bold; margin-bottom: 10px; font-size: 14px; }
+        .skin-weapon { font-size: 10px; color: #777; text-transform: uppercase; margin-bottom: 15px; }
+        .btn-equip { background: transparent; border: 1px solid #00ffcc; color: #00ffcc; padding: 8px; cursor: pointer; width: 100%; font-size: 12px; }
+        .btn-equip.equipped { background: #00ffcc; color: #000; }
+        .btn-equip:hover:not(.equipped) { background: rgba(0, 255, 204, 0.2); }
+        .rarity-comun { color: #aaa; } .rarity-epica { color: #a335ee; } .rarity-legendaria { color: #d69f0f; }
+        
+        #skin-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); border: 2px solid #d69f0f; padding: 40px; text-align: center; z-index: 500; display: none; box-shadow: 0 0 50px rgba(214, 159, 15, 0.5); }
+        #roulette-container { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 900px; height: 200px; background: rgba(10, 15, 20, 0.98); border: 2px solid #d69f0f; z-index: 400; overflow: hidden; box-shadow: 0 0 50px rgba(214, 159, 15, 0.4); }
+        #roulette-track { display: flex; height: 100%; align-items: center; width: max-content; }
+        .roulette-item { width: 150px; height: 140px; margin: 0 5px; background: #111; border: 2px solid #333; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 14px; font-weight: bold; flex-shrink: 0; position: relative; }
+        .roulette-item.rarity-comun { border-bottom: 4px solid #aaa; } .roulette-item.rarity-epica { border-bottom: 4px solid #a335ee; } .roulette-item.rarity-legendaria { border-bottom: 4px solid #d69f0f; background: rgba(214, 159, 15, 0.1); }
+        .roulette-item span { font-size: 10px; color: #777; margin-top: 5px; }
+        #roulette-selector { position: absolute; top: 0; left: 50%; width: 4px; height: 100%; background: white; transform: translateX(-50%); z-index: 401; box-shadow: 0 0 15px white; }
+        
+        #weapon-menu { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 20, 25, 0.95); border: 1px solid #d69f0f; padding: 20px; z-index: 150; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .weapon-option { padding: 10px 20px; margin: 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s; font-weight: bold; }
+        .weapon-option:hover { background: #d69f0f; color: #000; border-color: #d69f0f; }
+        
+        #hud { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 100px; height: 100px; transform: translate(-50%, -50%); }
+        .crosshair-line { position: absolute; background: #00ffcc; }
+        .ch-vertical { width: 2px; height: 15px; left: 49px; } .ch-horizontal { width: 15px; height: 2px; top: 49px; } .ch-top { top: 30px; } .ch-bottom { bottom: 30px; } .ch-left { left: 30px; } .ch-right { right: 30px; }
+        #sniper-scope { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 35%, black 100%); z-index: 10; }
+        #sniper-scope::before { content: ""; position: absolute; top: 50%; left: 10%; width: 80%; height: 1px; background: rgba(255, 255, 255, 0.3); }
+        #sniper-scope::after { content: ""; position: absolute; left: 50%; top: 10%; width: 1px; height: 80%; background: rgba(255, 255, 255, 0.3); }
+        .sniper-dot { position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: red; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 5px red; z-index: 11; }
+        .bars-container { position: absolute; bottom: 40px; left: 50px; width: 250px; }
+        .bar-bg { background: rgba(0,0,0,0.5); height: 12px; width: 100%; margin: 8px 0; border: 1px solid #444; }
+        .bar-fill { height: 100%; transition: width 0.1s; }
+        #hp-fill { background: #00ffaa; width: 100%; } #stamina-fill { background: #d69f0f; width: 100%; }
+        .stats { position: absolute; bottom: 40px; right: 50px; color: white; font-size: 40px; text-align: right; }
+        .weapon-info { font-size: 18px; color: #d69f0f; margin-bottom: 5px; font-weight: bold; }
+        .net-status { position: absolute; top: 20px; left: 20px; color: #00ffcc; font-size: 12px; text-shadow: 1px 1px 2px #000; }
+        #flash-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 200; }
+        .damage-popup { position: absolute; pointer-events: none; color: #ffffff; font-weight: 900; font-size: 24px; text-shadow: 2px 2px 0px #000; animation: damageFloat 0.8s ease-out forwards; z-index: 300; }
+        .damage-headshot { color: #d69f0f; font-size: 32px; }
+        @keyframes damageFloat { 0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; } 20% { transform: translate(-50%, -40px) scale(1.2); opacity: 1; } 100% { transform: translate(-50%, -100px) scale(1); opacity: 0; } }
+
+        .fafi-list-container { background: rgba(0,0,0,0.5); padding: 15px; border-radius: 4px; max-height: 150px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px; }
+        .fafi-list-item { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; font-size: 13px; color: #ccc; }
+        .fafi-list-item:last-child { border-bottom: none; }
+        .achievement-locked { opacity: 0.5; filter: grayscale(100%); }
+        .achievement-unlocked { color: #d69f0f; font-weight: bold; }
+
+        #campaign-map-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #2e2e2e 0%, #0a0c0f 100%); z-index: 500; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .map-node { width: 60px; height: 60px; border-radius: 50%; background: #222; border: 2px solid #555; display: flex; align-items: center; justify-content: center; font-weight: bold; margin: 0 20px; cursor: pointer; transition: 0.3s; font-size: 20px; }
+        .map-node.unlocked { background: #d69f0f; border-color: #fff; color: #000; box-shadow: 0 0 20px #d69f0f; }
+        .map-node.locked { cursor: not-allowed; opacity: 0.5; }
+        .map-node.unlocked:hover { transform: scale(1.1); }
+        .map-path { display: flex; align-items: center; margin-bottom: 30px; }
+        .map-line { height: 6px; width: 80px; background: #333; }
+        .map-line.unlocked { background: #d69f0f; }
