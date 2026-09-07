@@ -4,17 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Team T Studio | Desarrollo de Videojuegos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <header>
-        <div class="nav-container">
-            <div class="logo-container">
-                <img src="assets/Isotipo_TeamT.png" alt="Logo T" class="logo-icon">
-                <img src="assets/Logotipo_TeamT.jpg" alt="Team T Studio" class="logo-text">
+    <header class="navbar">
+        <div class="navbar-inner">
+            <div class="navbar-brand">
+                <img src="assets/Isotipo_TeamT.png" alt="Logo T">
+                <span>Team T Studio</span>
             </div>
-            <nav class="mobile-menu" id="mobileMenu">
+            <nav class="nav-links">
                 <a href="#inicio">Inicio</a>
                 <a href="#proyectos">Proyectos</a>
                 <a href="#nosotros">Nosotros</a>
@@ -31,39 +34,42 @@
     </header>
 
     <main>
-        <section id="inicio" class="container">
-            <div class="banner">
-                <h1>TEAM T STUDIO</h1>
-                <p>Creadores de realidades · Desarrolladores de FAFI 1.6</p>
-            </div>
+        <section id="inicio" class="hero">
+            <h1>TEAM T STUDIO</h1>
+            <p>Creadores de realidades · Desarrolladores de FAFI 1.6</p>
         </section>
 
-        <section id="proyectos" class="container">
-            <h2 class="section-title">Proyectos</h2>
-            <div class="grid-proyectos">
-                <div class="card-proyecto">
-                    <div class="img-placeholder fafi-highlight" style="padding: 0;">
-                        <img src="assets/Isotipo_prueba.png" alt="FAFI 1.6 Gameplay" class="img-fafi">
+        <section id="proyectos" class="projects">
+            <div class="section-header">
+                <h2>Proyectos</h2>
+            </div>
+            <div class="projects-grid">
+                <div class="project-card">
+                    <div class="project-card-image">
+                        <img src="assets/Isotipo_prueba.png" alt="FAFI 1.6 Gameplay">
                     </div>
-                    <div class="info-proyecto">
-                        <h3 class="accent-color">FAFI 1.6</h3>
+                    <div class="project-card-content">
+                        <span class="project-label">FAFI 1.6</span>
+                        <h3>FAFI 1.6</h3>
                         <p>Nuestro primer titulo, aun en desarrollo. Una experiencia única llena de acción, mecánicas inmersivas y un rendimiento optimizado para llevar la adrenalina al máximo nivel.</p>
                     </div>
                 </div>
-                <div class="card-proyecto">
-                    <div class="img-placeholder">
-                        <span>[ Imagen Proyecto 2 ]</span>
+                <div class="project-card">
+                    <div class="project-card-image">
+                        <img src="assets/Isotipo_prueba.png" alt="Proyecto Enigma">
                     </div>
-                    <div class="info-proyecto">
+                    <div class="project-card-content">
+                        <span class="project-label">Enigma</span>
                         <h3>Proyecto Enigma</h3>
                         <p>Actualmente en fase de pre-producción. Explorando nuevas narrativas y estilos visuales para nuestra próxima gran entrega.</p>
                     </div>
                 </div>
-                <div class="card-proyecto">
-                    <div class="img-placeholder">
-                        <span>[ Imagen Proyecto 3 ]</span>
+                <div class="project-card">
+                    <div class="project-card-image">
+                        <img src="assets/Isotipo_prueba.png" alt="Prototipo T">
                     </div>
-                    <div class="info-proyecto">
+                    <div class="project-card-content">
+                        <span class="project-label">Prototipo</span>
                         <h3>Prototipo T</h3>
                         <p>Laboratorio de ideas y mecánicas experimentales donde nacen las futuras innovaciones del estudio.</p>
                     </div>
@@ -71,30 +77,30 @@
             </div>
         </section>
 
-        <section id="nosotros">
+        <section id="nosotros" class="team">
             <div class="container">
-                <h2 class="section-title">Equipo</h2>                
-                <div class="grid-equipo">
-                    <div class="miembro">
-                        <div class="foto-circulo">
+                <h2>Equipo</h2>
+                <div class="team-grid">
+                    <div class="team-member">
+                        <div class="team-member-avatar">
                             <img src="assets/SantinoLaudati.png" alt="Foto Santino Laudati">
                         </div>
                         <h4>Santino Laudati</h4>
-                        <span>Lider de proyecto</span>
+                        <span class="role">Lider de proyecto</span>
                     </div>
-                    <div class="miembro">
-                        <div class="foto-circulo">
+                    <div class="team-member">
+                        <div class="team-member-avatar">
                             <img src="assets/DanteIglesias.png" alt="Foto Dante Iglesias">
                         </div>
                         <h4>Dante Iglesias</h4>
-                        <span>Load Developer</span>
+                        <span class="role">Load Developer</span>
                     </div>
-                    <div class="miembro">
-                        <div class="foto-circulo">
+                    <div class="team-member">
+                        <div class="team-member-avatar">
                             <img src="assets/Pachus13.png" alt="Foto Ian Quiroga">
                         </div>
                         <h4>Ian Quiroga</h4>
-                        <span>Game Designer / Artista</span>
+                        <span class="role">Game Designer / Artista</span>
                     </div>
                 </div>
 
@@ -106,23 +112,21 @@
         </section>
     </main>
 
-    <footer id="contacto">
-        <div class="container footer-container">
-             <div class="contacto-info">
+    <footer id="contacto" class="footer">
+        <div class="container footer-inner">
+            <div class="footer-brand">
                 <strong>Contacto con nosotros:</strong>
-                <div class="redes">
-                    <a href="#" title="Web">🌐</a>
-                    <a href="https://discord.gg/gyxVjcdg" title="Discord">💬</a>
-                    <a href="https://www.instagram.com/teamtstudio/" title="Instagram">📸</a>
-                </div>
             </div>
-            <div class="copyright">
+            <div class="footer-links">
+                <a href="#" title="Web">🌐</a>
+                <a href="https://discord.gg/gyxVjcdg" title="Discord">💬</a>
+                <a href="https://www.instagram.com/teamtstudio/" title="Instagram">📸</a>
+            </div>
+            <div class="footer-copyright">
                 &copy; Team T 2026. Todos los derechos reservados.
             </div>
         </div>
     </footer>
     <script src="js/script.js"></script>
-    <link rel="stylesheet" href="js/script.js">
-
 </body>
 </html>
