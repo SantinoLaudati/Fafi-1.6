@@ -408,6 +408,11 @@ img {
   opacity: 1;
 }
 
+.project-card-image img.color-img {
+  filter: none;
+  opacity: 1;
+}
+
 .project-card-content {
   padding: var(--card-padding);
   position: relative;
@@ -461,14 +466,16 @@ img {
 }
 
 .team-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  align-items: center;
   gap: 3rem;
 }
 
 @media (min-width: 768px) {
   .team-grid {
+    grid-template-columns: repeat(3, 1fr);
     gap: 6rem;
   }
 }
@@ -518,6 +525,30 @@ img {
   font-weight: 700;
   text-transform: uppercase;
   color: #9AA0A6;
+}
+
+/* ---------- About / Info Section ---------- */
+.info-equipo {
+  max-width: 40rem;
+  margin: 5rem 0 0;
+  padding-top: 3rem;
+  border-top: 1px solid rgba(59, 73, 76, 0.2);
+  text-align: left;
+}
+
+.info-equipo .accent-color {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--surface-tint);
+  margin-bottom: 1rem;
+}
+
+.info-equipo p {
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--on-surface-variant);
 }
 
 /* ---------- Footer ---------- */
