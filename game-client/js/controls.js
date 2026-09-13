@@ -97,5 +97,6 @@ function animate() {
         else { rp.userData.leftLeg.rotation.x = 0; rp.userData.rightLeg.rotation.x = 0; rp.userData.leftArm.rotation.x = 0; rp.userData.rightArm.rotation.x = 0; rp.userData.walkTime = 0; }
     }
 
-    broadcast({ type: 'move', pos: { x: camera.position.x, y: camera.position.y - 1.6, z: camera.position.z }, rot: camera.rotation.y, sprint: isSprinting, weapon: currentWeapon }); renderer.render(scene, camera);
+    broadcastPlayerUpdate(); 
+    renderer.render(scene, camera);
 }

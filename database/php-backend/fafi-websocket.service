@@ -1,0 +1,44 @@
+# Fafi-1.6 WebSocket Server Systemd Service
+# Place in /etc/systemd/system/fafi-websocket.service
+
+[Unit]
+Description=Fafi-1.6 WebSocket Game Server
+After=network.target mysql.service
+Requires=mysql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/fafi-1.6/php-backend
+ExecStart=/usr/bin/php websocket/server.php
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fafi-websocket
+
+# Environment variables
+Environment=APP_ENV=production
+Environment=DB_DRIVER=mysql
+Environment=DB_HOST=localhost
+Environment=DB_PORT=3306
+Environment=DB_NAME=fafi_1_6
+Environment=DB_USER=fafi_user
+Environment=DB_PASSWORD=your_secure_password_here
+Environment=JWT_SECRET=your-super-secret-jwt-key-min-32-characters
+Environment=WS_PORT=8080
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/fafi-1.6/php-backend/logs
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

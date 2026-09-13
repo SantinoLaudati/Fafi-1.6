@@ -22,6 +22,7 @@
         <div id="register-box" class="auth-box" style="display: none;">
             <span class="fafi16-label">CREAR NUEVA CUENTA</span>
             <input type="text" id="reg-user" class="fafi16-input" placeholder="Elige un usuario">
+            <input type="email" id="reg-email" class="fafi16-input" placeholder="Email">
             <input type="password" id="reg-pass" class="fafi16-input" placeholder="Contraseña">
             <button class="fafi16-btn-standard fafi16-btn-campaign" style="margin-top: 10px;" onclick="handleRegister()">CREAR CUENTA</button>
             <div style="margin-top: 15px; font-size: 12px; color: #aaa; cursor: pointer;" onclick="showLogin()">Volver a <span style="color:#4ade80;">Iniciar Sesión</span></div>
@@ -44,7 +45,7 @@
                 <div class="fafi16-coins" id="coins-display-menu">FAFI COINS: 2000</div>
                 <div id="player-profile" style="color: #d69f0f; font-weight: bold; text-transform: uppercase; font-size: 12px; text-align: right;">
                     JUGADOR: <span id="player-name" style="color: #fff;"></span> <br>
-                    <span style="color:#777; font-size:10px; text-transform: none;">DB Offline (Local)</span>
+                    <span id="player-status" style="color:#777; font-size:10px; text-transform: none;">Conectando...</span>
                 </div>
             </div>
         </div>
@@ -59,14 +60,15 @@
                 <button class="fafi16-btn-standard fafi16-btn-success" onclick="startPractice('aim')">CAMPO DE TIRO (AIM)</button>
                 
                 <div style="margin-top: 20px;">
-                    <span class="fafi16-label">Multijugador - Tu ID (Click para copiar)</span>
-                    <div id="my-id" class="fafi16-btn-standard" onclick="copyMyID()" style="border-color: rgba(214, 159, 15, 0.5); color: #d69f0f;">CARGANDO ACCESO...</div>
-                </div>
-                
-                <div style="margin-top: 10px;">
-                    <span class="fafi16-label">Conectarse a Servidor de Amigo</span>
-                    <input type="text" id="join-id" class="fafi16-input" placeholder="INGRESA EL ID DEL HOST">
-                    <button class="fafi16-btn-standard fafi16-btn-success" id="start-btn">ENTRAR A LA SALA</button>
+                    <span class="fafi16-label">Multijugador - Sala</span>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button class="fafi16-btn-standard fafi16-btn-campaign" onclick="createRoom()" style="flex: 1;">CREAR SALA</button>
+                        <button class="fafi16-btn-standard fafi16-btn-success" onclick="joinRoomPrompt()" style="flex: 1;">UNIRSE A SALA</button>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <span class="fafi16-label">ID de Sala (Click para copiar)</span>
+                        <div id="my-room-id" class="fafi16-btn-standard" onclick="copyRoomID()" style="border-color: rgba(214, 159, 15, 0.5); color: #d69f0f;">NO EN SALA</div>
+                    </div>
                 </div>
             </div>
 
@@ -199,8 +201,11 @@
         </div>
     </div>
     <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/network.js"></script>
     <script src="js/main.js"></script>
     <script src="js/player.js"></script>
     <script src="js/controls.js"></script>

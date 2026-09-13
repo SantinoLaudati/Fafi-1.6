@@ -18,27 +18,46 @@ function showLogin() {
 window.handleLogin = async () => {
     const user = document.getElementById('login-user').value.trim();
     const pass = document.getElementById('login-pass').value.trim();
-    if(user.length < 3) { alert("Usuario inválido."); return; }
+    if (user.length < 3) { alert("Usuario inválido."); return; }
 
-    window.currentUserId = user; 
-    finalizeAuth(user);
+    try {
+        await authService.login(user, pass);
+        await finalizeAuth();
+    } catch (err) {
+        alert(err.message);
+    }
 };
 
 window.handleRegister = async () => {
     const user = document.getElementById('reg-user').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
     const pass = document.getElementById('reg-pass').value.trim();
-    if(user.length < 3) { alert("El usuario debe tener al menos 3 caracteres."); return; }
+    if (user.length < 3) { alert("El usuario debe tener al menos 3 caracteres."); return; }
+    if (!email.includes('@')) { alert("Email inválido."); return; }
 
-    alert("Cuenta local creada (No conectada a DB).");
-    window.currentUserId = user;
-    finalizeAuth(user);
+    try {
+        await authService.register(user, email, pass);
+        await finalizeAuth();
+    } catch (err) {
+        alert(err.message);
+    }
 };
 
-function finalizeAuth(username) {
+async function finalizeAuth() {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('menus').style.display = 'flex';
-    document.getElementById('player-name').innerText = username;
-    loadGameData();
+    document.getElementById('player-name').innerText = authService.user.username;
+    document.getElementById('player-status').innerText = 'Conectado';
+    
+    await loadGameDataFromAPI();
+    
+    try {
+        await gameNetwork.connect(authService.token);
+        setupGameNetworkHandlers();
+    } catch (err) {
+        console.error('WebSocket connection failed:', err);
+        document.getElementById('player-status').innerText = 'Sin conexión WS';
+    }
 }
 
 window.fafiCoins = 2000;
@@ -74,33 +93,46 @@ const skinsDB = [
 ];
 
 window.saveGameData = async () => {
-    if (!window.currentUserId) return; 
-    const dataToSave = { 
-        coins: window.fafiCoins, inventory: window.userInventory, equipped: window.equippedSkins,
-        purchases: window.purchaseHistory, friends: window.friendsList, achievements: window.achievements, level: window.campaignLevel
-    };
-    
-    localStorage.setItem('fafi_save_' + window.currentUserId, JSON.stringify(dataToSave));
+    if (!authService.isAuthenticated()) return;
+    try {
+        await apiService.updateConfig({
+            preferencias_ui: {
+                equipped_skins: window.equippedSkins
+            }
+        });
+    } catch (err) {
+        console.error('Failed to save game data:', err);
+    }
 };
 
-window.loadGameData = async () => {
-    if (!window.currentUserId) return;
+async function loadGameDataFromAPI() {
+    if (!authService.isAuthenticated()) return;
     
-    const savedData = localStorage.getItem('fafi_save_' + window.currentUserId);
-    if (savedData) {
-        const data = JSON.parse(savedData);
-        window.fafiCoins = data.coins !== undefined ? data.coins : 2000;
-        window.userInventory = data.inventory || [];
-        window.equippedSkins = data.equipped || window.equippedSkins;
-        window.purchaseHistory = data.purchases || [];
-        window.friendsList = data.friends || [];
-        if(data.achievements) window.achievements = data.achievements;
-        window.campaignLevel = data.level || 1;
+    try {
+        const [inventory, coins, equipped, achievements, friends, campaign] = await Promise.all([
+            apiService.getInventory(),
+            apiService.getCoins(),
+            apiService.getEquipped(),
+            apiService.getAchievements(),
+            apiService.getFriends(),
+            apiService.getCampaignProgress()
+        ]);
+        
+        window.userInventory = inventory.inventory.map(item => item.articulo_id);
+        window.fafiCoins = coins.coins;
+        window.equippedSkins = equipped.equipped_skins || {};
+        window.achievements = achievements.achievements;
+        window.friendsList = friends.friends.filter(f => f.estado === 'aceptada').map(f => f.username);
+        window.campaignLevel = campaign.progress?.ultimo_nivel || 1;
+        
         updateCoinsDisplay();
-        if(weaponGroup && currentWeapon) setupWeapon(); 
+        updateProfileUI();
+        
+        if (weaponGroup && currentWeapon) setupWeapon();
+    } catch (err) {
+        console.error('Failed to load game data:', err);
     }
-    updateProfileUI();
-};
+}
 
 window.updateProfileUI = () => {
     const histEl = document.getElementById('purchase-history-list');
@@ -123,18 +155,28 @@ window.updateProfileUI = () => {
     });
 };
 
-window.addFriend = () => {
+window.addFriend = async () => {
     const fId = document.getElementById('new-friend-id').value.trim();
-    if(fId && !window.friendsList.includes(fId)) {
-        window.friendsList.push(fId);
+    if (!fId) return;
+    
+    try {
+        await apiService.addFriend(fId);
         document.getElementById('new-friend-id').value = "";
-        saveGameData(); updateProfileUI();
+        const friendsData = await apiService.getFriends();
+        window.friendsList = friendsData.friends.filter(f => f.estado === 'aceptada').map(f => f.username);
+        updateProfileUI();
+    } catch (err) {
+        alert(err.message);
     }
 };
 
 window.unlockAchievement = (id) => {
     const ach = window.achievements.find(a => a.id === id);
-    if(ach && !ach.unlocked) { ach.unlocked = true; saveGameData(); updateProfileUI(); }
+    if (ach && !ach.unlocked) { 
+        ach.unlocked = true; 
+        saveGameData(); 
+        updateProfileUI(); 
+    }
 };
 
 window.updateCoinsDisplay = () => {
@@ -147,81 +189,71 @@ window.closeStore = () => { document.getElementById('store-ui').style.display = 
 window.openInventory = () => { renderInventory(); document.getElementById('inventory-ui').style.display = 'block'; document.getElementById('menus').style.display = 'none'; initPreview(); };
 window.closeInventory = () => { document.getElementById('inventory-ui').style.display = 'none'; document.getElementById('menus').style.display = 'flex'; };
 
-window.buyBox = (type) => {
-    let cost = type === 'basic' ? 200 : (type === 'advanced' ? 500 : 1000);
-    if(window.fafiCoins < cost) { alert("¡No tienes suficientes FafiCoins!"); return; }
-    window.fafiCoins -= cost; 
+window.buyBox = async (type) => {
+    const boxMap = { basic: 'Caja Básica', advanced: 'Caja Avanzada', legendary: 'Caja Clasificada' };
+    const boxName = boxMap[type];
     
-    window.purchaseHistory.push({ box: type, cost: cost });
-    unlockAchievement('rich_boy');
-    
-    updateCoinsDisplay(); saveGameData(); updateProfileUI();
-
-    let roll = Math.random() * 100;
-    let targetRarity = 'comun';
-    if(type === 'basic') { targetRarity = roll < 15 ? 'epica' : 'comun'; }
-    else if(type === 'advanced') { targetRarity = roll < 20 ? 'legendaria' : (roll < 70 ? 'epica' : 'comun'); }
-    else if(type === 'legendary') { targetRarity = roll < 50 ? 'legendaria' : 'epica'; }
-
-    let possibleSkins = skinsDB.filter(s => s.rarity === targetRarity);
-    if(possibleSkins.length === 0) possibleSkins = skinsDB;
-    let wonSkin = possibleSkins[Math.floor(Math.random() * possibleSkins.length)];
-    
-    const rouletteContainer = document.getElementById('roulette-container');
-    const track = document.getElementById('roulette-track');
-    rouletteContainer.style.display = 'block';
-    track.style.transition = 'none'; track.style.transform = 'translateX(0)'; track.innerHTML = '';
-
-    const numItems = 45; const winIndex = 38; 
-    for(let i=0; i<numItems; i++) {
-        let itemSkin = (i === winIndex) ? wonSkin : skinsDB[Math.floor(Math.random() * skinsDB.length)];
-        let el = document.createElement('div');
-        el.className = `roulette-item rarity-${itemSkin.rarity}`;
-        el.innerHTML = `<div>${itemSkin.name}</div><span>${itemSkin.weapon.toUpperCase()}</span>`;
-        track.appendChild(el);
-    }
-
-    void track.offsetWidth; 
-    const itemWidth = 164; 
-    const containerWidth = rouletteContainer.clientWidth;
-    const randomOffset = (Math.random() - 0.5) * 100; 
-    const targetX = -(winIndex * itemWidth) + (containerWidth / 2) - (itemWidth / 2) + randomOffset;
-
-    track.style.transition = 'transform 5s cubic-bezier(0.1, 0.9, 0.2, 1)';
-    track.style.transform = `translateX(${targetX}px)`;
-
-    setTimeout(() => {
-        rouletteContainer.style.display = 'none';
-        let popupTitle = document.getElementById('popup-title');
-        let popupDesc = document.getElementById('popup-desc');
-        let popupSkinName = document.getElementById('popup-skin-name');
-
-        popupSkinName.innerText = wonSkin.name;
-        popupSkinName.className = `rarity-${wonSkin.rarity}`;
-
-        if(window.userInventory.includes(wonSkin.id)) {
-            let refund = targetRarity === 'legendaria' ? 400 : (targetRarity === 'epica' ? 150 : 50);
-            window.fafiCoins += refund;
-            popupTitle.innerText = "¡SKIN DUPLICADA!";
-            popupDesc.innerText = `Ya tenías esta skin. Te hemos devuelto ${refund} FafiCoins.`;
-            updateCoinsDisplay();
-        } else {
-            window.userInventory.push(wonSkin.id);
-            popupTitle.innerText = "¡NUEVA SKIN DESBLOQUEADA!";
-            popupDesc.innerText = `Arma: ${wonSkin.weapon.toUpperCase()} | Rareza: ${wonSkin.rarity.toUpperCase()}`;
+    try {
+        const storeItems = await apiService.getStore();
+        const boxItem = storeItems.items.find(item => item.nombre === boxName);
+        
+        if (!boxItem) {
+            alert('Caja no encontrada');
+            return;
         }
-
-        saveGameData();
-        document.getElementById('skin-popup').style.display = 'block';
-    }, 5500);
+        
+        if (window.fafiCoins < boxItem.precio) { 
+            alert("¡No tienes suficientes FafiCoins!"); 
+            return; 
+        }
+        
+        const result = await apiService.purchaseBox(boxItem.id);
+        
+        window.fafiCoins = result.coins;
+        updateCoinsDisplay();
+        
+        if (result.reward) {
+            const reward = result.reward;
+            const rouletteContainer = document.getElementById('roulette-container');
+            const track = document.getElementById('roulette-track');
+            const popupTitle = document.getElementById('popup-title');
+            const popupDesc = document.getElementById('popup-desc');
+            const popupSkinName = document.getElementById('popup-skin-name');
+            
+            if (reward.duplicate) {
+                window.fafiCoins += reward.refund;
+                updateCoinsDisplay();
+                popupTitle.innerText = "¡SKIN DUPLICADA!";
+                popupDesc.innerText = `Ya tenías esta skin. Te hemos devuelto ${reward.refund} FafiCoins.`;
+            } else {
+                window.userInventory.push(reward.articulo_id);
+                popupTitle.innerText = "¡NUEVA SKIN DESBLOQUEADA!";
+                popupDesc.innerText = `Arma: ${reward.arma_base.toUpperCase()} | Rareza: ${reward.rareza.toUpperCase()}`;
+            }
+            
+            popupSkinName.innerText = reward.nombre;
+            popupSkinName.className = `rarity-${reward.rareza}`;
+            
+            rouletteContainer.style.display = 'none';
+            document.getElementById('skin-popup').style.display = 'block';
+            
+            await loadGameDataFromAPI();
+        }
+    } catch (err) {
+        alert(err.message);
+    }
 };
 
 window.renderInventory = () => {
     const list = document.getElementById('inventory-list');
     list.innerHTML = "";
-    if(window.userInventory.length === 0) { list.innerHTML = "<p style='color:#aaa;'>Aún no tienes skins. ¡Ve a la tienda!</p>"; return; }
+    if (window.userInventory.length === 0) { 
+        list.innerHTML = "<p style='color:#aaa;'>Aún no tienes skins. ¡Ve a la tienda!</p>"; 
+        return; 
+    }
     window.userInventory.forEach(skinId => {
         const skin = skinsDB.find(s => s.id === skinId);
+        if (!skin) return;
         const isEquipped = window.equippedSkins[skin.weapon] === skin.id;
         const card = document.createElement('div');
         card.className = 'skin-card';
@@ -237,14 +269,237 @@ window.renderInventory = () => {
     });
 };
 
-window.equipSkin = (skinId, weaponId) => {
-    if(window.equippedSkins[weaponId] === skinId) { window.equippedSkins[weaponId] = null; } 
-    else { window.equippedSkins[weaponId] = skinId; }
-    saveGameData(); renderInventory();
-    if(weaponGroup && currentWeapon === weaponId) setupWeapon();
+window.equipSkin = async (skinId, weaponId) => {
+    if (window.equippedSkins[weaponId] === skinId) { 
+        window.equippedSkins[weaponId] = null; 
+    } else { 
+        window.equippedSkins[weaponId] = skinId; 
+    }
+    
+    try {
+        await apiService.equipSkin(skinId, weaponId);
+    } catch (err) {
+        console.error('Failed to equip skin:', err);
+        // Revert on error
+        if (window.equippedSkins[weaponId] === skinId) {
+            window.equippedSkins[weaponId] = null;
+        } else {
+            window.equippedSkins[weaponId] = skinId;
+        }
+    }
+    
+    renderInventory();
+    if (weaponGroup && currentWeapon === weaponId) setupWeapon();
 };
 
 let previewScene, previewCamera, previewRenderer, previewWeaponModel;
+
+let remotePlayers = {};
+let currentRoomId = null;
+
+function createRemotePlayer(data) {
+    if (remotePlayers[data.id] || !scene) return;
+    const rp = new THREE.Group();
+    const colors = [0xff4655, 0x00ccff, 0x00ffcc, 0xffcc00, 0xcc00ff, 0xffffff]; 
+    const pColor = colors[Object.keys(remotePlayers).length % colors.length];
+    const mat = new THREE.MeshStandardMaterial({ color: pColor, roughness: 0.5 }); 
+    const headMat = new THREE.MeshStandardMaterial({ color: 0xffe0c2, roughness: 0.5 });
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), headMat); 
+    head.position.y = 0;
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.1, 0.1), new THREE.MeshStandardMaterial({ color: 0x000 })); 
+    visor.position.set(0, 0.05, -0.18); 
+    head.add(visor); 
+    rp.add(head);
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.3), mat); 
+    torso.position.y = -0.55; 
+    rp.add(torso);
+
+    function createLimb(w, h, d, yOffset) { 
+        const group = new THREE.Group(); 
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); 
+        mesh.position.y = yOffset; 
+        group.add(mesh); 
+        return group; 
+    }
+    const leftLeg = createLimb(0.2, 0.7, 0.2, -0.35); 
+    leftLeg.position.set(-0.15, -0.9, 0); 
+    rp.add(leftLeg);
+    const rightLeg = createLimb(0.2, 0.7, 0.2, -0.35); 
+    rightLeg.position.set(0.15, -0.9, 0); 
+    rp.add(rightLeg);
+    const leftArm = createLimb(0.15, 0.7, 0.15, -0.35); 
+    leftArm.position.set(-0.35, -0.25, 0); 
+    rp.add(leftArm);
+    const rightArm = createLimb(0.15, 0.7, 0.15, -0.35); 
+    rightArm.position.set(0.35, -0.25, 0); 
+    rp.add(rightArm);
+    const weaponMat = new THREE.MeshStandardMaterial({color: 0x333333}); 
+    const weaponMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.6), weaponMat); 
+    weaponMesh.position.set(0, -0.4, -0.2); 
+    rightArm.add(weaponMesh);
+
+    rp.userData = { leftLeg, rightLeg, leftArm, rightArm, weaponMesh, walkTime: 0, isMoving: false, isSprinting: false, lastPos: new THREE.Vector3() }; 
+    remotePlayers[data.id] = rp; 
+    rp.position.copy(data.position);
+    rp.rotation.y = data.rotation;
+    scene.add(rp);
+}
+
+function updateRemotePlayer(data) {
+    const rp = remotePlayers[data.playerId];
+    if (!rp) return;
+    
+    rp.userData.isMoving = rp.userData.lastPos.distanceTo(new THREE.Vector3().copy(data.position)) > 0.02;
+    rp.userData.lastPos.copy(data.position);
+    rp.userData.isSprinting = data.health < 100; // placeholder
+    rp.position.copy(data.position);
+    rp.rotation.y = data.rotation;
+    
+    if (data.weapon === 'knife') rp.userData.weaponMesh.scale.set(1, 1, 0.3); 
+    else if (data.weapon === 'pistol' || data.weapon === 'deagle') rp.userData.weaponMesh.scale.set(0.8, 1, 0.5); 
+    else rp.userData.weaponMesh.scale.set(1, 1, 1);
+}
+
+function handleRemoteShoot(data) {
+    const bulletColor = data.weapon === 'grenade' ? 0xffffff : 0xff0000;
+    spawnBullet(
+        new THREE.Vector3(data.position.x, data.position.y, data.position.z),
+        new THREE.Vector3(data.direction.x, data.direction.y, data.direction.z),
+        bulletColor,
+        data.weapon === 'grenade',
+        true,
+        data.weapon
+    );
+}
+
+function handleRemoteDamage(data) {
+    if (data.targetId === authService.user?.id) {
+        health -= data.amount;
+        damageShake = 0.4;
+        if (health <= 0) { 
+            health = 100; 
+            camera.position.set((Math.random() - 0.5) * 40, 1.6, (Math.random() - 0.5) * 40); 
+        }
+        document.getElementById('hp-fill').style.width = health + "%";
+    }
+}
+
+function handleRemoteKill(data) {
+    console.log(`${data.killerId} killed ${data.victimId} with ${data.weapon}`);
+}
+
+function handleRemoteRespawn(data) {
+    const rp = remotePlayers[data.playerId];
+    if (rp) {
+        rp.position.copy(data.position);
+        rp.userData.lastPos.copy(data.position);
+    }
+}
+
+function setupGameNetworkHandlers() {
+    gameNetwork.on('welcome', (data) => {
+        console.log('[GameNetwork] Welcome:', data);
+    });
+
+    gameNetwork.on('room_state', (data) => {
+        currentRoomId = data.room.id;
+        document.getElementById('my-room-id').innerText = data.room.id;
+        document.getElementById('my-room-id').style.color = '#4ade80';
+        
+        data.players.forEach(p => {
+            if (p.id !== authService.user.id) {
+                createRemotePlayer(p);
+            }
+        });
+        
+        startGameNetwork();
+    });
+
+    gameNetwork.on('player_joined', (data) => {
+        if (data.player.id !== authService.user.id) {
+            createRemotePlayer(data.player);
+        }
+    });
+
+    gameNetwork.on('player_left', (data) => {
+        if (remotePlayers[data.playerId]) {
+            scene.remove(remotePlayers[data.playerId]);
+            delete remotePlayers[data.playerId];
+        }
+    });
+
+    gameNetwork.on('player_update', (data) => {
+        if (data.playerId !== authService.user.id) {
+            updateRemotePlayer(data);
+        }
+    });
+
+    gameNetwork.on('player_shoot', (data) => {
+        if (data.playerId !== authService.user.id) {
+            handleRemoteShoot(data);
+        }
+    });
+
+    gameNetwork.on('player_damage', (data) => {
+        if (data.targetId === authService.user.id || data.attackerId === authService.user.id) {
+            handleRemoteDamage(data);
+        }
+    });
+
+    gameNetwork.on('player_killed', (data) => {
+        handleRemoteKill(data);
+    });
+
+    gameNetwork.on('player_respawned', (data) => {
+        handleRemoteRespawn(data);
+    });
+
+    gameNetwork.on('chat', (data) => {
+        console.log(`[Chat] ${data.username}: ${data.message}`);
+    });
+
+    gameNetwork.on('max_reconnect_failed', () => {
+        document.getElementById('player-status').innerText = 'Desconectado';
+        alert('Se perdió la conexión con el servidor. Recarga la página.');
+    });
+}
+
+function broadcastPlayerUpdate() {
+    if (!gameNetwork.isConnected()) return;
+    
+    gameNetwork.updatePlayer({
+        position: {
+            x: camera.position.x,
+            y: camera.position.y - 1.6,
+            z: camera.position.z
+        },
+        rotation: camera.rotation.y,
+        weapon: currentWeapon,
+        health: health,
+        sprint: isSprinting
+    });
+}
+
+function broadcastShoot(position, direction, weapon) {
+    if (!gameNetwork.isConnected()) return;
+    
+    gameNetwork.shoot({
+        position: { x: position.x, y: position.y, z: position.z },
+        direction: { x: direction.x, y: direction.y, z: direction.z },
+        weapon: weapon
+    });
+}
+
+function broadcastDamage(targetId, amount, isHeadshot, weapon) {
+    if (!gameNetwork.isConnected()) return;
+    
+    gameNetwork.damage({
+        targetId: targetId,
+        amount: amount,
+        isHeadshot: isHeadshot,
+        weapon: weapon
+    });
+}
 
 function buildPreviewMesh(weaponId, skinId) {
     const group = new THREE.Group();
@@ -428,14 +683,11 @@ const bullets = [];
 let currentWeapon = 'vandal';
 let autoShootInterval = null;
 let isWeaponMenuOpen = false;
-let peer; let connections = {}; let remotePlayers = {};
+let remotePlayers = {};
 
 window.updateSensDisplay = (val) => { document.getElementById('sens-val').innerText = val; sensitivity = (val / 5) * 0.0018; };
-window.copyMyID = () => {
-    const idText = document.getElementById('my-id').innerText;
-    if(idText.includes("CARGANDO")) return;
-    navigator.clipboard.writeText(idText); alert("ID Copiado: " + idText);
-};
+
+window.copyRoomID = () => {
 
 window.startPractice = (mapType) => {
     document.getElementById('net-status').innerText = `MODO: PRÁCTICA (${mapType.toUpperCase()})`;
@@ -497,58 +749,29 @@ window.toggleInGameMenu = () => {
 window.showControls = () => { alert(" CONTROLES BÁSICOS \n\n• Moverse: W, A, S, D\n• Saltar: Espacio\n• Correr: Shift Izquierdo\n• Disparar: Clic Izquierdo\n• Apuntar (Sniper): Clic Derecho\n• Recargar: R\n• Inspeccionar Arma: F\n• Tienda en Partida: B\n• Cambiar Arma: Teclas 1 al 7\n• Menú de Pausa: 0"); };
 window.returnToMainMenu = () => { location.reload(); };
 
-function broadcast(data) { for(let id in connections) { if(connections[id] && connections[id].open) connections[id].send(data); } }
+window.createRoom = () => {
+    const roomId = 'room_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    gameNetwork.joinRoom(roomId);
+};
 
-function initNetwork() {
-    peer = new Peer();
-    peer.on('open', (id) => { document.getElementById('my-id').innerText = id; });
-    peer.on('error', (err) => { console.error("PeerJS Error:", err); document.getElementById('my-id').innerText = "ERROR DE RED"; });
-    peer.on('connection', (c) => {
-        for(let id in connections) { if(connections[id].open) connections[id].send({type: 'new_peer', peerId: c.peer}); }
-        const existingPeers = Object.keys(connections);
-        if(existingPeers.length > 0) { c.on('open', () => { c.send({type: 'existing_peers', peers: existingPeers}); }); }
-        connections[c.peer] = c; setupDataListener(c);
-        if(gameMode !== 'online') { gameMode = 'online'; startGameNetwork(); unlockAchievement('first_blood'); } else { createRemotePlayer(c.peer); }
-    });
-    document.getElementById('start-btn').onclick = () => {
-        const joinId = document.getElementById('join-id').value;
-        if(joinId) { unlockAchievement('first_blood'); gameMode = 'online'; const c = peer.connect(joinId); connections[c.peer] = c; setupDataListener(c); startGameNetwork(); } 
-        else { alert("Por favor ingresa un ID de la sala/host"); }
-    };
-}
+window.joinRoomPrompt = () => {
+    const roomId = prompt('Ingresa el ID de la sala:');
+    if (roomId) {
+        gameNetwork.joinRoom(roomId.trim());
+    }
+};
 
-function setupDataListener(c) {
-    c.on('open', () => {
-        document.getElementById('net-status').innerText = `EN SALA (${Object.keys(connections).length} JUGADORES)`;
-        createRemotePlayer(c.peer); c.send({type: 'init-request'});
-    });
-    c.on('data', (data) => {
-        if (data.type === 'new_peer') { if(data.peerId !== peer.id && !connections[data.peerId]) { const newC = peer.connect(data.peerId); connections[newC.peer] = newC; setupDataListener(newC); } }
-        if (data.type === 'existing_peers') { data.peers.forEach(pid => { if(pid !== peer.id && !connections[pid]) { const newC = peer.connect(pid); connections[newC.peer] = newC; setupDataListener(newC); } }); }
-        if (data.type === 'init-request') { createRemotePlayer(c.peer); c.send({type: 'init-confirm'}); }
-        if (data.type === 'init-confirm') createRemotePlayer(c.peer);
+window.copyRoomID = () => {
+    const idText = document.getElementById('my-room-id').innerText;
+    if (idText === 'NO EN SALA' || !idText) return;
+    navigator.clipboard.writeText(idText); 
+    alert("ID de Sala Copiado: " + idText);
+};
 
-        if (data.type === 'move' && remotePlayers[c.peer]) {
-            let rp = remotePlayers[c.peer];
-            let newPos = new THREE.Vector3(data.pos.x, data.pos.y, data.pos.z);
-            rp.userData.isMoving = rp.userData.lastPos.distanceTo(newPos) > 0.02; rp.userData.lastPos.copy(newPos); rp.userData.isSprinting = data.sprint; rp.position.copy(newPos); rp.rotation.y = data.rot;
-            if (data.weapon === 'knife') rp.userData.weaponMesh.scale.set(1, 1, 0.3); else if (data.weapon === 'pistol' || data.weapon === 'deagle') rp.userData.weaponMesh.scale.set(0.8, 1, 0.5); else rp.userData.weaponMesh.scale.set(1, 1, 1);
-        }
-        if (data.type === 'shoot') {
-            const bulletColor = data.weapon === 'grenade' ? 0xffffff : 0xff0000;
-            spawnBullet(new THREE.Vector3(data.pos.x, data.pos.y, data.pos.z), new THREE.Vector3(data.dir.x, data.dir.y, data.dir.z), bulletColor, data.weapon === 'grenade', true, data.weapon);
-        }
-        if (data.type === 'damage') {
-            health -= data.amount; damageShake = 0.4;
-            if(health <= 0) { health = 100; camera.position.set((Math.random() - 0.5) * 40, 1.6, (Math.random() - 0.5) * 40); }
-            document.getElementById('hp-fill').style.width = health + "%";
-        }
-        if (data.type === 'flash_event') triggerFlash();
-    });
-    c.on('close', () => {
-        if(remotePlayers[c.peer]) { scene.remove(remotePlayers[c.peer]); delete remotePlayers[c.peer]; }
-        delete connections[c.peer]; document.getElementById('net-status').innerText = `EN SALA (${Object.keys(connections).length} JUGADORES)`;
-    });
+function broadcast(data) { 
+    if (gameNetwork.isConnected()) {
+        gameNetwork.send('custom', data);
+    }
 }
 
 function startGameNetwork() { document.getElementById('menus').style.display = "none"; document.getElementById('hud').style.display = "block"; document.body.requestPointerLock(); init(); }
@@ -639,5 +862,5 @@ function createRemotePlayer(id) {
     const rightArm = createLimb(0.15, 0.7, 0.15, -0.35); rightArm.position.set(0.35, -0.25, 0); rp.add(rightArm);
     const weaponMat = new THREE.MeshStandardMaterial({color: 0x333333}); const weaponMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.6), weaponMat); weaponMesh.position.set(0, -0.4, -0.2); rightArm.add(weaponMesh);
 
-    rp.userData = { leftLeg, rightLeg, leftArm, rightArm, weaponMesh, walkTime: 0, isMoving: false, isSSprint: false, lastPos: new THREE.Vector3() }; remotePlayers[id] = rp; scene.add(rp);
+    rp.userData = { leftLeg, rightLeg, leftArm, rightArm, weaponMesh, walkTime: 0, isMoving: false, isSprinting: false, lastPos: new THREE.Vector3() }; remotePlayers[id] = rp; scene.add(rp);
 }

@@ -125,20 +125,21 @@ function shoot() {
         sprayCount++;
         if(sprayCount > 20) sprayCount = 20; 
 
-        broadcast({ type: 'shoot', pos: spawnPos, dir: dir, weapon: currentWeapon });
+        broadcastShoot(spawnPos, dir, currentWeapon);
     }
     else if(currentWeapon === 'knife' && !isStabbing) {
         isStabbing = true; stabAnimProgress = 0;
         for(let id in remotePlayers) {
             if(camera.position.distanceTo(remotePlayers[id].position) < 3) {
-                if(connections[id]) connections[id].send({ type: 'damage', amount: weaponStats.knife.body }); showDamage(weaponStats.knife.body, false, remotePlayers[id]);
+                broadcastDamage(id, weaponStats.knife.body, false, 'knife');
+                showDamage(weaponStats.knife.body, false, remotePlayers[id]);
             }
         }
         setTimeout(() => { isStabbing = false; }, 500);
     }
     else if(currentWeapon === 'grenade' && !isThrowing) {
         isThrowing = true; throwAnimProgress = 0;
-        setTimeout(() => { spawnBullet(spawnPos, dir, 0xffffff, true, false, 'grenade'); broadcast({ type: 'shoot', pos: spawnPos, dir: dir, weapon: 'grenade' }); isThrowing = false; }, 200);
+        setTimeout(() => { spawnBullet(spawnPos, dir, 0xffffff, true, false, 'grenade'); broadcastShoot(spawnPos, dir, 'grenade'); isThrowing = false; }, 200);
     }
 }
 
@@ -175,7 +176,7 @@ function spawnBullet(pos, dir, color, isFlash, isRemote, weaponType) {
                 let rpRootPos = remotePlayers[id].position; let headDist = bullet.position.distanceTo(rpRootPos); let bodyCenter = rpRootPos.clone(); bodyCenter.y -= 0.6; let bodyDist = bullet.position.distanceTo(bodyCenter);
                 if(headDist < 0.35) { hitId = id; isHeadshot = true; break; } else if(bodyDist < 0.8) { hitId = id; isHeadshot = false; break; }
             }
-            if(hitId) { let targetPlayer = remotePlayers[hitId]; let finalDamage = isHeadshot ? stats.head : stats.body; if(connections[hitId]) connections[hitId].send({ type: 'damage', amount: finalDamage }); showDamage(finalDamage, isHeadshot, targetPlayer); scene.remove(bullet); clearInterval(checkInterval); }
+            if(hitId) { let targetPlayer = remotePlayers[hitId]; let finalDamage = isHeadshot ? stats.head : stats.body; broadcastDamage(hitId, finalDamage, isHeadshot, weaponType); showDamage(finalDamage, isHeadshot, targetPlayer); scene.remove(bullet); clearInterval(checkInterval); }
         }, 10);
         setTimeout(() => clearInterval(checkInterval), 1000);
     }
@@ -222,7 +223,14 @@ function spawnBullet(pos, dir, color, isFlash, isRemote, weaponType) {
     }
 
     setTimeout(() => {
-        if(isFlash) { for(let id in remotePlayers) { if(!isRemote && remotePlayers[id] && bullet.position.distanceTo(remotePlayers[id].position) < 30) { if(connections[id]) connections[id].send({ type: 'flash_event' }); } } if(bullet.position.distanceTo(camera.position) < 30) triggerFlash(); }
+        if(isFlash) { 
+            for(let id in remotePlayers) { 
+                if(!isRemote && remotePlayers[id] && bullet.position.distanceTo(remotePlayers[id].position) < 30) { 
+                    gameNetwork.send('damage', { targetId: id, amount: 0, isHeadshot: false, weapon: 'flash' });
+                }
+            } 
+            if(bullet.position.distanceTo(camera.position) < 30) triggerFlash(); 
+        }
         scene.remove(bullet); const idx = bullets.indexOf(bullet); if(idx > -1) bullets.splice(idx, 1);
     }, isFlash ? 2500 : 1000);
 }
