@@ -369,7 +369,7 @@ class GameServer implements MessageComponentInterface {
 // CLI entry point
 if (php_sapi_name() === 'cli') {
     // Check for Ratchet
-    $autoload = __DIR__ . '/../../vendor/autoload.php';
+    $autoload = __DIR__ . '/../vendor/autoload.php';
     if (!file_exists($autoload)) {
         echo "Error: Run 'composer install' first\n";
         exit(1);

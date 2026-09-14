@@ -125,12 +125,12 @@ function handleCompleteCampaign($input, $user) {
     }
     
     db()->query(
-        `INSERT INTO progreso_campana (usuario_id, ultimo_nivel, dificultad, misiones_completadas)
+        'INSERT INTO progreso_campana (usuario_id, ultimo_nivel, dificultad, misiones_completadas)
          VALUES (?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
            ultimo_nivel = VALUES(ultimo_nivel),
            dificultad = VALUES(dificultad),
-           misiones_completadas = VALUES(misiones_completadas)`,
+           misiones_completadas = VALUES(misiones_completadas)',
         [$user['id'], $currentLevel, $dificultad, json_encode($misiones)]
     );
     
@@ -165,18 +165,18 @@ function handleCompleteCampaign($input, $user) {
 
 function handleGetStats($user) {
     $result = db()->fetchOne(
-        `SELECT e.*, u.username
+        'SELECT e.*, u.username
          FROM estadisticas_jugador e
          JOIN usuarios u ON e.usuario_id = u.id
-         WHERE e.usuario_id = ?`,
+         WHERE e.usuario_id = ?',
         [$user['id']]
     );
     
     // Get weapon stats
     $weaponStats = db()->fetchAll(
-        `SELECT nombre_arma, dano_base, cadencia_tiro, retroceso_vertical, retroceso_horizontal, dispersion
+        'SELECT nombre_arma, dano_base, cadencia_tiro, retroceso_vertical, retroceso_horizontal, dispersion
          FROM estadisticas_armas
-         ORDER BY nombre_arma`
+         ORDER BY nombre_arma'
     );
     
     echo json_encode([
@@ -206,13 +206,13 @@ function handleUpdateStats($input, $user) {
         : 0;
     
     db()->query(
-        `UPDATE estadisticas_jugador SET
+        'UPDATE estadisticas_jugador SET
             bajas = bajas + ?,
             muertes = muertes + ?,
             partidas_ganadas = partidas_ganadas + ?,
             precision_general = ?,
             tiempo_jugado_minutos = tiempo_jugado_minutos + ?
-         WHERE usuario_id = ?`,
+         WHERE usuario_id = ?',
         [$bajas, $muertes, $partidasGanadas, $newPrecision, $tiempoJugado, $user['id']]
     );
     
@@ -249,13 +249,13 @@ function handleLeaderboard($type, $limit) {
     };
     
     $result = db()->fetchAll(
-        `SELECT u.username, e.bajas, e.muertes, e.partidas_ganadas, e.precision_general,
+        "SELECT u.username, e.bajas, e.muertes, e.partidas_ganadas, e.precision_general,
                 CASE WHEN e.muertes > 0 THEN ROUND(e.bajas / e.muertes, 2) ELSE e.bajas END as kd_ratio
          FROM estadisticas_jugador e
          JOIN usuarios u ON e.usuario_id = u.id
          WHERE u.estado = 'activo'
          ORDER BY {$orderBy}
-         LIMIT ?`,
+         LIMIT ?",
         [$limit]
     );
     
@@ -266,12 +266,12 @@ function handleGetMatches($user, $limit) {
     $limit = min((int)$limit, 50);
     
     $result = db()->fetchAll(
-        `SELECT pj.*, hp.mapa, hp.modo_juego, hp.duracion_segundos, hp.equipo_ganador, hp.fecha
+        'SELECT pj.*, hp.mapa, hp.modo_juego, hp.duracion_segundos, hp.equipo_ganador, hp.fecha
          FROM partidas_jugadores pj
          JOIN historial_partidas hp ON pj.partida_id = hp.id
          WHERE pj.usuario_id = ?
          ORDER BY hp.fecha DESC
-         LIMIT ?`,
+         LIMIT ?',
         [$user['id'], $limit]
     );
     
@@ -320,11 +320,11 @@ function handleSaveMatch($input, $user) {
         
         // Update player stats
         db()->query(
-            `UPDATE estadisticas_jugador SET
+            'UPDATE estadisticas_jugador SET
                 bajas = bajas + ?,
                 muertes = muertes + ?,
                 partidas_ganadas = partidas_ganadas + ?
-             WHERE usuario_id = ?`,
+             WHERE usuario_id = ?',
             [$bajas, $muertes, $equipo === $equipoGanador ? 1 : 0, $user['id']]
         );
         

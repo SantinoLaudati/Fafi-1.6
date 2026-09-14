@@ -55,14 +55,14 @@ function handleSocial($method, $id, $action, $input, $user) {
 
 function handleGetFriends($user) {
     $result = db()->fetchAll(
-        `SELECT la.amigo_id, la.estado, la.fecha_solicitud,
+        'SELECT la.amigo_id, la.estado, la.fecha_solicitud,
                 u.username, u.estado as user_estado
          FROM lista_amigos la
          JOIN usuarios u ON la.amigo_id = u.id
          WHERE la.usuario_id = ?
          ORDER BY 
-            CASE la.estado WHEN 'aceptada' THEN 0 WHEN 'pendiente' THEN 1 ELSE 2 END,
-            la.fecha_solicitud DESC`,
+            CASE la.estado WHEN \'aceptada\' THEN 0 WHEN \'pendiente\' THEN 1 ELSE 2 END,
+            la.fecha_solicitud DESC',
         [$user['id']]
     );
     
@@ -97,8 +97,8 @@ function handleAddFriend($input, $user) {
     
     // Check if already friends or pending
     $existing = db()->fetchOne(
-        `SELECT * FROM lista_amigos 
-         WHERE (usuario_id = ? AND amigo_id = ?) OR (usuario_id = ? AND amigo_id = ?)`,
+        'SELECT * FROM lista_amigos 
+         WHERE (usuario_id = ? AND amigo_id = ?) OR (usuario_id = ? AND amigo_id = ?)',
         [$user['id'], $targetId, $targetId, $user['id']]
     );
     
@@ -145,8 +145,8 @@ function handleAcceptFriend($friendId, $user) {
     
     // Update both directions to accepted
     db()->query(
-        `INSERT INTO lista_amigos (usuario_id, amigo_id, estado) VALUES (?, ?, 'aceptada')
-         ON DUPLICATE KEY UPDATE estado = 'aceptada'`,
+        'INSERT INTO lista_amigos (usuario_id, amigo_id, estado) VALUES (?, ?, \'aceptada\')
+         ON DUPLICATE KEY UPDATE estado = \'aceptada\'',
         [$user['id'], $friendId]
     );
     
@@ -170,8 +170,8 @@ function handleRemoveFriend($friendId, $user) {
 
 function handleBlockUser($friendId, $user) {
     db()->query(
-        `INSERT INTO lista_amigos (usuario_id, amigo_id, estado) VALUES (?, ?, 'bloqueada')
-         ON DUPLICATE KEY UPDATE estado = 'bloqueada'`,
+        'INSERT INTO lista_amigos (usuario_id, amigo_id, estado) VALUES (?, ?, \'bloqueada\')
+         ON DUPLICATE KEY UPDATE estado = \'bloqueada\'',
         [$user['id'], $friendId]
     );
     
@@ -186,12 +186,12 @@ function handleBlockUser($friendId, $user) {
 
 function handleGetAchievements($user) {
     $result = db()->fetchAll(
-        `SELECT l.id, l.nombre, l.descripcion,
+        'SELECT l.id, l.nombre, l.descripcion,
                 ld.fecha_desbloqueo,
                 CASE WHEN ld.usuario_id IS NOT NULL THEN 1 ELSE 0 END as unlocked
          FROM logros l
          LEFT JOIN logros_desbloqueados ld ON l.id = ld.logro_id AND ld.usuario_id = ?
-         ORDER BY unlocked DESC, l.nombre`,
+         ORDER BY unlocked DESC, l.nombre',
         [$user['id']]
     );
     
@@ -206,10 +206,10 @@ function handleSearchUsers($user, $query) {
     }
     
     $result = db()->fetchAll(
-        `SELECT id, username, estado 
+        'SELECT id, username, estado 
          FROM usuarios 
          WHERE username LIKE ? AND id != ?
-         LIMIT 10`,
+         LIMIT 10',
         ["%{$query}%", $user['id']]
     );
     

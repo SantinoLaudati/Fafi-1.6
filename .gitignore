@@ -1,0 +1,17 @@
+# Dependencias
+vendor/
+node_modules/
+
+# Variables de entorno (nunca commitear)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# IDEs / SO
+.vscode/
+.idea/
+.DS_Store

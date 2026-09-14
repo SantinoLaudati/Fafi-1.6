@@ -38,28 +38,40 @@ fi
 # Create backup directory
 mkdir -p "$BACKUP_DIR"
 
-# Backup database
+# Backup database (best-effort: no interrumpe el deploy si no hay nada que respaldar)
 log_info "Backing up database..."
-mysqldump -u root -p"$DB_ROOT_PASSWORD" fafi_1_6 > "$BACKUP_DIR/db_backup_$DATE.sql"
-gzip "$BACKUP_DIR/db_backup_$DATE.sql"
-log_info "Database backup saved to $BACKUP_DIR/db_backup_$DATE.sql.gz"
+if docker compose version &> /dev/null; then
+    docker compose -f "$PROJECT_DIR/docker-compose.yml" exec -T db \
+        mysqldump -u root -p"$DB_ROOT_PASSWORD" fafi_1_6 \
+        > "$BACKUP_DIR/db_backup_$DATE.sql" 2>/dev/null || log_warn "Database backup skipped (DB not ready?)"
+else
+    mysqldump -u root -p"$DB_ROOT_PASSWORD" fafi_1_6 \
+        > "$BACKUP_DIR/db_backup_$DATE.sql" 2>/dev/null || log_warn "Database backup skipped"
+fi
+if [[ -s "$BACKUP_DIR/db_backup_$DATE.sql" ]]; then
+    gzip "$BACKUP_DIR/db_backup_$DATE.sql"
+    log_info "Database backup saved to $BACKUP_DIR/db_backup_$DATE.sql.gz"
+else
+    rm -f "$BACKUP_DIR/db_backup_$DATE.sql"
+    log_warn "No database backup generated (primera instalacion)"
+fi
 
 # Backup current code
 log_info "Backing up current code..."
-tar -czf "$BACKUP_DIR/code_backup_$DATE.tar.gz" -C "$PROJECT_DIR" . --exclude=vendor --exclude=logs --exclude=.git
+tar -czf "$BACKUP_DIR/code_backup_$DATE.tar.gz" -C "$PROJECT_DIR" . --exclude=vendor --exclude=logs --exclude=.git || log_warn "Code backup skipped"
 log_info "Code backup saved to $BACKUP_DIR/code_backup_$DATE.tar.gz"
 
-# Pull latest code (if using git)
+# Pull latest code (branch master)
 if [[ -d "$PROJECT_DIR/.git" ]]; then
-    log_info "Pulling latest code..."
+    log_info "Pulling latest code from master..."
     cd "$PROJECT_DIR"
     git fetch origin
-    git reset --hard origin/main
+    git reset --hard origin/master
 fi
 
 # Install/update PHP dependencies
 log_info "Installing PHP dependencies..."
-cd "$PROJECT_DIR/php-backend"
+cd "$PROJECT_DIR/database/php-backend"
 composer install --no-dev --optimize-autoloader --no-interaction
 
 # Run database migrations (if any)
@@ -77,15 +89,15 @@ log_info "Clearing caches..."
 log_info "Setting permissions..."
 chown -R www-data:www-data "$PROJECT_DIR"
 chmod -R 755 "$PROJECT_DIR"
-chmod -R 777 "$PROJECT_DIR/php-backend/logs" 2>/dev/null || true
+chmod -R 777 "$PROJECT_DIR/database/php-backend/logs" 2>/dev/null || true
 
 # Restart services
 log_info "Restarting services..."
-if command -v docker-compose &> /dev/null; then
-    # Docker deployment
+if docker compose version &> /dev/null; then
+    # Docker deployment (usa .env de la raiz; copiar antes: cp .env.docker .env)
     cd "$PROJECT_DIR"
-    docker-compose -f docker-compose.yml --env-file .env.docker up -d --build
-    docker-compose exec -T app php-fpm -t
+    docker compose -f docker-compose.yml up -d --build
+    docker compose exec -T app php-fpm -t
 else
     # Traditional deployment
     systemctl reload nginx
@@ -119,5 +131,6 @@ echo "   Date: $(date)"
 echo "   Backup: $BACKUP_DIR/db_backup_$DATE.sql.gz"
 echo "   Health: OK"
 echo ""
-echo "🌐 Your game is now live at: https://$DOMAIN"
-echo "🔌 WebSocket: wss://$DOMAIN/game"
+echo "🌐 Your game is now live at: http://$DOMAIN"
+echo "🔌 WebSocket: ws://$DOMAIN/game"
+echo "🩺 Health check: http://$DOMAIN/health"

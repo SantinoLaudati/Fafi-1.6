@@ -169,13 +169,13 @@ function handleGetProfile() {
     $user = requireAuth();
     
     $result = db()->fetchOne(
-        `SELECT u.id, u.username, u.email, u.estado, u.fecha_creacion,
+        'SELECT u.id, u.username, u.email, u.estado, u.fecha_creacion,
                 e.bajas, e.muertes, e.partidas_ganadas, e.precision_general, e.tiempo_jugado_minutos,
                 m.moneda_gratuita, m.moneda_premium
          FROM usuarios u
          JOIN estadisticas_jugador e ON u.id = e.usuario_id
          JOIN monedas_jugador m ON u.id = m.usuario_id
-         WHERE u.id = ?`,
+         WHERE u.id = ?',
         [$user['id']]
     );
     

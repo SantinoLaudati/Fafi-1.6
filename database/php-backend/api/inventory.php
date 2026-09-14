@@ -54,14 +54,14 @@ function handleInventory($method, $id, $action, $input, $user) {
 
 function handleGetInventory($user) {
     $result = db()->fetchAll(
-        `SELECT ij.articulo_id, ij.fecha_adquisicion,
+        'SELECT ij.articulo_id, ij.fecha_adquisicion,
                 art.nombre, art.descripcion, art.precio, art.tipo_moneda,
                 sa.arma_base, sa.rareza, sa.ruta_modelo
          FROM inventario_jugador ij
          JOIN articulos_tienda art ON ij.articulo_id = art.id
          LEFT JOIN skins_armas sa ON art.id = sa.articulo_id
          WHERE ij.usuario_id = ?
-         ORDER BY ij.fecha_adquisicion DESC`,
+         ORDER BY ij.fecha_adquisicion DESC',
         [$user['id']]
     );
     
@@ -144,11 +144,11 @@ function handleEquipSkin($input, $user) {
 
 function handleGetStore($user) {
     $result = db()->fetchAll(
-        `SELECT art.*, sa.arma_base, sa.rareza, sa.ruta_modelo
+        'SELECT art.*, sa.arma_base, sa.rareza, sa.ruta_modelo
          FROM articulos_tienda art
          LEFT JOIN skins_armas sa ON art.id = sa.articulo_id
          WHERE art.activo = 1
-         ORDER BY art.precio ASC`
+         ORDER BY art.precio ASC'
     );
     
     echo json_encode(['items' => $result]);
@@ -269,10 +269,10 @@ function openLootBox($userId, $boxName) {
     
     // Get possible skins of that rarity
     $skins = db()->fetchAll(
-        `SELECT sa.articulo_id, art.nombre, sa.arma_base, sa.rareza
+        'SELECT sa.articulo_id, art.nombre, sa.arma_base, sa.rareza
          FROM skins_armas sa
          JOIN articulos_tienda art ON sa.articulo_id = art.id
-         WHERE sa.rareza = ? AND art.activo = 1`,
+         WHERE sa.rareza = ? AND art.activo = 1',
         [$rolledRarity]
     );
     
@@ -331,12 +331,12 @@ function checkAndUnlockAchievements($userId, $trigger) {
 
 function handleGetPurchaseHistory($user) {
     $result = db()->fetchAll(
-        `SELECT hc.*, art.nombre as articulo_nombre
+        'SELECT hc.*, art.nombre as articulo_nombre
          FROM historial_compras hc
          JOIN articulos_tienda art ON hc.articulo_id = art.id
          WHERE hc.usuario_id = ?
          ORDER BY hc.fecha_compra DESC
-         LIMIT 50`,
+         LIMIT 50',
         [$user['id']]
     );
     

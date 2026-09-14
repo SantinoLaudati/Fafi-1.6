@@ -6,8 +6,8 @@ FROM composer:2.7 AS builder
 
 WORKDIR /app
 
-# Copy composer files
-COPY composer.json composer.lock ./
+# Copy composer files (composer.lock no está versionado: se genera en el build)
+COPY composer.json ./
 
 # Install dependencies (no dev)
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
@@ -36,6 +36,7 @@ RUN apk add --no-cache nodejs npm
 # Configure PHP
 COPY docker/php.ini /usr/local/etc/php/conf.d/custom.ini
 COPY docker/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY docker/www.conf /usr/local/etc/php-fpm.d/www.conf
 
 # Configure Nginx
 COPY docker/nginx.conf /etc/nginx/nginx.conf
