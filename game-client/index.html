@@ -17,6 +17,13 @@
             <input type="password" id="login-pass" class="fafi16-input" placeholder="Contraseña">
             <button class="fafi16-btn-standard fafi16-btn-success" style="margin-top: 10px;" onclick="handleLogin()">ENTRAR AL JUEGO</button>
             <div style="margin-top: 15px; font-size: 12px; color: #aaa; cursor: pointer;" onclick="showRegister()">¿No tienes cuenta? <span style="color:#d69f0f;">Regístrate aquí</span></div>
+            
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <button class="fafi16-btn-standard" style="background: rgba(214, 159, 15, 0.1); border-color: #d69f0f; color: #d69f0f; width: 100%;" onclick="enableDevMode()">
+                    🛠 MODO DESARROLLADOR (OFFLINE)
+                </button>
+                <p style="font-size: 10px; color: #666; margin-top: 5px; text-align: center;">Juega sin servidor • Datos en localStorage</p>
+            </div>
         </div>
 
         <div id="register-box" class="auth-box" style="display: none;">
@@ -37,7 +44,7 @@
             <div class="fafi16-nav-tabs">
                 <div class="fafi16-tab-btn active" onclick="switchFafi16Tab('jugar', this)">Jugar</div>
                 <div class="fafi16-tab-btn" onclick="openInventory()">Equipamiento</div>
-                <div class="fafi16-tab-btn" onclick="openStore()">Tienda</div>
+                <div class="fafi16-tab-btn online-only" onclick="openStore()">Tienda</div>
                 <div class="fafi16-tab-btn" onclick="switchFafi16Tab('perfil', this)">Perfil</div>
                 <div class="fafi16-tab-btn" onclick="switchFafi16Tab('ajustes', this)">Ajustes</div>
             </div>
@@ -59,7 +66,7 @@
                 <button class="fafi16-btn-standard fafi16-btn-campaign" onclick="openCampaignMap()">CAMPAÑA WWII (NUEVO)</button>
                 <button class="fafi16-btn-standard fafi16-btn-success" onclick="startPractice('aim')">CAMPO DE TIRO (AIM)</button>
                 
-                <div style="margin-top: 20px;">
+                <div class="online-only" style="margin-top: 20px;">
                     <span class="fafi16-label">Multijugador - Sala</span>
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
                         <button class="fafi16-btn-standard fafi16-btn-campaign" onclick="createRoom()" style="flex: 1;">CREAR SALA</button>
@@ -79,11 +86,11 @@
                 <div class="fafi-list-container" id="purchase-history-list"></div>
 
                 <span class="fafi16-label">Lista de Amigos</span>
-                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div class="online-only" style="display:flex; gap:10px; margin-bottom:10px;">
                     <input type="text" id="new-friend-id" class="fafi16-input" style="margin:0;" placeholder="Usuario del amigo">
                     <button class="fafi16-btn-standard fafi16-btn-success" style="margin:0; width:auto;" onclick="addFriend()">AÑADIR</button>
                 </div>
-                <div class="fafi-list-container" id="friends-list"></div>
+                <div class="fafi-list-container online-only" id="friends-list"></div>
 
                 <span class="fafi16-label">Logros Desbloqueados</span>
                 <div class="fafi-list-container" id="achievements-list"></div>
@@ -178,6 +185,7 @@
         <div style="width: 350px; display: flex; flex-direction: column; gap: 15px; margin-top: 10px;">
             <button class="fafi16-btn-standard" onclick="showControls()">VER CONTROLES</button>
             <button class="fafi16-btn-standard fafi16-btn-success" onclick="toggleInGameMenu()">REANUDAR PARTIDA</button>
+            <button class="fafi16-btn-standard" style="background: rgba(214, 159, 15, 0.1); border-color: #d69f0f; color: #d69f0f;" onclick="switchMode()">🔄 CAMBIAR MODO (ONLINE/OFFLINE)</button>
             <button class="fafi16-btn-standard" style="background: rgba(255, 70, 85, 0.1); border-color: rgba(255, 70, 85, 0.5); color: #ff4655;" onclick="returnToMainMenu()">VOLVER AL MENÚ PRINCIPAL</button>
         </div>
     </div>

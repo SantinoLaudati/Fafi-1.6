@@ -125,13 +125,17 @@ function shoot() {
         sprayCount++;
         if(sprayCount > 20) sprayCount = 20; 
 
-        broadcastShoot(spawnPos, dir, currentWeapon);
+        if (!window.authService?.isDevMode()) {
+            broadcastShoot(spawnPos, dir, currentWeapon);
+        }
     }
     else if(currentWeapon === 'knife' && !isStabbing) {
         isStabbing = true; stabAnimProgress = 0;
         for(let id in remotePlayers) {
             if(camera.position.distanceTo(remotePlayers[id].position) < 3) {
-                broadcastDamage(id, weaponStats.knife.body, false, 'knife');
+                if (!window.authService?.isDevMode()) {
+                    broadcastDamage(id, weaponStats.knife.body, false, 'knife');
+                }
                 showDamage(weaponStats.knife.body, false, remotePlayers[id]);
             }
         }
@@ -139,7 +143,7 @@ function shoot() {
     }
     else if(currentWeapon === 'grenade' && !isThrowing) {
         isThrowing = true; throwAnimProgress = 0;
-        setTimeout(() => { spawnBullet(spawnPos, dir, 0xffffff, true, false, 'grenade'); broadcastShoot(spawnPos, dir, 'grenade'); isThrowing = false; }, 200);
+        setTimeout(() => { spawnBullet(spawnPos, dir, 0xffffff, true, false, 'grenade'); if (!window.authService?.isDevMode()) broadcastShoot(spawnPos, dir, 'grenade'); isThrowing = false; }, 200);
     }
 }
 
@@ -168,7 +172,7 @@ function spawnBullet(pos, dir, color, isFlash, isRemote, weaponType) {
     let speed = 120.0; if (isFlash) { speed = 22.0; } else if (weaponType === 'sniper') { speed = 250.0; }
     bullet.velocity = dir.clone().multiplyScalar(speed); if(isFlash) bullet.velocity.y += 8; bullet.isGravity = isFlash; bullet.isFlash = isFlash; scene.add(bullet); bullets.push(bullet);
 
-    if(!isRemote && Object.keys(remotePlayers).length > 0 && !isFlash && gameMode === 'online') {
+    if(!isRemote && Object.keys(remotePlayers).length > 0 && !isFlash && gameMode === 'online' && !window.authService?.isDevMode()) {
         const stats = weaponStats[weaponType];
         const checkInterval = setInterval(() => {
             let hitId = null; let isHeadshot = false;
@@ -226,7 +230,9 @@ function spawnBullet(pos, dir, color, isFlash, isRemote, weaponType) {
         if(isFlash) { 
             for(let id in remotePlayers) { 
                 if(!isRemote && remotePlayers[id] && bullet.position.distanceTo(remotePlayers[id].position) < 30) { 
-                    gameNetwork.send('damage', { targetId: id, amount: 0, isHeadshot: false, weapon: 'flash' });
+                    if (!window.authService?.isDevMode()) {
+                        gameNetwork.send('damage', { targetId: id, amount: 0, isHeadshot: false, weapon: 'flash' });
+                    }
                 }
             } 
             if(bullet.position.distanceTo(camera.position) < 30) triggerFlash(); 

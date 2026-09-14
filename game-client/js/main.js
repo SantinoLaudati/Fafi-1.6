@@ -43,21 +43,53 @@ window.handleRegister = async () => {
     }
 };
 
+window.enableDevMode = async () => {
+    const username = prompt('Nombre de usuario (opcional):') || 'DevPlayer';
+    try {
+        await authService.enableDevMode(username);
+        await finalizeAuthDevMode();
+    } catch (err) {
+        alert(err.message);
+    }
+};
+
 async function finalizeAuth() {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('menus').style.display = 'flex';
     document.getElementById('player-name').innerText = authService.user.username;
-    document.getElementById('player-status').innerText = 'Conectado';
+    document.getElementById('player-status').innerText = authService.isDevMode() ? 'MODO DESARROLLADOR (OFFLINE)' : 'Conectado';
     
-    await loadGameDataFromAPI();
-    
-    try {
-        await gameNetwork.connect(authService.token);
-        setupGameNetworkHandlers();
-    } catch (err) {
-        console.error('WebSocket connection failed:', err);
-        document.getElementById('player-status').innerText = 'Sin conexión WS';
+    if (authService.isDevMode()) {
+        await loadGameDataLocal();
+    } else {
+        await loadGameDataFromAPI();
     }
+    
+    if (!authService.isDevMode()) {
+        try {
+            await gameNetwork.connect(authService.token);
+            setupGameNetworkHandlers();
+        } catch (err) {
+            console.error('WebSocket connection failed:', err);
+            document.getElementById('player-status').innerText = 'Sin conexión WS';
+        }
+    } else {
+        document.getElementById('net-status').innerText = 'MODO OFFLINE - SIN SERVIDOR';
+        // Hide online-only UI elements
+        document.querySelectorAll('.online-only').forEach(el => el.style.display = 'none');
+    }
+}
+
+async function finalizeAuthDevMode() {
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('menus').style.display = 'flex';
+    document.getElementById('player-name').innerText = authService.user.username;
+    document.getElementById('player-status').innerText = 'MODO DESARROLLADOR (OFFLINE)';
+    
+    await loadGameDataLocal();
+    
+    document.getElementById('net-status').innerText = 'MODO OFFLINE - SIN SERVIDOR';
+    document.querySelectorAll('.online-only').forEach(el => el.style.display = 'none');
 }
 
 window.fafiCoins = 2000;
@@ -94,6 +126,12 @@ const skinsDB = [
 
 window.saveGameData = async () => {
     if (!authService.isAuthenticated()) return;
+    
+    if (authService.isDevMode()) {
+        saveGameDataLocal();
+        return;
+    }
+    
     try {
         await apiService.updateConfig({
             preferencias_ui: {
@@ -134,6 +172,50 @@ async function loadGameDataFromAPI() {
     }
 }
 
+async function loadGameDataLocal() {
+    const savedData = localStorage.getItem('fafi_save_dev');
+    if (savedData) {
+        try {
+            const data = JSON.parse(savedData);
+            window.fafiCoins = data.coins !== undefined ? data.coins : 999999;
+            window.userInventory = data.inventory || [];
+            window.equippedSkins = data.equipped || window.equippedSkins;
+            window.purchaseHistory = data.purchases || [];
+            window.friendsList = data.friends || [];
+            window.achievements = data.achievements || window.achievements;
+            window.campaignLevel = data.level || 1;
+        } catch (e) {
+            console.error('Error loading local data:', e);
+        }
+    } else {
+        // Default dev mode values - unlock everything
+        window.fafiCoins = 999999;
+        window.userInventory = skinsDB.map(s => s.id); // All skins
+        window.equippedSkins = { vandal: 'v_neon', ak47: 'ak_oro', deagle: 'd_crimson', sniper: 's_void', pistol: null, knife: 'k_karambit', grenade: null };
+        window.achievements.forEach(a => a.unlocked = true);
+        window.campaignLevel = 5;
+        saveGameDataLocal();
+    }
+    
+    updateCoinsDisplay();
+    updateProfileUI();
+    
+    if (weaponGroup && currentWeapon) setupWeapon();
+}
+
+function saveGameDataLocal() {
+    const dataToSave = { 
+        coins: window.fafiCoins, 
+        inventory: window.userInventory, 
+        equipped: window.equippedSkins,
+        purchases: window.purchaseHistory, 
+        friends: window.friendsList, 
+        achievements: window.achievements, 
+        level: window.campaignLevel
+    };
+    localStorage.setItem('fafi_save_dev', JSON.stringify(dataToSave));
+}
+
 window.updateProfileUI = () => {
     const histEl = document.getElementById('purchase-history-list');
     histEl.innerHTML = window.purchaseHistory.length === 0 ? "<div class='fafi-list-item'>No hay compras registradas.</div>" : "";
@@ -156,6 +238,18 @@ window.updateProfileUI = () => {
 };
 
 window.addFriend = async () => {
+    if (authService.isDevMode()) {
+        const fId = document.getElementById('new-friend-id').value.trim();
+        if (!fId) return;
+        if (!window.friendsList.includes(fId)) {
+            window.friendsList.push(fId);
+            document.getElementById('new-friend-id').value = "";
+            saveGameDataLocal();
+            updateProfileUI();
+        }
+        return;
+    }
+    
     const fId = document.getElementById('new-friend-id').value.trim();
     if (!fId) return;
     
@@ -190,6 +284,35 @@ window.openInventory = () => { renderInventory(); document.getElementById('inven
 window.closeInventory = () => { document.getElementById('inventory-ui').style.display = 'none'; document.getElementById('menus').style.display = 'flex'; };
 
 window.buyBox = async (type) => {
+    if (authService.isDevMode()) {
+        // Dev mode: instant unlock all skins of that rarity
+        const rarityMap = { basic: 'comun', advanced: 'epica', legendary: 'legendaria' };
+        const targetRarity = rarityMap[type];
+        
+        const newSkins = skinsDB.filter(s => s.rarity === targetRarity && !window.userInventory.includes(s.id));
+        if (newSkins.length === 0) {
+            alert(`¡Ya tienes todas las skins ${targetRarity}!`);
+            return;
+        }
+        
+        const wonSkin = newSkins[Math.floor(Math.random() * newSkins.length)];
+        window.userInventory.push(wonSkin.id);
+        
+        const popupTitle = document.getElementById('popup-title');
+        const popupDesc = document.getElementById('popup-desc');
+        const popupSkinName = document.getElementById('popup-skin-name');
+        
+        popupTitle.innerText = "¡NUEVA SKIN DESBLOQUEADA! (DEV)";
+        popupDesc.innerText = `Arma: ${wonSkin.weapon.toUpperCase()} | Rareza: ${wonSkin.rarity.toUpperCase()}`;
+        popupSkinName.innerText = wonSkin.name;
+        popupSkinName.className = `rarity-${wonSkin.rarity}`;
+        
+        document.getElementById('skin-popup').style.display = 'block';
+        saveGameDataLocal();
+        renderInventory();
+        return;
+    }
+    
     const boxMap = { basic: 'Caja Básica', advanced: 'Caja Avanzada', legendary: 'Caja Clasificada' };
     const boxName = boxMap[type];
     
@@ -276,11 +399,17 @@ window.equipSkin = async (skinId, weaponId) => {
         window.equippedSkins[weaponId] = skinId; 
     }
     
+    if (authService.isDevMode()) {
+        saveGameDataLocal();
+        renderInventory();
+        if (weaponGroup && currentWeapon === weaponId) setupWeapon();
+        return;
+    }
+    
     try {
         await apiService.equipSkin(skinId, weaponId);
     } catch (err) {
         console.error('Failed to equip skin:', err);
-        // Revert on error
         if (window.equippedSkins[weaponId] === skinId) {
             window.equippedSkins[weaponId] = null;
         } else {
@@ -747,6 +876,21 @@ window.toggleInGameMenu = () => {
 };
 
 window.showControls = () => { alert(" CONTROLES BÁSICOS \n\n• Moverse: W, A, S, D\n• Saltar: Espacio\n• Correr: Shift Izquierdo\n• Disparar: Clic Izquierdo\n• Apuntar (Sniper): Clic Derecho\n• Recargar: R\n• Inspeccionar Arma: F\n• Tienda en Partida: B\n• Cambiar Arma: Teclas 1 al 7\n• Menú de Pausa: 0"); };
+
+window.switchMode = () => {
+    if (confirm('¿Cambiar modo? Se recargará la página.')) {
+        if (authService.isDevMode()) {
+            localStorage.removeItem('fafi_dev_mode');
+            localStorage.removeItem('fafi_dev_user');
+            localStorage.removeItem('fafi_save_dev');
+        } else {
+            localStorage.removeItem('fafi_token');
+            localStorage.removeItem('fafi_user');
+        }
+        location.reload();
+    }
+};
+
 window.returnToMainMenu = () => { location.reload(); };
 
 window.createRoom = () => {

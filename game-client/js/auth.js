@@ -3,9 +3,19 @@ class AuthService {
         this.token = localStorage.getItem('fafi_token');
         this.user = JSON.parse(localStorage.getItem('fafi_user') || 'null');
         this.refreshPromise = null;
+        this.devMode = localStorage.getItem('fafi_dev_mode') === 'true';
+        
+        if (this.devMode) {
+            this.token = 'dev-mode-token';
+            this.user = JSON.parse(localStorage.getItem('fafi_dev_user') || '{"id":"dev","username":"DevPlayer","devMode":true}');
+        }
     }
 
     async request(endpoint, options = {}) {
+        if (this.devMode) {
+            throw new Error('Modo offline: API no disponible');
+        }
+        
         const headers = {
             'Content-Type': 'application/json',
             ...options.headers
@@ -40,6 +50,23 @@ class AuthService {
             }
             throw err;
         }
+    }
+
+    enableDevMode(username = 'DevPlayer') {
+        this.devMode = true;
+        this.token = 'dev-mode-token';
+        this.user = {
+            id: 'dev_' + Date.now(),
+            username: username,
+            devMode: true
+        };
+        localStorage.setItem('fafi_dev_mode', 'true');
+        localStorage.setItem('fafi_dev_user', JSON.stringify(this.user));
+        return Promise.resolve({ user: this.user, token: this.token });
+    }
+
+    isDevMode() {
+        return this.devMode;
     }
 
     async refreshToken() {
