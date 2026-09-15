@@ -48,6 +48,14 @@ function handleGame($method, $id, $action, $input, $user) {
                 case 'matches':
                     handleSaveMatch($input, $user);
                     break;
+                case 'earn':
+                    if ($id === 'coins') {
+                        handleAwardCoins($input, $user);
+                    } else {
+                        http_response_code(404);
+                        echo json_encode(['error' => 'Endpoint no encontrado']);
+                    }
+                    break;
                 default:
                     http_response_code(404);
                     echo json_encode(['error' => 'Endpoint no encontrado']);
@@ -336,6 +344,33 @@ function handleSaveMatch($input, $user) {
         db()->rollback();
         throw $e;
     }
+}
+
+function handleAwardCoins($input, $user) {
+    $coins = (int)($input['coins'] ?? 0);
+
+    if ($coins <= 0) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Cantidad inválida']);
+        return;
+    }
+
+    $coins = min($coins, 500);
+
+    db()->query(
+        'UPDATE monedas_jugador SET moneda_gratuita = moneda_gratuita + ? WHERE usuario_id = ?',
+        [$coins, $user['id']]
+    );
+
+    $result = db()->fetchOne(
+        'SELECT moneda_gratuita FROM monedas_jugador WHERE usuario_id = ?',
+        [$user['id']]
+    );
+
+    echo json_encode([
+        'message' => 'Coins añadidos',
+        'coins' => $result['moneda_gratuita']
+    ]);
 }
 
 function handleGetConfig($user) {
