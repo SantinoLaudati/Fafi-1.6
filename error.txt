@@ -1,0 +1,39 @@
+[bauti@crm Fafi-1.6-master]$ docker compose up -d
+WARN[0000] The "DB_PASSWORD" variable is not set. Defaulting to a blank string.
+WARN[0000] The "JWT_SECRET" variable is not set. Defaulting to a blank string.
+WARN[0000] The "DB_ROOT_PASSWORD" variable is not set. Defaulting to a blank string.
+WARN[0000] The "DB_PASSWORD" variable is not set. Defaulting to a blank string.
+WARN[0000] The "DB_ROOT_PASSWORD" variable is not set. Defaulting to a blank string.
+WARN[0000] /home/bauti/Fafi-1.6-master/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion
+WARN[0000] Docker Compose requires buildx plugin to be installed
+Sending build context to Docker daemon  26.49kB
+Step 1/21 : FROM composer:2.7 AS builder
+ ---> cb3483dc8516
+Step 2/21 : WORKDIR /app
+ ---> Using cache
+ ---> 30c04c11b328
+Step 3/21 : COPY composer.json ./
+ ---> Using cache
+ ---> 006a008ab5c1
+Step 4/21 : RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+ ---> Running in bc96ace4a8fe
+No composer.lock file present. Updating dependencies to latest instead of installing from lock file. See https://getcomposer.org/install for more information.
+Loading composer repositories with package information
+Updating dependencies
+Your requirements could not be resolved to an installable set of packages.
+
+  Problem 1
+    - Root composer.json requires PHP extension ext-pdo_mysql * but it is missing from your system. Install or enable PHP's pdo_mysql extension.
+
+To enable extensions, verify that they are enabled in your .ini files:
+    - /usr/local/etc/php/php-cli.ini
+    - /usr/local/etc/php/conf.d/docker-php-ext-bz2.ini
+    - /usr/local/etc/php/conf.d/docker-php-ext-sodium.ini
+    - /usr/local/etc/php/conf.d/docker-php-ext-zip.ini
+You can also run `php --ini` in a terminal to see which files are used by PHP in CLI mode.
+Alternatively, you can run Composer with `--ignore-platform-req=ext-pdo_mysql` to temporarily ignore these required extensions.
+Running update with --no-dev does not mean require-dev is ignored, it just means the packages will not be installed. If dev requirements are blocking the update you have to resolve those problems.
+[+] up 0/1
+ ⠙ Image fafi-16-master-app Building                                                                                                                                                                           4.3s
+The command '/bin/sh -c composer install --no-dev --optimize-autoloader --no-interaction --no-progress' returned a non-zero code: 2
+[bauti@crm Fafi-1.6-master]$
