@@ -7,10 +7,10 @@ FROM composer:2.7 AS builder
 WORKDIR /app
 
 # Copy composer files (composer.lock no está versionado: se genera en el build)
-COPY composer.json ./
+COPY composer.json composer.lock* ./
 
-# Install dependencies (no dev)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+# Install dependencies (no dev) - ignore platform reqs porque el builder no tiene ext-pdo_mysql (se instala en la etapa final)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --ignore-platform-reqs
 
 # Production stage
 FROM php:8.2-fpm-alpine
