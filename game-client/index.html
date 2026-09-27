@@ -1242,7 +1242,7 @@ function initThree(){
 
   // load AK
   const loader = new GLTFLoader();
-  loader.load('assets/ak-47.glb', (gltf)=>{
+  loader.load('assets/models/weapons/ak47.glb', (gltf)=>{
     akModel = gltf.scene;
     akModel.traverse(o=>{ if(o.isMesh){ o.castShadow=true; }});
     // normalize scale y centrar modelo
@@ -1283,7 +1283,7 @@ function initThree(){
     }
     console.log('AK-47 cargado', gltf);
   }, undefined, (e)=>{
-    console.warn('No se pudo cargar ak-47.glb, usando arma provisional', e);
+    console.warn('No se pudo cargar assets/models/weapons/ak47.glb, usando arma provisional', e);
     // fallback box gun
     const g = new THREE.Group();
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.09,0.55), new THREE.MeshStandardMaterial({color:0x2a2a2a}));
@@ -1303,7 +1303,7 @@ function initThree(){
 
   // load Cuchillo
   const knifeLoader = new GLTFLoader();
-  knifeLoader.load('assets/cuchillo_de_combate.glb', (gltf)=>{
+  knifeLoader.load('assets/models/weapons/cuchillo_combate.glb', (gltf)=>{
     knifeModel = gltf.scene;
     knifeModel.traverse(o=>{ if(o.isMesh){ o.castShadow=true; }});
     const boxK = new THREE.Box3().setFromObject(knifeModel);
@@ -1325,7 +1325,7 @@ function initThree(){
     console.log('Cuchillo cargado', gltf, 'escala',sK.toFixed(3));
     updateWeaponVisibility();
   }, undefined, (e)=>{
-    console.warn('No se pudo cargar cuchillo_de_combate.glb, usando cuchillo provisional', e);
+    console.warn('No se pudo cargar assets/models/weapons/cuchillo_combate.glb, usando cuchillo provisional', e);
     const gk = new THREE.Group();
     const blade = new THREE.Mesh(new THREE.BoxGeometry(0.032,0.012,0.22), new THREE.MeshStandardMaterial({color:0xcdd6e6, metalness:0.7, roughness:0.2}));
     blade.position.set(0,0,-0.14);
@@ -1345,7 +1345,7 @@ function initThree(){
 
   // load AWP L115A3 - rehecho como AK47 para verse en FOV
   const awpLoader = new GLTFLoader();
-  awpLoader.load('assets/low-poly_l115a3.glb', (gltf)=>{
+  awpLoader.load('assets/models/weapons/sniper_l115a3.glb', (gltf)=>{
     awpModel = gltf.scene;
     awpModel.traverse(o=>{ if(o.isMesh){ o.castShadow=true; }});
     const boxA = new THREE.Box3().setFromObject(awpModel);
@@ -1369,7 +1369,7 @@ function initThree(){
     console.log('AWP L115A3 x100', gltf, 'escala',sA.toFixed(3));
     updateWeaponVisibility();
   }, undefined, (e)=>{
-    console.warn('No se pudo cargar low-poly_l115a3.glb, usando AWP provisional', e);
+    console.warn('No se pudo cargar assets/models/weapons/sniper_l115a3.glb, usando AWP provisional', e);
     const gA = new THREE.Group();
     const bodyA = new THREE.Mesh(new THREE.BoxGeometry(0.09,0.08,0.72), new THREE.MeshStandardMaterial({color:0x2a3a2a}));
     const barrelA = new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.022,0.62,10), new THREE.MeshStandardMaterial({color:0x111111}));
@@ -1391,7 +1391,7 @@ function initThree(){
 
   // load Deagle CS:GO
   const deagleLoader = new GLTFLoader();
-  deagleLoader.load('assets/low-poly_desert_eagle.glb', (gltf)=>{
+  deagleLoader.load('assets/models/weapons/desert_eagle.glb', (gltf)=>{
     deagleModel = gltf.scene;
     deagleModel.traverse(o=>{ if(o.isMesh){ o.castShadow=true; }});
     const boxD = new THREE.Box3().setFromObject(deagleModel);
@@ -1414,7 +1414,7 @@ function initThree(){
     console.log('Deagle cargada', gltf, 'escala',sD.toFixed(3));
     updateWeaponVisibility();
   }, undefined, (e)=>{
-    console.warn('No se pudo cargar low-poly_desert_eagle.glb, usando Deagle provisional', e);
+    console.warn('No se pudo cargar assets/models/weapons/desert_eagle.glb, usando Deagle provisional', e);
     const gD=new THREE.Group();
     const bodyD=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.05,0.18), new THREE.MeshStandardMaterial({color:0x2a2a2a}));
     const barrelD=new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.11,8), new THREE.MeshStandardMaterial({color:0x111111}));
@@ -1507,7 +1507,7 @@ function loadDust2Map(onDone){
   const loadingEl = document.getElementById('dust2Loading');
   if(loadingEl) loadingEl.style.display='block';
   const loader2 = new GLTFLoader();
-  loader2.load('assets/de_dust2_-_cs_map.glb', (gltf)=>{
+  loader2.load('assets/models/maps/de_dust2.glb', (gltf)=>{
     const model = gltf.scene;
     // Normalizar escala a ~42 unidades (tamaño CS original) y centrar
     const box = new THREE.Box3().setFromObject(model);
@@ -1588,7 +1588,7 @@ function loadDust2Map(onDone){
       loadingEl.textContent = 'Cargando Dust2... ' + pct + '%';
     }
   }, (e)=>{
-    console.warn('No se pudo cargar de_dust2_-_cs_map.glb', e);
+    console.warn('No se pudo cargar assets/models/maps/de_dust2.glb', e);
     dust2Loading = false;
     if(loadingEl) loadingEl.textContent = 'Error cargando Dust2 - usando mapa fallback';
     setTimeout(()=>{ if(loadingEl) loadingEl.style.display='none'; }, 1500);
