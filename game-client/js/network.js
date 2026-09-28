@@ -1,3 +1,29 @@
+// ============================================================
+// GameNetwork - Capa de red para el MODO ONLINE (multijugador).
+//
+// ESTADO: actualmente NO se carga en index.html y el juego corre
+// local (single-player contra bots). Se deja listo por si en el
+// futuro se quiere habilitar la funcion online.
+//
+// PARA HABILITARLA:
+// 1) Cargar este script en index.html despues de config.js:
+//      <script src="js/config.js"></script>
+//      <script src="js/network.js"></script>
+// 2) Tras el login (token JWT de auth.js/api.js), conectar:
+//      window.gameNetwork.connect(token)
+//      window.gameNetwork.joinRoom('sala1', 'dust2')
+// 3) En el loop del juego difundir el estado propio:
+//      gameNetwork.updatePlayer({ x, y, z, rot, weapon })
+//    y aplicar el de los demas jugadores con callbacks:
+//      gameNetwork.on('player_update', cb)  / 'shoot' / 'damage' / 'chat'
+// 4) Backend: database/php-backend/websocket/server.php (Ratchet)
+//    corriendo en el puerto 8080 del contenedor; nginx proxya
+//    ws://<host>/game -> 127.0.0.1:8080 (php-backend/nginx.conf).
+//    Levantar el stack con `docker compose up -d`.
+//
+// El protocolo de mensajes coincide con websocket/server.php:
+//   join_room, leave_room, player_update, shoot, damage, chat, ping
+// ============================================================
 class GameNetwork {
     constructor() {
         this.ws = null;
