@@ -21,17 +21,11 @@ RUN apk add --no-cache \
     supervisor \
     linux-headers \
     $PHPIZE_DEPS \
-    postgresql-dev \
     mysql-client \
     curl \
     bash \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql opcache \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
+    && docker-php-ext-install pdo pdo_mysql opcache \
     && apk del $PHPIZE_DEPS
-
-# Install Node.js for any build tools (optional)
-RUN apk add --no-cache nodejs npm
 
 # Configure PHP
 COPY docker/php.ini /usr/local/etc/php/conf.d/custom.ini

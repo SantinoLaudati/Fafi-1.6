@@ -28,8 +28,7 @@ php-backend/
 │   ├── database.php       # Configuración DB
 │   └── jwt.php            # Manejo JWT nativo
 ├── database/
-│   ├── schema_mysql.sql   # Esquema completo MySQL
-│   └── seed_mysql.sql     # Datos iniciales
+│   └── seed_mysql.sql     # Datos iniciales (schema canónico en database/Fafi_1_6.sql del repo)
 ├── docker/                # Configuración Docker
 │   ├── php.ini
 │   ├── opcache.ini
@@ -47,7 +46,6 @@ php-backend/
 - **PHP 8.2+** con extensiones: pdo, pdo_mysql, json, openssl
 - **MySQL 5.7+** o **MariaDB 10.2+**
 - **Composer 2+**
-- **Node.js 18+** (opcional, para herramientas)
 - **Docker & Docker Compose** (para contenedores)
 
 ## ⚡ Instalación Rápida (Docker)
@@ -70,7 +68,7 @@ curl http://localhost/health
 
 ```bash
 # 1. Base de datos
-mysql -u root -p < database/schema_mysql.sql
+mysql -u root -p < ../database/Fafi_1_6.sql
 mysql -u root -p fafi_1_6 < database/seed_mysql.sql
 
 # 2. Dependencias PHP
@@ -205,7 +203,7 @@ docker-compose exec app php-fpm -t
 
 ## 🎮 Integración Frontend
 
-Ver `FRONTEND_INTEGRATION.md` para conectar el `game-client` existente.
+Ver `docs/frontend-integration.md` para conectar el `game-client` existente.
 
 Cambios principales:
 1. Reemplazar `localStorage` → API calls

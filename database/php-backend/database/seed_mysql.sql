@@ -1,5 +1,5 @@
 -- Fafi-1.6 MySQL Seed Data
--- Run after schema_mysql.sql
+-- Run after Fafi_1_6.sql (schema canónico)
 
 USE `fafi_1_6`;
 
