@@ -7,10 +7,10 @@ FROM composer:2.7 AS builder
 WORKDIR /app
 
 # Copy composer files (composer.lock no está versionado: se genera en el build)
-COPY composer.json ./
+COPY composer.json composer.lock* ./
 
-# Install dependencies (no dev)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+# Install dependencies (no dev) - ignore platform reqs porque el builder no tiene ext-pdo_mysql (se instala en la etapa final)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --ignore-platform-reqs
 
 # Production stage
 FROM php:8.2-fpm-alpine
@@ -21,17 +21,11 @@ RUN apk add --no-cache \
     supervisor \
     linux-headers \
     $PHPIZE_DEPS \
-    postgresql-dev \
     mysql-client \
     curl \
     bash \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql opcache \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
+    && docker-php-ext-install pdo pdo_mysql opcache \
     && apk del $PHPIZE_DEPS
-
-# Install Node.js for any build tools (optional)
-RUN apk add --no-cache nodejs npm
 
 # Configure PHP
 COPY docker/php.ini /usr/local/etc/php/conf.d/custom.ini

@@ -52,7 +52,7 @@ services:
       - MYSQL_PASSWORD=${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
-      - ./database/php-backend/database/schema_mysql.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/Fafi_1_6.sql:/docker-entrypoint-initdb.d/01-schema.sql
       - ./database/php-backend/database/seed_mysql.sql:/docker-entrypoint-initdb.d/02-seed.sql
     networks:
       - fafi-network

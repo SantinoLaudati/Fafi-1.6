@@ -134,8 +134,8 @@ Instalación (desarrollo)
 2. Instalar dependencias PHP:
    cd database/php-backend
    composer install
-3. Crear la base de datos MySQL (importar database/schema_mysql.sql y
-   database/seed_mysql.sql) o usar Docker: docker compose up -d db
+3. Crear la base de datos MySQL (importar database/Fafi_1_6.sql y
+   database/php-backend/database/seed_mysql.sql) o usar Docker: docker compose up -d db
 4. Configurar variables de entorno:
    - Para el stack Docker: copiar `.env.docker` a `.env` en la raíz y
      ajustar valores (DB_ROOT_PASSWORD, DB_PASSWORD, JWT_SECRET, DOMAIN).
@@ -168,7 +168,7 @@ Requisitos: Docker y Docker Compose en el servidor.
    (para una demo escolar, DOMAIN = IP o hostname del servidor)
 2. Levantar el stack:
    docker compose up -d --build
-   (Los scripts schema_mysql.sql y seed_mysql.sql se importan automáticamente
+   (Los scripts database/Fafi_1_6.sql y seed_mysql.sql se importan automáticamente
    en la primera creación de la base de datos.)
 3. Verificar: http://<IP>/health
 4. El nginx del contenedor ya sirve: API (/api), WebSocket (/game), el juego
@@ -225,7 +225,7 @@ Las contribuciones son bienvenidas.
 
 Autor
 
-Desarrollado por TeamT estudio independiente.
+Desarrollado por TeamTStudio estudio independiente.
 
 Integrado por 
 Dante Iglesias 
