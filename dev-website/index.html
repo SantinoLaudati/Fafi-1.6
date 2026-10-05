@@ -1,123 +1,309 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en" data-lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team T Studio | Desarrollo de Videojuegos</title>
+    <meta name="theme-color" content="#121214">
+    <title>Team T Studio | FAFI 1.6 &mdash; Tactical FPS</title>
+    <meta name="description" content="Team T Studio is an independent game studio. Play FAFI 1.6, a browser-based tactical FPS with Aim Practice and Dust II exploration modes.">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Team T Studio | FAFI 1.6">
+    <meta property="og:description" content="Independent studio. FAFI 1.6 &mdash; tactical precision meets arcade fun, straight in your browser.">
+    <meta property="og:image" content="assets/FAFI-1.6Demo2.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="assets/Isotipo_TeamT_SinFondo.png" type="image/png">
+    <link rel="apple-touch-icon" href="assets/Isotipo_TeamT_SinFondo.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;family=Space+Grotesk:wght@400;600;700&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <header class="navbar">
-        <div class="navbar-inner">
-            <div class="navbar-brand">
-                <img src="assets/Isotipo_TeamT_SinFondo.png" alt="Logo T">
-                <span>Team T Studio</span>
-            </div>
-            <nav class="nav-links">
-                <a href="#inicio">Work</a>
-                <a href="#proyectos">Studio</a>
-                <a href="#nosotros">About</a>
-                <a href="#contacto">Contact</a>
-            </nav>
-            <button class="nav-toggle" id="navToggle" aria-label="Abrir menú">☰</button>
-        </div>
-        <nav class="mobile-menu" id="mobileMenu">
-            <a href="#inicio">Work</a>
-            <a href="#proyectos">Studio</a>
-            <a href="#nosotros">About</a>
-            <a href="#contacto">Contact</a>
+<a class="skip-link" href="#main" data-i18n="a11y.skip">Skip to content</a>
+
+<header class="navbar">
+    <div class="navbar-inner">
+        <a class="navbar-brand" href="#inicio">
+            <img src="assets/Isotipo_TeamT_SinFondo.png" alt="" width="44" height="44">
+            <span>Team T&nbsp;Studio</span>
+        </a>
+
+        <nav class="nav-links" aria-label="Main">
+            <a href="#jugar" data-nav="jugar" data-i18n="nav.play">Play</a>
+            <a href="#proyectos" data-nav="proyectos" data-i18n="nav.work">Work</a>
+            <a href="#nosotros" data-nav="nosotros" data-i18n="nav.studio">Studio</a>
+            <a href="#config" data-nav="config" data-i18n="nav.settings">Settings</a>
         </nav>
-    </header>
 
-    <main>
-        <section id="inicio" class="hero">
-            <h1>TEAM T STUDIO</h1>
-            <p>Creadores de realidades · Developers of FAFI 1.6</p>
-            <a href="#proyectos" class="btn-primary">Explore projects</a>
-        </section>
+        <div class="navbar-actions">
+            <a class="btn btn-primary btn-sm" href="http://192.168.2.1/" data-launch data-i18n="nav.playCta">Play now</a>
+            <button class="nav-toggle" id="navToggle" type="button"
+                    aria-controls="mobileMenu" aria-expanded="false"
+                    aria-label="Open menu" data-i18n-aria-label="a11y.menu.open">
+                <span class="nav-toggle-bars" aria-hidden="true"></span>
+            </button>
+        </div>
+    </div>
 
-        <section id="proyectos" class="projects">
-            <div class="section-header">
-                <h2>Projects</h2>
+    <nav class="mobile-menu" id="mobileMenu" aria-label="Mobile" hidden>
+        <a href="#jugar" data-i18n="nav.play">Play</a>
+        <a href="#proyectos" data-i18n="nav.work">Work</a>
+        <a href="#nosotros" data-i18n="nav.studio">Studio</a>
+        <a href="#config" data-i18n="nav.settings">Settings</a>
+        <a href="#contacto" data-i18n="nav.contact">Contact</a>
+        <a class="btn btn-primary" href="http://192.168.2.1/" data-launch data-i18n="nav.playCta">Play now</a>
+    </nav>
+</header>
+
+<main id="main">
+
+    <!-- ============ HERO ============ -->
+    <section id="inicio" class="hero">
+        <div class="container hero-inner">
+            <p class="eyebrow" data-i18n="hero.eyebrow">Independent game studio</p>
+            <h1 class="hero-title">TEAM&nbsp;T<br>STUDIO</h1>
+            <p class="hero-sub" data-i18n="hero.subtitle">Creators of realities &middot; Developers of FAFI 1.6</p>
+
+            <div class="hero-cta">
+                <a class="btn btn-primary btn-lg" href="http://192.168.2.1/" data-launch data-i18n="hero.ctaPlay">Play FAFI 1.6</a>
+                <a class="btn btn-ghost btn-lg" href="#proyectos" data-i18n="hero.ctaWork">Explore projects</a>
             </div>
+
+            <p class="status-pill" id="heroStatus" data-status="idle" role="status">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span class="status-text" data-i18n="status.checking">Checking server&hellip;</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- ============ LAUNCHER ============ -->
+    <section id="jugar" class="launcher">
+        <div class="container">
+            <div class="launcher-panel">
+                <div class="launcher-media">
+                    <img src="assets/FAFI-1.6Demo2.png" alt="FAFI 1.6 gameplay screenshot" width="1727" height="1069" loading="lazy" decoding="async">
+                    <span class="launcher-badge">v2</span>
+                </div>
+
+                <div class="launcher-body">
+                    <p class="eyebrow" data-i18n="launcher.eyebrow">Now shipping</p>
+                    <h2 class="launcher-title">FAFI&nbsp;1.6</h2>
+                    <p class="launcher-desc" data-i18n="launcher.desc">A tactical history shooter built for the browser. No install, no launcher client &mdash; just your keyboard, your mouse and the round timer.</p>
+
+                    <div class="launcher-actions">
+                        <a class="btn btn-primary btn-lg" href="http://192.168.2.1/" data-launch data-i18n="launcher.play">Launch game</a>
+                        <a class="btn btn-ghost btn-lg" href="#controles" data-i18n="launcher.controls">Controls</a>
+                    </div>
+
+                    <dl class="launcher-facts">
+                        <div>
+                            <dt data-i18n="facts.modes">Modes</dt>
+                            <dd data-i18n="facts.modesValue">2 &mdash; Aim Practice, Dust II</dd>
+                        </div>
+                        <div>
+                            <dt data-i18n="facts.platform">Platform</dt>
+                            <dd data-i18n="facts.platformValue">Browser (desktop)</dd>
+                        </div>
+                        <div>
+                            <dt data-i18n="facts.price">Price</dt>
+                            <dd data-i18n="facts.priceValue">Free</dd>
+                        </div>
+                        <div>
+                            <dt data-i18n="facts.server">Server</dt>
+                            <dd><code data-server-display>192.168.2.1</code></dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Game modes -->
+            <div class="modes">
+                <article class="mode-card">
+                    <span class="mode-index">01</span>
+                    <h3 data-i18n="mode1.title">Aim Practice</h3>
+                    <p data-i18n="mode1.desc">Thirty seconds. Moving targets in the gallery range, every weapon unlocked from the first second. Built to warm up your aim and track your accuracy.</p>
+                </article>
+                <article class="mode-card">
+                    <span class="mode-index">02</span>
+                    <h3 data-i18n="mode2.title">Dust II &mdash; Exploration</h3>
+                    <p data-i18n-html="mode2.desc">Start with a knife and $3000, pick Terrorist or Counter-Terrorist spawn, then press <kbd>B</kbd> for the buy menu: Deagle, AK-47, AWP and more.</p>
+                </article>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls" id="controles">
+                <h3 class="controls-title" data-i18n="controls.title">Controls</h3>
+                <ul class="controls-grid">
+                    <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span data-i18n="controls.move">Move</span></li>
+                    <li><kbd>Shift</kbd><span data-i18n="controls.crouch">Crouch / sprint</span></li>
+                    <li><kbd>Space</kbd><span data-i18n="controls.jump">Jump (Dust II)</span></li>
+                    <li><kbd class="kbd-wide">LMB</kbd><span data-i18n="controls.fire">Fire / knife</span></li>
+                    <li><kbd class="kbd-wide">RMB</kbd><span data-i18n="controls.aim">Aim / scope (AWP)</span></li>
+                    <li><kbd>R</kbd><span data-i18n="controls.reload">Reload</span></li>
+                    <li><kbd>F</kbd><span data-i18n="controls.inspect">Inspect weapon</span></li>
+                    <li><kbd>Q</kbd><span data-i18n="controls.swap">Change weapon</span></li>
+                    <li><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span data-i18n="controls.slots">Weapon slots</span></li>
+                    <li><kbd>B</kbd><span data-i18n="controls.buy">Buy menu (Dust II)</span></li>
+                    <li><kbd>Esc</kbd><span data-i18n="controls.menu">Back to menu</span></li>
+                    <li><kbd>F7</kbd><span data-i18n="controls.debug">Debug overlay</span></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ PROJECTS ============ -->
+    <section id="proyectos" class="projects">
+        <div class="container">
+            <div class="section-header">
+                <h2 data-i18n="projects.title">Projects</h2>
+                <span class="section-count">02</span>
+            </div>
+
             <div class="projects-grid">
-                <div class="project-card">
+                <article class="project-card project-card--live">
                     <div class="project-card-image">
-                        <img src="assets/FAFI-1.6Demo2.png" class="color-img" alt="FAFI 1.6 Gameplay">
+                        <img src="assets/FAFI-1.6Demo2.png" alt="FAFI 1.6 gameplay screenshot" width="1727" height="1069" loading="lazy" decoding="async">
+                        <span class="project-tag" data-i18n="projects.live">Playable</span>
                     </div>
                     <div class="project-card-content">
                         <span class="project-label">FAFI 1.6</span>
                         <h3>FAFI 1.6</h3>
-                        <p>Tactical history shooter, our first project.</p>
+                        <p data-i18n="projects.p1">Tactical history shooter, our first project. Aim Practice and a full Dust II exploration map, playable in the browser.</p>
+                        <a class="card-action" href="http://192.168.2.1/" data-launch>
+                            <span data-i18n="projects.p1cta">Play now</span>
+                            <span class="card-action-arrow" aria-hidden="true">&rarr;</span>
+                        </a>
                     </div>
-                </div>
-                <div class="project-card">
+                </article>
+
+                <article class="project-card">
                     <div class="project-card-image">
-                        <img src="assets/CoreTT.png" class="color-img" alt="CoreTT">
+                        <img src="assets/CoreTT.png" alt="CoreTT interface screenshot" width="1722" height="1074" loading="lazy" decoding="async">
+                        <span class="project-tag project-tag--muted" data-i18n="projects.soon">In development</span>
                     </div>
                     <div class="project-card-content">
                         <span class="project-label">CoreTT</span>
                         <h3>CoreTT</h3>
-                        <p>Platform for improving at competitive games. Currently in the pre-production phase.</p>
+                        <p data-i18n="projects.p2">Platform for improving at competitive games. Currently in the pre-production phase.</p>
+                        <span class="card-action card-action--disabled" aria-disabled="true">
+                            <span data-i18n="projects.p2cta">Coming soon</span>
+                        </span>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="nosotros" class="team">
-            <div class="container">
-                <h2>Development Team</h2>
-                <div class="team-grid">
-                    <div class="team-member">
-                        <div class="team-member-avatar">
-                            <img src="assets/SantinoLaudati.png" alt="Foto Santino Laudati">
-                        </div>
-                        <h4>Santino Laudati</h4>
-                        <span class="role">Lead Developer/R&D Developer</span>
-                    </div>
-                    <div class="team-member">
-                        <div class="team-member-avatar">
-                            <img src="assets/DanteIglesias.png" alt="Foto Dante Iglesias">
-                        </div>
-                        <h4>Dante Iglesias</h4>
-                        <span class="role">Frontend Designer/Technical Writer</span>
-                    </div>
-                    <div class="team-member">
-                        <div class="team-member-avatar">
-                            <img src="assets/Pachus13.png" alt="Foto Ian Quiroga">
-                        </div>
-                        <h4>Ian Quiroga</h4>
-                        <span class="role">Backend Developer</span>
-                    </div>
-                </div>
-
-                <div class="info-equipo">
-                    <h3 class="accent-color">About Team T Studio</h3>
-                    <p>We are an independent studio passionate about video game development. Our goal is to create memorable experiences by combining polished gameplay with strong visual identities. With the launch of <strong>FAFI 1.6</strong>, we aim to establish ourselves in the industry and build a solid community of players.</p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer id="contacto" class="footer">
-        <div class="container footer-inner">
-            <div class="footer-brand">
-                <strong>Contact</strong>
-            </div>
-            <div class="footer-links">
-                <a href="#" title="Web">🌐</a>
-                <a href="https://discord.gg/gyxVjcdg" title="Discord">💬</a>
-                <a href="https://www.instagram.com/teamtstudio/" title="Instagram">📸</a>
-            </div>
-            <div class="footer-copyright">
-                &copy; Team T 2026. Todos los derechos reservados.
+                </article>
             </div>
         </div>
-    </footer>
-    <script src="js/script.js"></script>
+    </section>
+
+    <!-- ============ STUDIO / TEAM ============ -->
+    <section id="nosotros" class="team">
+        <div class="container">
+            <h2 data-i18n="team.title">Development Team</h2>
+
+            <div class="team-grid">
+                <article class="team-member">
+                    <div class="team-member-avatar">
+                        <img src="assets/SantinoLaudati.png" alt="Portrait of Santino Laudati" width="1792" height="2390" loading="lazy" decoding="async">
+                    </div>
+                    <h3>Santino Laudati</h3>
+                    <p class="role" data-i18n="team.role1">Lead Developer / R&amp;D</p>
+                </article>
+                <article class="team-member">
+                    <div class="team-member-avatar">
+                        <img src="assets/DanteIglesias.png" alt="Portrait of Dante Iglesias" width="460" height="1024" loading="lazy" decoding="async">
+                    </div>
+                    <h3>Dante Iglesias</h3>
+                    <p class="role" data-i18n="team.role2">Frontend Designer / Technical Writer</p>
+                </article>
+                <article class="team-member">
+                    <div class="team-member-avatar">
+                        <img src="assets/Pachus13.png" alt="Portrait of Ian Quiroga" width="268" height="234" loading="lazy" decoding="async">
+                    </div>
+                    <h3>Ian Quiroga</h3>
+                    <p class="role" data-i18n="team.role3">Backend Developer</p>
+                </article>
+            </div>
+
+            <div class="about">
+                <h3 data-i18n="about.title">About Team T Studio</h3>
+                <p data-i18n-html="about.body">We are an independent studio passionate about video game development. Our goal is to create memorable experiences by combining polished gameplay with strong visual identities. With the launch of <strong>FAFI 1.6</strong>, we aim to establish ourselves in the industry and build a solid community of players.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section id="config" class="settings">
+        <div class="container">
+            <div class="section-header">
+                <h2 data-i18n="settings.title">Settings</h2>
+                <span class="section-count" data-i18n="settings.localTag">Saved on this device</span>
+            </div>
+
+            <div class="settings-grid">
+
+                <!-- Language -->
+                <fieldset class="setting">
+                    <legend class="setting-title" data-i18n="settings.langTitle">Language</legend>
+                    <p class="setting-desc" data-i18n="settings.langDesc">Choose the language of this site.</p>
+
+                    <div class="lang-switch" role="radiogroup" aria-label="Language">
+                        <button type="button" class="lang-option" role="radio" data-set-lang="en" aria-checked="true">
+                            <span class="lang-code">EN</span>
+                            <span class="lang-name">English</span>
+                        </button>
+                        <button type="button" class="lang-option" role="radio" data-set-lang="es" aria-checked="false">
+                            <span class="lang-code">ES</span>
+                            <span class="lang-name">Espa&ntilde;ol</span>
+                        </button>
+                    </div>
+                </fieldset>
+
+                <!-- Game server -->
+                <fieldset class="setting">
+                    <legend class="setting-title" data-i18n="settings.serverTitle">Game server address</legend>
+                    <p class="setting-desc" data-i18n="settings.serverDesc">Where the launcher sends you when you press play. The server address can change, so you can edit it here.</p>
+
+                    <form class="server-form" id="serverForm" novalidate>
+                        <label class="visually-hidden" for="serverInput" data-i18n="settings.serverLabel">Server address</label>
+                        <div class="server-row">
+                            <input class="server-input" type="text" id="serverInput"
+                                   name="server" inputmode="url" autocomplete="off"
+                                   spellcheck="false" placeholder="http://192.168.2.1">
+                            <button class="btn btn-primary btn-sm" type="submit" data-i18n="settings.save">Save</button>
+                        </div>
+                        <p class="server-feedback" id="serverFeedback" role="status" data-state="idle"></p>
+                    </form>
+                </fieldset>
+
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer id="contacto" class="footer">
+    <div class="container footer-inner">
+        <div class="footer-brand">
+            <strong>Contact</strong>
+            <a class="footer-server" href="http://192.168.2.1/" data-launch data-i18n="footer.playServer">Play on the server</a>
+        </div>
+
+        <ul class="footer-links">
+            <li><a href="http://192.168.2.1/" data-launch data-i18n="footer.game">Game</a></li>
+            <li><a href="https://discord.gg/gyxVjcdg" target="_blank" rel="noopener noreferrer" data-i18n="footer.discord">Discord</a></li>
+            <li><a href="https://www.instagram.com/teamtstudio/" target="_blank" rel="noopener noreferrer" data-i18n="footer.instagram">Instagram</a></li>
+        </ul>
+
+        <p class="footer-copyright">
+            <span>&copy;</span> <span data-year>2026</span>
+            <span data-i18n="footer.rights">Team T Studio. All rights reserved.</span>
+        </p>
+    </div>
+</footer>
+
+<script src="js/script.js"></script>
 </body>
 </html>
