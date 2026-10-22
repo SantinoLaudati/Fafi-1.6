@@ -4,7 +4,7 @@
  * Singleton pattern for PDO connection
  */
 
-require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/database_1_0v.php';
 
 class Database {
     private static $instance = null;

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import { updateAmmoHUD, updateWeaponVisibility, switchWeapon, updateWeaponAnim, updateViewRecoil, updateBullets, shoot, knifeAttack, spawnParticles } from './player.js';
-import { handleMovement, updateFPS, drawMinimap, updateDebugPanel } from './controls.js';
+import { updateAmmoHUD, updateWeaponVisibility, switchWeapon, updateWeaponAnim, updateViewRecoil, updateBullets, shoot, knifeAttack, spawnParticles } from './player_1_0v.js';
+import { handleMovement, updateFPS, drawMinimap, updateDebugPanel } from './controls_1_0v.js';
 
 
 /* === FAFI 1.6 MAIN port: todo el menú + configurables sobre motor V2 (sin colisiones con V2) === */
@@ -573,7 +573,7 @@ function initThree(){
 
   // load AK
   const loader = new GLTFLoader();
-  loader.load('assets/models/weapons/primarias/wep_ak47.glb', (gltf)=>{
+  loader.load('assets/models/weapons/primarias/wep_ak47_1_0v.glb', (gltf)=>{
     akModel = gltf.scene;
     akModel.traverse(o=>{ if(o.isMesh){ o.castShadow=true; }});
     // normalize scale y centrar modelo
@@ -634,7 +634,7 @@ function initThree(){
 
   // load Cuchillo
   const knifeLoader = new GLTFLoader();
-  knifeLoader.load('assets/models/weapons/melee/wep_cuchillo.glb', (gltf)=>{
+  knifeLoader.load('assets/models/weapons/melee/wep_cuchillo_1_0v.glb', (gltf)=>{
     knifeModel = gltf.scene;
     knifeModel.traverse(o=>{ if(o.isMesh){ o.castShadow=true; }});
     const boxK = new THREE.Box3().setFromObject(knifeModel);
@@ -676,7 +676,7 @@ function initThree(){
 
   // load AWP L115A3 - rehecho como AK47 para verse en FOV
   const awpLoader = new GLTFLoader();
-  awpLoader.load('assets/models/weapons/primarias/wep_awp.glb', (gltf)=>{
+  awpLoader.load('assets/models/weapons/primarias/wep_awp_1_0v.glb', (gltf)=>{
     awpModel = gltf.scene;
     awpModel.traverse(o=>{ if(o.isMesh){ o.castShadow=true; }});
     const boxA = new THREE.Box3().setFromObject(awpModel);
@@ -722,7 +722,7 @@ function initThree(){
 
   // load Deagle CS:GO
   const deagleLoader = new GLTFLoader();
-  deagleLoader.load('assets/models/weapons/secundarias/wep_deagle.glb', (gltf)=>{
+  deagleLoader.load('assets/models/weapons/secundarias/wep_deagle_1_0v.glb', (gltf)=>{
     deagleModel = gltf.scene;
     deagleModel.traverse(o=>{ if(o.isMesh){ o.castShadow=true; }});
     const boxD = new THREE.Box3().setFromObject(deagleModel);
@@ -838,7 +838,7 @@ function loadDust2Map(onDone){
   const loadingEl = document.getElementById('dust2Loading');
   if(loadingEl) loadingEl.style.display='block';
   const loader2 = new GLTFLoader();
-  loader2.load('assets/models/maps/map_prueba.glb', (gltf)=>{
+  loader2.load('assets/models/maps/map_prueba_1_0v.glb', (gltf)=>{
     const model = gltf.scene;
     // Normalizar escala a ~42 unidades (tamaño CS original) y centrar
     const box = new THREE.Box3().setFromObject(model);

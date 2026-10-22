@@ -5,8 +5,8 @@
  * Requires: composer require cboden/ratchet
  */
 
-require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../config/jwt.php';
+require_once __DIR__ . '/../config/db_1_0v.php';
+require_once __DIR__ . '/../config/jwt_1_0v.php';
 
 JWT::init();
 

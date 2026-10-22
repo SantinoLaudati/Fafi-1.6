@@ -93,22 +93,22 @@ function optionalAuth() {
 try {
     switch ($resource) {
         case 'auth':
-            require_once __DIR__ . '/auth.php';
+            require_once __DIR__ . '/auth_1_0v.php';
             handleAuth($method, $action, $input);
             break;
             
         case 'inventory':
-            require_once __DIR__ . '/inventory.php';
+            require_once __DIR__ . '/inventory_1_0v.php';
             handleInventory($method, $id, $action, $input, requireAuth());
             break;
             
         case 'social':
-            require_once __DIR__ . '/social.php';
+            require_once __DIR__ . '/social_1_0v.php';
             handleSocial($method, $id, $action, $input, requireAuth());
             break;
             
         case 'game':
-            require_once __DIR__ . '/game.php';
+            require_once __DIR__ . '/game_1_0v.php';
             handleGame($method, $id, $action, $input, requireAuth());
             break;
             
