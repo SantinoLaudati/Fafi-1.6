@@ -3,6 +3,8 @@ Fafi-1.6
 
 > Un FPS táctico multijugador desarrollado en HTML, inspirado en la precisión competitiva de Valorant y Counter‑Strike, combinado con una estética arcade y cartoon moderna.
 
+> **Estado real de esta build (V2):** el juego es **para un jugador**. Los modos disponibles son **AIM Practice (30 s)**, **Dust II — Exploración** y una **campaña de 5 niveles**. El multijugador, los bots, el Team Deathmatch, el Bomb Mode, la tienda y el inventario **no están activos**. Los sonidos están desactivados. Las afirmaciones de las secciones siguientes describen la visión original del proyecto; para el comportamiento exacto consulta el **[Manual de Usuario](docs/Manual_de_Usuario_FAFI_1.6.md)** y la **[Revisión del proyecto](docs/REVISION_PROYECTO.md)**.
+
 
 
 
@@ -63,11 +65,15 @@ El juego se basa en enfrentamientos por equipos donde los jugadores deben:
 
 
 
-Modos de Juego
+Modos de Juego (build actual)
 
-Team Deathmatch — Eliminación por equipos.
+AIM Practice — 30 segundos contra blancos móviles; todas las armas disponibles.
 
-Bomb Mode — Colocar o desactivar objetivos.
+Dust II — Exploración libre del mapa con física, saltos y compra de armas (B). Sin enemigos ni temporizador.
+
+Campaña — 5 niveles de AIM con blancos cada vez más rápidos; 600+ puntos para avanzar.
+
+> Team Deathmatch, Bomb Mode y el modo online están planificados pero **no implementados** en esta build.
 
 
 ---
@@ -188,13 +194,17 @@ Controles
 Acción	Tecla
 
 Moverse	WASD
-Saltar	Espacio
+Saltar	Espacio (solo Dust II)
 Disparar	Click Izquierdo
-Apuntar	Click Derecho
+Apuntar	Click Derecho (AK mantener; AWP alternar; Deagle no tiene mira)
 Recargar	R
-Agacharse	Ctrl
-Correr	Shift
-Cambiar Arma	Scroll Mouse 
+Agacharse	Shift (mantener)
+Inspeccionar arma	F
+Equipar AK / Cuchillo / AWP / Deagle	1 / 2 / 3 / 4
+Cambiar de arma	Q o rueda del ratón
+Comprar (solo Dust II)	B
+Pausa / menú	ESC
+Debug	F7
 
 ---
 

@@ -1547,9 +1547,9 @@ async function fafiDoLogin(){
   const online=!!(window.authService && !window.authService.isDevMode());
   if(online){
     try{
-      const user=await window.authService.login(u,p);
-      if(!user) throw new Error('Credenciales incorrectas');
-      fafiFinalizeAuth(user, false);
+      const data=await window.authService.login(u,p);
+      if(!data || !data.user) throw new Error('Credenciales incorrectas');
+      fafiFinalizeAuth(data.user, false);
       return;
     }catch(e){
       alert((e&&e.message)?e.message:'No se pudo conectar con el servidor.');
@@ -1568,9 +1568,9 @@ async function fafiDoRegister(){
   const online=!!(window.authService && !window.authService.isDevMode());
   if(online){
     try{
-      const user=await window.authService.register(u,email,p);
-      if(!user) throw new Error('No se pudo crear la cuenta');
-      fafiFinalizeAuth(user, false);
+      const data=await window.authService.register(u,email,p);
+      if(!data || !data.user) throw new Error('No se pudo crear la cuenta');
+      fafiFinalizeAuth(data.user, false);
       return;
     }catch(e){
       alert((e&&e.message)?e.message:'No se pudo crear la cuenta en el servidor.');
