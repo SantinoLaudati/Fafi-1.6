@@ -85,6 +85,8 @@ Si es la primera vez que juegas, debes crear una cuenta.
 
 Si todo está bien, entrarás automáticamente al menú del juego.
 
+![Pantalla de registro](images/02_registro_anotado.jpg)
+
 📸 **Captura sugerida:** Pantalla de registro con los campos completos.
 
 **Errores comunes:**
@@ -101,6 +103,8 @@ Si ya tienes cuenta:
 1. Escribe tu **usuario** (o tu email) en el primer campo.
 2. Escribe tu **contraseña** en el segundo campo.
 3. Haz clic en **ENTRAR AL JUEGO** (o pulsa la tecla **Enter**).
+
+![Pantalla de inicio de sesion](images/01_login_anotado.jpg)
 
 📸 **Captura sugerida:** Pantalla de inicio de sesión con usuario y contraseña.
 
@@ -146,6 +150,8 @@ Tiene tres botones para elegir modo:
 - Tienes todas las armas disponibles desde el inicio.
 - Al terminar se muestra tu puntuación, aciertos y precisión.
 
+![Juego AIM con HUD](images/09_aim_anotado.jpg)
+
 📸 **Captura sugerida:** Pantalla de juego AIM con blancos y HUD.
 
 **Rangos según puntos:**
@@ -157,6 +163,8 @@ Tiene tres botones para elegir modo:
 | 1000 – 1499 | PRO |
 | 1500 – 1999 | ELITE |
 | 2000+ | ¡LEYENDA FAFI! |
+
+![Resultados de AIM](images/14_resultado_anotado.jpg)
 
 📸 **Captura sugerida:** Pantalla de resultados al terminar AIM.
 
@@ -174,6 +182,8 @@ Tiene tres botones para elegir modo:
 6. Pulsa **ESC** para pausar.
 
 📸 **Captura sugerida:** Pantalla de selección de bando (Terroristas / Antiterroristas).
+
+![Mapa Dust II](images/11_dust2_anotado.jpg)
 
 📸 **Captura sugerida:** Vista del mapa Dust II con HUD y minimapa.
 
@@ -259,6 +269,8 @@ Tiene tres botones para elegir modo:
 
 Entra en la pestaña **Ajustes** del menú principal.
 
+![Ajustes](images/04_ajustes_anotado.jpg)
+
 📸 **Captura sugerida:** Pestaña "Ajustes" con el deslizador de sensibilidad y botón de calidad.
 
 ### Sensibilidad de la cámara
@@ -284,6 +296,8 @@ La pestaña **Perfil** muestra:
 - Lista de amigos.
 - Logros desbloqueados.
 
+![Perfil](images/05_perfil_anotado.jpg)
+
 📸 **Captura sugerida:** Pestaña "Perfil" con historial, amigos y logros.
 
 ### Logros
@@ -294,6 +308,8 @@ La pestaña **Perfil** muestra:
 | Explorador Dust2 | Entra a Dust II por primera vez. |
 | Aim Pro | Consigue 1000+ pts en AIM. |
 
+![Logros](images/05_perfil_anotado.jpg)
+
 📸 **Captura sugerida:** Lista de logros con algunos desbloqueados (✓) y otros bloqueados (🔒).
 
 ---
@@ -302,7 +318,11 @@ La pestaña **Perfil** muestra:
 
 La **Tienda** y el **Equipamiento** están desactivados en esta versión. Si haces clic, verás un mensaje de "PRÓXIMAMENTE".
 
+![Tienda (proximamente)](images/06_tienda_anotado.jpg)
+
 📸 **Captura sugerida:** Mensaje "PRÓXIMAMENTE" en Tienda.
+
+![Equipamiento (proximamente)](images/07_equipamiento_anotado.jpg)
 
 📸 **Captura sugerida:** Mensaje "PRÓXIMAMENTE" en Equipamiento.
 
