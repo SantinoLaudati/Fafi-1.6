@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { makeLoader } from './loaders.js';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import { QUALITY, loadQualityLevel, saveQualityLevel, applyQuality, updateSun, makeBlobShadow } from './quality.js';
+import { QUALITY, SUN_DIR, loadQualityLevel, saveQualityLevel, applyQuality, updateSun, makeBlobShadow } from './quality.js';
 import { createDefuse, TEAM_BADGE } from './defuse.js';
 import { createGrenades, GRENADES } from './grenades.js';
 import { loadWeaponPack, makeViewWeapon } from './characters.js';
 import { ZONAS } from './zonas.js';
+import { SFX } from './sfx.js';
 
 
 
@@ -471,6 +472,7 @@ let DEFAULT_T_SPAWN = { x: -4.063, z: 23.117 };   // se reemplazan al activar ca
 let DEFAULT_CT_SPAWN = { x: 7.444, z: -14.528 };
 // física Dust2
 let playerVelY=0, playerGrounded=false;
+const pVel = new THREE.Vector3();     // velocidad horizontal del jugador (inercia: aceleración, fricción y poco control en el aire)
 let dust2Colliders=[];
 let dust2GroundY=null;
 let playerRadius=basePlayerRadius;
@@ -532,7 +534,6 @@ let sunLight=null, hemiLight=null, fillLight=null, muzzleLight=null;
 const lightPool=[];
 function acquireLight(color,intensity,distance,pos){ const l=lightPool.find(x=>x.userData.free); if(!l) return null; l.userData.free=false; l.color.set(color); l.intensity=intensity; l.distance=distance; l.position.copy(pos); return l; }
 function releaseLight(l){ if(!l) return; l.intensity=0; l.userData.free=true; }
-const SUN_DIR = new THREE.Vector3(0.45,0.78,0.38).normalize();   // hacia el sol
 function applyGraphicsQuality(){
   if(!renderer) return;
   const q = applyQuality(renderer, sunLight, qualityLevel);
@@ -770,6 +771,7 @@ function activateMap(key){
   dust2Group.userData.bounds=e.bounds.clone();
   dust2Colliders=e.colliders; colScale=Math.max(0.4, Math.min(1, (e.scale||1)*0.8)); stepMax = 0.68;
   currentMapKey=key;
+  SFX.surface = key==='office' ? 'step_metal' : key==='italy' ? 'step_stone' : 'step';
   wallLimit.xmin=e.bounds.min.x+1.0; wallLimit.xmax=e.bounds.max.x-1.0;
   wallLimit.zmin=e.bounds.min.z+1.0; wallLimit.zmax=e.bounds.max.z-1.0;
   DEFAULT_T_SPAWN=e.spawns.t; DEFAULT_CT_SPAWN=e.spawns.ct;
@@ -1132,13 +1134,13 @@ const defuse = createDefuse({
   setSpectating:(v)=>{ spectating=v; if(v){ isHoldingShoot=false; isAiming=false; document.getElementById('scopeOverlay')?.classList.remove('on'); } },
   setViewmodelVisible:(v)=>{ viewmodelHidden=!v; updateWeaponVisibility(); },
   lookAtPlayer:(x,y,z)=>{ camera.up.set(0,1,0); camera.lookAt(x,y,z); },
-  resetLoadout:(team, full)=>{ playerVelY=0; playerGrounded=false; dust2GroundY=null; viewRecoilX=0; viewRecoilY=0; giveDefaultLoadout(full); },
+  resetLoadout:(team, full)=>{ playerVelY=0; pVel.set(0,0,0); playerGrounded=false; dust2GroundY=null; viewRecoilX=0; viewRecoilY=0; giveDefaultLoadout(full); },
   setMoney:(v)=>{ money=v; updateMoneyHUD(); if(buyMenuOpen) updateBuyMenu(); },
   grenadesClear:()=>{ if(typeof clearGrenades==='function') clearGrenades(); },
   explosionFx:(pos,R)=>explosionEffect(pos,R), acquireLight:(c,i,d,p)=>acquireLight(c,i,d,p), releaseLight:(l)=>releaseLight(l),
   damageFlash:(f)=>{ const e=document.getElementById('dfDamage'); if(e){ e.style.opacity=Math.min(0.85,0.25+f*0.6); setTimeout(()=>{ e.style.opacity=0; }, 140); } },
   botShotFx:()=>{}, colScale:()=>colScale,
-  hitFeedback:(pos,head)=>{ hitMarker.classList.add('show'); setTimeout(()=>hitMarker.classList.remove('show'),120); spawnParticles(pos, head?0xffd23a:0xff3b3b); if(head) showFloating('HEADSHOT'); },
+  hitFeedback:(pos,head)=>{ SFX.play(head?'headshot':'hit'); hitMarker.classList.add('show'); setTimeout(()=>hitMarker.classList.remove('show'),120); spawnParticles(pos, head?0xffd23a:0xff3b3b); if(head) showFloating('HEADSHOT'); },
   flashScreen:(sec)=>flashScreenFx(sec)
 });
 function updateFlashOverlay(dt){
@@ -1202,12 +1204,14 @@ function startThrow(){
   if(gThrow.active) return;
   const k=currentWeapon; if(!GRENADES[k] || grenadeStock[k]<=0) return;
   gThrow.active=true; gThrow.t=0; gThrow.released=false; gThrow.type=k;
+  SFX.play('grenade_pin');
 }
 function releaseGrenade(){
   const k=gThrow.type;
   const fwd=new THREE.Vector3(); camera.getWorldDirection(fwd);
   const origin=camera.position.clone().addScaledVector(fwd,0.55); origin.y-=0.12;
   grenades.throw(k, origin, fwd.clone().add(new THREE.Vector3(0,0.18,0)).normalize(), defuse.active?defuse.player:null);
+  SFX.play('grenade_throw');
   setStock(k, grenadeStock[k]-1);
   showFloating(GRENADES[k].label+' lanzada');
 }
@@ -1236,10 +1240,10 @@ function buyUtil(k){
   if(money<price){ showFloating('Sin dinero suficiente ($'+price+')'); return; }
   if(k==='kit'){
     if(defuse.team!=='ct' || defuse.hasKit) return;
-    money-=price; defuse.setHasKit(true); showFloating('Kit de defusa comprado');
+    SFX.play('buy'); money-=price; defuse.setHasKit(true); showFloating('Kit de defusa comprado');
   } else {
     if(grenadeStock[k]>=GRENADES[k].max){ showFloating('Máximo '+GRENADES[k].max+' '+GRENADES[k].label); return; }
-    money-=price; setStock(k, grenadeStock[k]+1); showFloating(GRENADES[k].label+' comprada -$'+price);
+    SFX.play('buy'); money-=price; setStock(k, grenadeStock[k]+1); showFloating(GRENADES[k].label+' comprada -$'+price);
   }
   if(defuse.active && defuse.player) defuse.player.money=money;
   updateMoneyHUD(); updateBuyMenu();
@@ -1373,6 +1377,7 @@ function tryBuy(w){
   const price=WEAPON_PRICES[w];
   if(money<price){ showFloating('Sin dinero suficiente ($'+price+')'); return; }
   money-=price; if(defuse.active && defuse.player) defuse.player.money=money;
+  SFX.play('buy');
   // Primaria excluyente: AK o AWP, no las dos (como pedir rifle o awp)
   if(PRIMARIES.includes(w)){
     for(const p of PRIMARIES){ if(p!==w && owned[p]){ owned[p]=false; showFloating(WEAPON_LABEL[p]+' reemplazada por '+WEAPON_LABEL[w]); } }
@@ -1425,8 +1430,7 @@ function onTargetHit(target, point){
   // hit marker
   hitMarker.classList.add('show');
   setTimeout(()=>hitMarker.classList.remove('show'), 120);
-  playSound(440,0.08,0.12,'sine',0.22);
-  setTimeout(()=>playSound(660,0.06,0.08,'sine',0.16),70);
+  SFX.play('hit');
 
   // particles
   spawnParticles(point || target.position.clone(), 0xff3b3b);
@@ -1479,7 +1483,27 @@ function updateHUD(){
   updateAmmoHUD();
 }
 
-function playSound(freq, attack, dur, type='sine', vol=0.2){ return; /* sonidos desactivados por pedido */ }
+// El audio del navegador necesita un gesto del usuario: el primer clic o tecla crea el contexto y precarga las muestras.
+(function unlockAudio(){
+  const go=()=>{ SFX.init(); removeEventListener('pointerdown',go,true); removeEventListener('keydown',go,true); };
+  addEventListener('pointerdown',go,true); addEventListener('keydown',go,true);
+  addEventListener('click',e=>{ if(e.target.closest && e.target.closest('button,.btn,[role=button]')) SFX.play('ui'); },true);
+})();
+// pasos y aterrizaje del jugador
+const footState={ acc:0, x:0, z:0, wasGround:true, fall:0 };
+function updateFootsteps(dt){
+  if(!camera || !gameActive || gameMode!=='dust2' || spectating || playerFrozen){ footState.x=camera?camera.position.x:0; footState.z=camera?camera.position.z:0; return; }
+  const dx=camera.position.x-footState.x, dz=camera.position.z-footState.z;
+  footState.x=camera.position.x; footState.z=camera.position.z;
+  if(playerGrounded){
+    if(!footState.wasGround && footState.fall<-4.5) SFX.play('land', { vol:Math.min(1,-footState.fall/10) });
+    if(!isCrouching){
+      footState.acc+=Math.min(Math.hypot(dx,dz),1);
+      if(footState.acc>2.1){ footState.acc=0; SFX.play(SFX.surface,{ vol:0.8 }); }
+    }
+  } else footState.fall=playerVelY;
+  footState.wasGround=playerGrounded;
+}
 
 
 // --- BANDOS estilo CS: tu marca (< / Z) > predeterminados horneados > auto por bounds ---
@@ -1829,7 +1853,10 @@ function animate(){
   updateWeaponAnim(dt);
   updateViewRecoil(dt);
   handleMovement(dt);
+  updateFootsteps(dt);
+  SFX.listener(camera);
   updateBullets(dt);
+  updateDebris(dt);
   if(!defuse.active) updateCharacters();
   if(!pauseOverlay.classList.contains('show')) defuse.update(dt);
   updateFlashOverlay(dt);
@@ -1970,6 +1997,7 @@ function switchWeapon(to){
   else if(ANIM_WEAPONS[to]){ maxMag=ANIM_WEAPONS[to].mag; ammoInMag=animAmmo[to].ammo; reserveAmmo=animAmmo[to].reserve; }
   else if(GRENADES[to]){ maxMag=1; ammoInMag=grenadeStock[to]; reserveAmmo=0; }
   else if(to==='knife'){ /* sin munición */ }
+  SFX.play(to==='knife'?'draw_knife':'draw');
   currentWeapon=to;
   updateWeaponVisibility();
   if(ANIM_WEAPONS[to]) animWeaponDraw(to);
@@ -1990,9 +2018,8 @@ function tryReload(){
   document.getElementById('reloadBar').classList.add('show');
   document.getElementById('reloadText').classList.add('show');
   updateAmmoHUD();
-  playSound(120,0.02,0.12,'square',0.14);
-  setTimeout(()=>playSound(200,0.02,0.10,'square',0.12), 380);
-  setTimeout(()=>playSound(320,0.02,0.10,'square',0.13), 820);
+  SFX.play('reload_out');
+  setTimeout(()=>{ if(isReloading) SFX.play('reload_in'); }, 780);
 }
 
 function finishReload(){
@@ -2006,7 +2033,7 @@ function finishReload(){
   document.getElementById('reloadText').classList.remove('show');
   document.getElementById('reloadFill').style.width='0%';
   updateAmmoHUD();
-  playSound(450,0.01,0.08,'sine',0.18);
+  SFX.play('bolt', { vol:0.8 });
 }
 
 function setAiming(v){
@@ -2025,6 +2052,7 @@ function tryInspect(){
   if(currentWeapon==='awp' && (!awpModel || !awpBasePos)) return;
   if(currentWeapon==='deagle' && (!deagleModel || !deagleBasePos)) return;
   if(ANIM_WEAPONS[currentWeapon] && !animW[currentWeapon]) return;
+  SFX.play('inspect');
   isInspecting=true;
   inspectProgress=0;
   isAiming=false;
@@ -2038,6 +2066,7 @@ function knifeAttack(){
   // si estabas inspeccionando, al atacar se cancela (pedido: al disparar se cancela animación)
   if(isInspecting){ isInspecting=false; inspectProgress=0; updateAmmoHUD(); }
   isKnifeSwinging=true; knifeSwingProgress=0; knifeSwingDir *= -1;
+  SFX.play('knife');
   updateAmmoHUD();
   // hit se evalúa a los 0.12s (en el swing)
   setTimeout(()=>{
@@ -2602,7 +2631,7 @@ function updateBullets(dt){
     if(hit){
       spawnParticles(hitPoint, 0xff3b3b);
       hitMarker.classList.add('show'); setTimeout(()=>hitMarker.classList.remove('show'),120);
-      playSound(440,0.08,0.12,'sine',0.22); setTimeout(()=>playSound(660,0.06,0.08,'sine',0.16),70);
+      SFX.play('hit');
       const pts=b.isAWP?250:b.isDeagle?140:100; hits++; score+=pts; showFloating('+'+pts+(b.isAWP?' AWP!':b.isDeagle?' DEAGLE!':'')); updateHUD();
       scene.remove(hit); targets = targets.filter(x=>x!==hit); if(gameActive) setTimeout(spawnTarget,120);
       // remover bala
@@ -2630,7 +2659,7 @@ function updateBullets(dt){
             const r = new THREE.Raycaster(b.prev, segDir, 0, segLen);
             const hits = r.intersectObjects(dustMeshes, false);
             if(hits.length){
-              spawnParticles(hits[0].point, 0xd8c2a0);
+              impactFx(hits[0], segDir);
               // pequeña chispa en pared Dust2
               outOfBounds = true;
             }
@@ -2685,7 +2714,7 @@ function shoot(){
   if(now - lastShotTime < curFireRate) return;
   if(currentWeapon==='awp' && isBoltCycling) return;
   if(ammoInMag<=0){
-    playSound(80,0.01,0.08,'square',0.12);
+    SFX.play('dry');
     tryReload();
     updateHUD();
     return;
@@ -2778,7 +2807,8 @@ function shoot(){
     if(life<=0) vmRoot.remove(casing); else requestAnimationFrame(tick);
   }; tick();
 
-  playSound(180,0.04,0.14,'square', isAiming?0.16:0.18);
+  SFX.play(['ak','awp','deagle','m4'].includes(currentWeapon)?currentWeapon:'rifle');
+  if(currentWeapon==='awp') setTimeout(()=>SFX.play('bolt',{vol:0.9}), 520);
 
   // dirección con dispersión: AWP muy precisa con mira, AK progresivo
   raycaster.setFromCamera({x:0,y:0}, camera);
@@ -2810,6 +2840,70 @@ function shoot(){
   if(ANIM_WEAPONS[currentWeapon]) animWeaponShoot(currentWeapon);
   updateHUD();
 }
+// ===== impactos: polvo y esquirlas con gravedad y rebote + agujero de bala persistente =====
+const DEB_MAX = 360;
+const deb = (() => {
+  const geo = new THREE.BufferGeometry(), pos = new Float32Array(DEB_MAX * 3), col = new Float32Array(DEB_MAX * 3);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.055, vertexColors: true, sizeAttenuation: true, depthWrite: false, transparent: true, opacity: 0.95 }));
+  pts.frustumCulled = false; pts.visible = false;
+  return { geo, pos, col, pts, vel: new Float32Array(DEB_MAX * 3), life: new Float32Array(DEB_MAX), floor: new Float32Array(DEB_MAX), n: 0, head: 0, added: false };
+})();
+const _dc = new THREE.Color();
+function emitDebris(p, nrm, hex, count, speed, floorY){
+  if(!deb.added && scene){ scene.add(deb.pts); deb.added=true; }
+  _dc.set(hex);
+  for(let k=0;k<count;k++){
+    const i = deb.head; deb.head = (deb.head+1)%DEB_MAX; deb.n = Math.min(DEB_MAX, deb.n+1);
+    deb.pos[i*3]=p.x; deb.pos[i*3+1]=p.y; deb.pos[i*3+2]=p.z;
+    const s = speed*(0.4+Math.random()*0.9);
+    deb.vel[i*3]   = nrm.x*s + (Math.random()-0.5)*s*0.9;
+    deb.vel[i*3+1] = nrm.y*s + Math.random()*s*0.6;
+    deb.vel[i*3+2] = nrm.z*s + (Math.random()-0.5)*s*0.9;
+    deb.life[i] = 0.5 + Math.random()*0.7; deb.floor[i] = floorY;
+    const sh = 0.75 + Math.random()*0.35;
+    deb.col[i*3]=_dc.r*sh; deb.col[i*3+1]=_dc.g*sh; deb.col[i*3+2]=_dc.b*sh;
+  }
+  deb.pts.visible = true; deb.geo.attributes.color.needsUpdate = true;
+}
+function updateDebris(dt){
+  if(!deb.pts.visible) return;
+  let alive = 0;
+  for(let i=0;i<DEB_MAX;i++){
+    if(deb.life[i] <= 0){ deb.pos[i*3+1] = -9999; continue; }
+    deb.life[i] -= dt; alive++;
+    deb.vel[i*3+1] -= 9.8*dt;
+    const drag = Math.exp(-1.4*dt); deb.vel[i*3]*=drag; deb.vel[i*3+2]*=drag;
+    deb.pos[i*3] += deb.vel[i*3]*dt; deb.pos[i*3+1] += deb.vel[i*3+1]*dt; deb.pos[i*3+2] += deb.vel[i*3+2]*dt;
+    if(deb.pos[i*3+1] < deb.floor[i]){ deb.pos[i*3+1] = deb.floor[i]; deb.vel[i*3+1] *= -0.35; deb.vel[i*3]*=0.6; deb.vel[i*3+2]*=0.6; }
+  }
+  deb.geo.attributes.position.needsUpdate = true;
+  if(!alive) deb.pts.visible = false;
+}
+const holes = []; let holeTex = null;
+function bulletHole(p, nrm){
+  if(!holeTex){
+    const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d');
+    const gr=g.createRadialGradient(32,32,2,32,32,30); gr.addColorStop(0,'rgba(10,8,6,0.95)'); gr.addColorStop(0.35,'rgba(30,24,18,0.75)'); gr.addColorStop(1,'rgba(30,24,18,0)');
+    g.fillStyle=gr; g.fillRect(0,0,64,64); holeTex=new THREE.CanvasTexture(c);
+  }
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.16,0.16), new THREE.MeshBasicMaterial({ map:holeTex, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-4, polygonOffsetUnits:-4 }));
+  m.position.copy(p).addScaledVector(nrm, 0.012); m.lookAt(p.clone().add(nrm)); m.rotation.z = Math.random()*6.28; m.userData.t = 0;
+  m.scale.setScalar(0.7+Math.random()*0.7);
+  scene.add(m); holes.push(m);
+  if(holes.length > 70){ const o=holes.shift(); scene.remove(o); o.geometry.dispose(); o.material.dispose(); }
+}
+const _hn = new THREE.Vector3();
+function impactFx(hit, dir, hex=0xd8c2a0){
+  const n = hit.face ? _hn.copy(hit.face.normal).transformDirection(hit.object.matrixWorld).clone() : new THREE.Vector3(0,1,0);
+  if(n.dot(dir) > 0) n.negate();
+  const floorY = n.y > 0.7 ? hit.point.y : Math.min(dust2GroundY!==null ? dust2GroundY : 0, hit.point.y - 0.05);
+  emitDebris(hit.point, n, hex, 14, 3.2, floorY);
+  emitDebris(hit.point, n, 0xffc060, 4, 5.5, floorY);           // chispas
+  bulletHole(hit.point, n);
+  SFX.at('bulletwall', hit.point, { vol: 0.9, ref: 4 });
+}
+
 function spawnParticles(pos, color){
   const count=10;
   for(let i=0;i<count;i++){
@@ -3167,7 +3261,7 @@ function handleMovement(dt){
     }
 
     // movimiento horizontal solo si hay input
-    if(forward!==0 || right!==0){
+    if(forward!==0 || right!==0 || pVel.lengthSq()>0.0004){
       const dirF = new THREE.Vector3(); camera.getWorldDirection(dirF); dirF.y=0; dirF.normalize();
       const dirR = new THREE.Vector3(-dirF.z, 0, dirF.x);
       const wish = new THREE.Vector3();
@@ -3185,7 +3279,12 @@ function handleMovement(dt){
       // inspeccionar ya no baja velocidad (pedido)
       // sincronizar compat vars (sin contar fatiga para no afectar base)
       moveSpeed = baseMoveSpeed * wMult; crouchSpeed = baseCrouchSpeed * wMult;
-      wish.multiplyScalar(speed * dt);
+      // inercia: acelera hacia la velocidad deseada, frena con fricción en suelo y casi no se controla en el aire
+      { const rate = playerGrounded ? ((forward!==0||right!==0) ? 13 : 10) : 1.5, k = 1 - Math.exp(-rate*dt);
+        pVel.x += (wish.x*speed - pVel.x)*k; pVel.z += (wish.z*speed - pVel.z)*k;
+        if(pVel.lengthSq()<0.0009 && forward===0 && right===0) pVel.set(0,0,0); }
+      wish.copy(pVel).multiplyScalar(dt);
+      const preX = camera.position.x, preZ = camera.position.z;
       // colisiones con deslizamiento + asistencia para colarse por puertas
       if(wish.length() > 0.0001){
         const feetMove = camera.position.y - curEye;
@@ -3230,6 +3329,8 @@ function handleMovement(dt){
         // clamp límites exteriores como seguridad
         camera.position.x = Math.max(wallLimit.xmin, Math.min(wallLimit.xmax, camera.position.x));
         camera.position.z = Math.max(wallLimit.zmin, Math.min(wallLimit.zmax, camera.position.z));
+        // al chocar contra una pared se pierde la velocidad que la atraviesa (desliza en vez de quedarse empujando)
+        { const ax=(camera.position.x-preX)/Math.max(dt,0.001), az=(camera.position.z-preZ)/Math.max(dt,0.001); if(Math.hypot(ax,az) < Math.hypot(pVel.x,pVel.z)*0.8){ pVel.x=ax; pVel.z=az; } }
       }
     }
     // resolver penetración residual - 8 direcciones + vista, evita ver a través de costado (foto 2)
@@ -3573,6 +3674,18 @@ async function fafiDoRegister(){
   alert('Cuenta local creada.');
   window.currentUserId=u; fafiFinalizeAuth({username:u}, true);
 }
+async function fafiPlayNormandy(){
+  try{
+    const m=await import('./historia.js');
+    m.playNormandy({ onEnd:(done)=>{
+      if(done){
+        if(window.campaignLevel<2) window.campaignLevel=2;
+        fafiUnlock('campaign_hero'); fafiSaveGameData(); fafiDbCompleteCampaign(1);
+      }
+      fafiOpenCampaign();
+    }});
+  }catch(e){ console.warn('historia',e); fafiOpenCampaign(); }
+}
 function fafiOpenCampaign(){
   document.getElementById('menus').style.display='none';
   const ov=document.getElementById('campaign-map-overlay'); ov.style.display='flex';
@@ -3580,7 +3693,9 @@ function fafiOpenCampaign(){
   for(let i=1;i<=5;i++){
     const un=i<=window.campaignLevel;
     const n=document.createElement('div'); n.className='map-node '+(un?'unlocked':'locked'); n.textContent=i;
+    if(i===1) n.title='Nivel 1 · Desembarco de Normandía (escenas)';
     if(un) n.addEventListener('click',()=>{
+      if(i===1){ ov.style.display='none'; fafiPlayNormandy(); return; }   // nivel 1 = cinemática histórica, sin jugabilidad
       window.campaignActiveLevel=i; window.fafiAimSpeedMult=1+(i-1)*0.35;
       ov.style.display='none'; startGame('aim'); showFloating('CAMPAÑA NIVEL '+i+' — 600+ pts para avanzar');
     });

@@ -1,6 +1,7 @@
 // Granadas: flash, humo, HE y molotov. Física con rebotes contra la geometría del mapa, efectos y viewmodels.
 import * as THREE from 'three';
 import { makeLoader } from './loaders.js';
+import { SFX } from './sfx.js';
 
 const DIR = 'assets/granadas/';
 export const GRENADES = {
@@ -53,7 +54,7 @@ export function createGrenades(A) {
     for (let i = active.length - 1; i >= 0; i--) {
       const g = active[i]; g.age += dt;
       if (!g.rest) {
-        g.vel.y += GRAV * dt;
+        g.vel.y += GRAV * dt; g.vel.multiplyScalar(Math.exp(-0.14 * dt));   // resistencia del aire
         const step = g.vel.clone().multiplyScalar(dt); const len = step.length();
         if (len > 1e-5) {
           ray.set(g.mesh.position, step.clone().divideScalar(len)); ray.far = len + 0.06; ray.firstHitOnly = true;
@@ -64,8 +65,11 @@ export function createGrenades(A) {
             g.mesh.position.copy(hit.point).addScaledVector(n, 0.06);
             const vn = n.clone().multiplyScalar(g.vel.dot(n));
             const vt = g.vel.clone().sub(vn);
-            g.vel.copy(vt.multiplyScalar(FRICTION)).addScaledVector(vn, -BOUNCE);
+            const vnLen = vn.length(), rest = vnLen < 2.2 ? 0.12 : BOUNCE * Math.min(1, 0.55 + vnLen / 18);   // a baja velocidad casi no rebota
+            g.vel.copy(vt.multiplyScalar(vnLen < 2.2 ? 0.9 : FRICTION)).addScaledVector(vn, -rest);
+            g.spin.copy(n).cross(g.vel).multiplyScalar(-1 / 0.07).clampLength(0, 22);   // rueda al ritmo de su velocidad
             g.bounced++;
+            { const sp = g.vel.length(); if (sp > 1.6) SFX.at("grenade_bounce", g.mesh.position, { vol: Math.min(1, sp / 8), ref: 5 }); }
             if (g.type === 'molo' && n.y > 0.5) g.age = 99;                  // el molotov estalla al tocar suelo
             if (g.vel.length() < 0.9 && n.y > 0.5) { g.rest = true; g.vel.set(0, 0, 0); }
           } else g.mesh.position.add(step);
@@ -104,8 +108,10 @@ export function createGrenades(A) {
       const light = A.acquireLight(0xffffff, 40, 14, pos);
       effects.push({ kind: 'flash', t0: performance.now(), sprite, light });
       A.flashArea(pos, g.owner);
+      SFX.at("flash", pos, { ref: 14 });
     } else if (g.type === 'he') {
       A.explosion(pos, 5);
+      SFX.at("he", pos, { ref: 22, rolloff: 0.9 });
       A.areaDamage(pos, 6.5, 98, g.owner, 'he');
     } else if (g.type === 'smoke') {
       const r = 2.7, group = new THREE.Group(), puffs = [];
@@ -117,7 +123,9 @@ export function createGrenades(A) {
       A.world.add(group);
       effects.push({ kind: 'smoke', t0: performance.now(), life: 18, pos, r: r * 1.5, puffs, group });
       A.registerSmoke(pos.clone().add(new THREE.Vector3(0, 0.8, 0)), r, 18000, null);
+      SFX.at("smoke", pos, { ref: 10 });
     } else if (g.type === 'molo') {
+      SFX.at("molotov", pos, { ref: 14 });
       const r = 2.6, group = new THREE.Group(), puffs = [];
       for (let i = 0; i < 14; i++) {
         const a = Math.random() * 6.28, d = Math.sqrt(Math.random()) * r;

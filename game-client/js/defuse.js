@@ -5,6 +5,7 @@ import { makeLoader } from './loaders.js';
 import { NavGrid } from './nav.js';
 import { createChickens } from './chickens.js';
 import { loadCharacterAssets, createCharacter, giveWeapon, animateCharacter, killCharacter, reviveCharacter, muzzleWorld, CHAR_HEIGHT } from './characters.js';
+import { SFX } from "./sfx.js";
 
 const BOMB_FILE = 'assets/extras/cs_go_bomb.glb';
 
@@ -335,6 +336,7 @@ export function createDefuse(A) {
     const mine = D.team === winner;
     banner((winner === 'ct' ? 'ANTITERRORISTAS' : 'TERRORISTAS') + ' GANAN LA RONDA', reason, winner);
     $('dfBanner')?.classList.add(mine ? 'good' : 'bad');
+    if (mine) SFX.play("round_win");
     D.hold.kind = null;
     refreshHud(true);
     if (D.score[winner] >= CFG.winRounds) {
@@ -390,6 +392,7 @@ export function createDefuse(A) {
     const m = ensureBombMesh(); m.position.copy(D.bomb.pos); m.rotation.y = by.yaw;
     m.userData.light = A.acquireLight(0xff2020, 0, 3.5, new THREE.Vector3(D.bomb.pos.x, D.bomb.pos.y + 0.28, D.bomb.pos.z)) || { intensity: 0 };
     D.state = 'planted'; D.stateT = CFG.bombTime;
+    SFX.at("c4_plant", D.bomb.pos, { ref: 10 }); D.bomb.lastOn = false;
     if (by.isPlayer) { by.money = Math.min(CFG.maxMoney, by.money + CFG.plantReward); A.setMoney(by.money); }
     banner('BOMBA PLANTADA', 'Sitio ' + D.bomb.site + ' • ' + CFG.bombTime + ' s', 't');
     D.units.forEach(u => { if (u.alive && u.team === 'ct' && !u.isPlayer) { u.goal = null; u.path = null; } });
@@ -398,6 +401,7 @@ export function createDefuse(A) {
     const pos = D.bomb.pos; const R = 14;
     const m = D.bomb.mesh; if (m) { m.userData.led.visible = false; }
     A.explosionFx(pos, R);
+    SFX.at("c4_blast", pos, { ref: 40, rolloff: 0.8 }); SFX.duck(0.5, 2.5);
     for (const u of D.units) {
       if (!u.alive) continue;
       const d = Math.hypot(u.pos.x - pos.x, u.pos.z - pos.z);
@@ -407,6 +411,7 @@ export function createDefuse(A) {
   }
   function defuseDone(by) {
     D.bomb.planted = false; D.bomb.timer = 0;
+    SFX.at("c4_defuse", D.bomb.pos, { ref: 10 });
     if (D.bomb.mesh) { D.bomb.mesh.userData.light.intensity = 0; D.bomb.mesh.userData.led.material.color.set(0x20ff40); }
     if (by.isPlayer) { by.money = Math.min(CFG.maxMoney, by.money + CFG.plantReward); A.setMoney(by.money); }
     roundEnd('ct', 'Bomba desactivada');
@@ -426,6 +431,7 @@ export function createDefuse(A) {
     if (!u.alive || D.state === 'freeze' || D.state === 'end' && attacker) return false;
     u.hp -= dmg;
     if (u.isPlayer) A.damageFlash(Math.min(1, dmg / 60));
+    if (u.isPlayer) SFX.play("hurt", { vol: Math.min(1, 0.5 + dmg / 80) }); else if (weapon !== "bomb") SFX.at(head ? "headshot" : "hurt", { x: u.pos.x, y: u.pos.y + 1.2, z: u.pos.z }, { vol: 0.6 });
     else { u.alertUntil = performance.now() + 4000; if (attacker && attacker.alive) { u.target = attacker; } }
     if (u.hp <= 0) { killUnit(u, attacker, head, weapon); return true; }
     return false;
@@ -433,7 +439,8 @@ export function createDefuse(A) {
   function killUnit(u, killer, head, weapon) {
     u.alive = false; u.hp = 0; u.deaths++; u.speed = 0; u.path = null;
     if (killer && killer !== u) { killer.kills++; if (killer.team !== u.team) { killer.money = Math.min(CFG.maxMoney, killer.money + CFG.killReward); if (killer.isPlayer) A.setMoney(killer.money); } }
-    if (u.char) killCharacter(u.char);
+    if (u.char) { const kx = killer && killer !== u ? u.pos.x - killer.pos.x : 0, kz = killer && killer !== u ? u.pos.z - killer.pos.z : 0; killCharacter(u.char, kx, kz); }
+    if (!u.isPlayer) SFX.at("kill", { x: u.pos.x, y: u.pos.y + 1.4, z: u.pos.z }, { vol: 0.7 });
     if (u.hasBomb) { u.hasBomb = false; dropBomb(u.pos); }
     if (u.isPlayer) { A.setViewmodelVisible(false); A.setSpectating(true); u.diedLast = true; A.showFloating('Has muerto'); }
     addKillfeed(killer, u, weapon, head);
@@ -536,7 +543,8 @@ export function createDefuse(A) {
       const dmg = Math.round(st.dmg * (head ? (HEAD_MULT[u.weaponId] || 4) : 1) * Math.max(0.6, 1 - dist * 0.004));
       damageUnit(t, dmg, u, head, u.weaponId);
     }
-    A.botShotFx(eye, u.weaponId);
+    SFX.at(u.weaponId === "knife" ? "knife" : u.weaponId, mz, { vol: 0.85, lowpass: dist > 45 ? 2600 : 0 });
+    if (!hit) SFX.at("bulletwall", aimPt, { vol: 0.6 });
   }
   const flashTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 1, 32, 32, 31); gr.addColorStop(0, 'rgba(255,255,230,1)'); gr.addColorStop(0.3, 'rgba(255,200,90,.85)'); gr.addColorStop(1, 'rgba(255,120,20,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
   const trGeo = new THREE.BoxGeometry(0.045, 0.045, 1);
@@ -639,6 +647,7 @@ export function createDefuse(A) {
       u.char.root.position.copy(u.pos); u.char.root.rotation.y = u.yaw;
       const pitch = tgt ? Math.atan2((tgt.pos.y - u.pos.y) * 0.5, Math.max(1, u.pos.distanceTo(tgt.pos))) : 0;
       animateCharacter(u.char, dt, tgt ? 0 : speed, pitch);
+      if (!tgt && speed > 0.3) { u.stepAcc = (u.stepAcc || 0) + speed * dt; if (u.stepAcc > 1.55) { u.stepAcc = 0; if (u.pos.distanceTo(A.camera.position) < 38) SFX.at(SFX.surface, { x: u.pos.x, y: u.pos.y + 0.1, z: u.pos.z }, { vol: 0.7, ref: 3 }); } }
     }
   }
   function separate() {
@@ -706,7 +715,7 @@ export function createDefuse(A) {
     // estados
     if (D.state === 'freeze') {
       D.stateT -= dt;
-      if (D.stateT <= 0) { D.state = 'live'; D.stateT = 0; A.setPlayerFrozen(false); banner('¡A POR ELLOS!', '', D.team); }
+      if (D.stateT <= 0) { D.state = 'live'; D.stateT = 0; A.setPlayerFrozen(false); SFX.play("round_start"); banner('¡A POR ELLOS!', '', D.team); }
     } else if (D.state === 'live') {
       D.roundTime -= dt;
       if (D.roundTime <= 0) { roundEnd('ct', 'Se acabó el tiempo'); }
@@ -718,6 +727,8 @@ export function createDefuse(A) {
         D.bomb.lightT += dt; const period = 0.35 + f * 0.9;
         const on = (D.bomb.lightT % period) < 0.12;
         m.userData.led.visible = on; m.userData.light.intensity = on ? 3 : 0;
+        if (on && !D.bomb.lastOn) SFX.at("c4_beep", D.bomb.pos, { ref: 12, vol: 0.5 + (1 - f) * 0.7 });
+        D.bomb.lastOn = on;
       }
       if (D.bomb.timer <= 0) { explode(); }
     } else if (D.state === 'end') {

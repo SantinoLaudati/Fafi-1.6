@@ -230,7 +230,7 @@ zona (madera / metal / polímero). `js/loaders.js` convierte `KHR_materials_pbrS
 
 Personajes: T = Phoenix y Leet, CT = FBI y ST6 (por el nombre interno del modelo: ctm_* = CT, tm_* = T).
 Armas: AK-47 (T), M4A4 (CT), AWP, Desert Eagle, cuchillo; granadas: flash (7), humo (8), HE (9), molotov (0); kit de defusa (CT).
-Los bots usan el pack "low poly weapon free pack". Las armas no llevan brazos; el cuchillo (`knife_animated (2).glb`) trae los suyos: estático, y con click derecho reproduce su animación de ataque.
+Los bots usan el pack "low poly weapon free pack". Las armas no llevan brazos; el cuchillo (`cuchillo_de_combate.glb`) trae los suyos: estático, y con click derecho reproduce su animación de ataque.
 
 Calidad gráfica (Ajustes): BAJA / MEDIA / ALTA — resolución, sombras (el sol sigue al jugador), tone mapping, niebla y
 resolución de texturas de los mapas.
@@ -279,3 +279,28 @@ Inspiración
 Fafi-1.6 toma inspiración en la jugabilidad táctica y precisión competitiva de shooters modernos, mezclándolo con un diseño artístico divertido y accesible para jugadores casuales y competitivos.
 
 > "Precisión táctica + diversión arcade = experiencia FPS única"
+
+Modo historia · Nivel 1 «Desembarco de Normandía» (`game-client/js/historia.js`)
+Secuencia de escenas de ~2 minutos (sin jugabilidad): armada, bombardeo naval, interior de una lancha LCVP, aproximación a Omaha,
+rampa y playa. «SALTAR» / Esc la cierra sin completarla; al terminar se desbloquea el nivel 2.
+
+- Narrador: locución masculina en español (`assets/historia/audio/narr_NN.wav`, generada con la voz neuronal Piper `es_MX-claude-high`; ver `CREDITS.md`; también hay `herramientas/grabar-locucion.html` para grabar una voz humana)
+  con subtítulos. Si falta un archivo usa la voz del navegador. Puedes sustituir los `.wav` por una grabación humana con los mismos nombres.
+- Sonido: grabaciones reales (cañones, explosiones, fusiles, mar, lanchas, aviones, gritos) reproducidas por `js/sfx.js`; la música orquestal es procedural.
+- Modelos GLB reales (`js/modelos.js`): destructores y acorazados, cargueros de transporte, aviones, soldados con esqueleto y animaciones
+  (teñidos en verde oliva) con fusil de cerrojo, sacos de arena. Lanchas LCVP, erizos checos, búnkeres y carros son geometría propia.
+  Autores y licencias en `CREDITS.md`.
+
+Sonido del juego (`game-client/js/sfx.js`, muestras en `assets/audio/sfx`)
+Disparos por arma, recarga, cerrojo, cuchillo, impactos, granadas (rebote, flash, humo, HE, molotov), bomba (plantar, pitidos que se aceleran,
+desactivar, explosión), pasos del jugador y de los bots según el mapa, muertes y clics de interfaz. Los sonidos de bots y granadas son
+posicionales (se atenúan con la distancia y suenan por el lado correcto). El audio se activa con el primer clic o tecla.
+
+Realismo (sombras, agua, físicas)
+- Sombras: sesgo adaptativo al tamaño del texel (sin acné), mapa de 2048 px en MEDIA, y sombras de contacto bajo cada personaje estiradas en la dirección
+  opuesta al sol (también en mapas con luz horneada). Ver `js/quality.js` (`alignBlobToSun`).
+- Agua de la cinemática: shader en GPU con olas, normales de detalle, reflejo del cielo con Fresnel, brillo del sol, color por profundidad y espuma
+  en crestas y orilla (`js/historia.js`).
+- Físicas: el jugador tiene inercia (acelera, frena con fricción, casi no controla el aire y pierde la velocidad contra las paredes); los bots caen
+  por gravedad con vuelco, rebote y deslizamiento según la dirección del disparo; las granadas tienen resistencia del aire, rebote según la
+  velocidad de impacto y giro al rodar; los impactos en paredes sueltan polvo y chispas con gravedad y dejan agujeros de bala.

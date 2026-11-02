@@ -4,6 +4,9 @@
 // ortográfico centrado en la cámara y ajustado a la grilla de texeles para evitar parpadeo).
 import * as THREE from 'three';
 
+// dirección HACIA el sol (la usan el sol de game.js y las sombras de contacto)
+export const SUN_DIR = new THREE.Vector3(0.45, 0.78, 0.38).normalize();
+
 export const QUALITY_LEVELS = ['low', 'medium', 'high'];
 
 export const QUALITY = {
@@ -18,7 +21,7 @@ export const QUALITY = {
     label: 'MEDIA',
     desc: 'Sombras suaves cerca del jugador, resolución nativa hasta 1.25x.',
     maxPixelRatio: 1.25,
-    shadows: true, shadowMapSize: 1024, shadowType: THREE.PCFShadowMap, shadowRange: 26,
+    shadows: true, shadowMapSize: 2048, shadowType: THREE.PCFShadowMap, shadowRange: 30,
     tone: true, fogMul: 1.0, fill: true, tex: 'med', maxBots: 9
   },
   high: {
@@ -64,8 +67,9 @@ export function applyQuality(renderer, sun, level) {
       c.left = -R; c.right = R; c.top = R; c.bottom = -R;
       c.near = 1; c.far = 160;
       c.updateProjectionMatrix();
-      sun.shadow.bias = -0.0004;
-      sun.shadow.normalBias = 0.05;
+      const texel = (2 * R) / q.shadowMapSize;        // el sesgo escala con el tamaño del texel: sin acné ni sombras despegadas
+      sun.shadow.bias = -0.0002;
+      sun.shadow.normalBias = Math.max(0.02, texel * 2.2);
       sun.shadow.radius = level === 'high' ? 3 : 1.5;
     }
   }
@@ -107,6 +111,16 @@ export function blobShadowTexture() {
   g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
   _blobTex = new THREE.CanvasTexture(c);
   return _blobTex;
+}
+// Orienta la sombra de contacto: se estira y se desplaza en sentido contrario al sol (también en mapas con luz horneada).
+export function alignBlobToSun(blob, yaw) {
+  const dx = -SUN_DIR.x, dz = -SUN_DIR.z, len = Math.hypot(dx, dz) || 1;
+  const wx = dx / len, wz = dz / len, c = Math.cos(yaw), s = Math.sin(yaw);
+  const lx = wx * c - wz * s, lz = wx * s + wz * c;          // mundo -> espacio del personaje
+  const stretch = 1 + 0.9 * len / SUN_DIR.y * 0.55;
+  blob.rotation.set(-Math.PI / 2, 0, Math.atan2(-lx, -lz));
+  blob.scale.set(0.9, stretch, 1);
+  blob.position.x = lx * 0.22 * stretch; blob.position.z = lz * 0.22 * stretch;
 }
 export function makeBlobShadow(radius = 0.42) {
   const m = new THREE.Mesh(

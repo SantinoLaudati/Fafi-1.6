@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { makeLoader } from './loaders.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
-import { makeBlobShadow } from './quality.js';
+import { makeBlobShadow, alignBlobToSun } from './quality.js';
 
 export const CHAR_HEIGHT = 1.12;               // altura de un personaje en el mundo (m)
 const ASSET = 'assets/';
@@ -258,10 +258,20 @@ export function animateCharacter(inst, dt, speed, aimPitch = 0) {
   const { rig, root, L } = inst;
   inst.time += dt;
   if (inst.dead) {
-    inst.deadT = Math.min(1, inst.deadT + dt / 0.55);
-    const e = 1 - Math.pow(1 - inst.deadT, 3);
-    inst.model.rotation.x = -e * 1.45;                        // cae de espaldas
-    inst.model.position.y = -inst.model.position.y * 0 + (inst.model.userData.baseY ?? (inst.model.userData.baseY = inst.model.position.y)) * (1 - e) + 0.12 * e;
+    // caída física: el cuerpo vuelca sobre los pies por la gravedad (aceleración angular), rebota un poco al llegar al suelo
+    // y se desliza unos centímetros en la dirección del impacto con fricción
+    const d = inst.fall || (inst.fall = { th: 0, w: 0.5, lx: 0, lz: -1, sx: 0, sz: 0 });
+    if (d.th < 1.5 || Math.abs(d.w) > 0.05) {
+      d.w += 11 * Math.sin(Math.min(d.th, 1.5) + 0.2) * dt;
+      d.th += d.w * dt;
+      if (d.th >= 1.5) { d.th = 1.5; d.w = -d.w * 0.22; if (Math.abs(d.w) < 0.25) d.w = 0; }
+    }
+    inst.model.quaternion.setFromAxisAngle(_axis.set(d.lz, 0, -d.lx), d.th);
+    const e = Math.min(1, d.th / 1.5);
+    if (inst.model.userData.baseY === undefined) inst.model.userData.baseY = inst.model.position.y;
+    inst.model.position.y = inst.model.userData.baseY * (1 - e) + 0.11 * e;
+    const sl = Math.exp(-3.2 * dt);
+    d.sx *= sl; d.sz *= sl; inst.model.position.x += d.sx * dt; inst.model.position.z += d.sz * dt;
     if (inst.weapon) inst.weapon.visible = false;
     inst.blob.visible = true;
     return;
@@ -333,13 +343,25 @@ export function animateCharacter(inst, dt, speed, aimPitch = 0) {
   }
   // sombra blob pegada al suelo (y local 0.03)
   inst.blob.position.y = 0.03;
+  alignBlobToSun(inst.blob, root.rotation.y);
+  inst.blob.position.y = 0.03;
 }
 
 // Marca muerte (se reinicia con revive)
-export function killCharacter(inst) { inst.dead = true; inst.deadT = 0; if (inst.weapon) inst.weapon.visible = false; }
+const _axis = new THREE.Vector3();
+// (dx, dz) = dirección del impacto en el mundo (de quien dispara hacia la víctima); sin dato cae hacia atrás
+export function killCharacter(inst, dx = 0, dz = 0) {
+  inst.dead = true; inst.deadT = 0; if (inst.weapon) inst.weapon.visible = false;
+  const l = Math.hypot(dx, dz);
+  if (l < 1e-4) { dx = -Math.sin(inst.root.rotation.y); dz = -Math.cos(inst.root.rotation.y); } else { dx /= l; dz /= l; }
+  const c = Math.cos(inst.root.rotation.y), s = Math.sin(inst.root.rotation.y);
+  const lx = dx * c - dz * s, lz = dx * s + dz * c;        // mundo -> espacio del root
+  inst.fall = { th: 0, w: 0.5 + Math.random() * 0.5, lx, lz, sx: lx * (0.9 + Math.random() * 0.7), sz: lz * (0.9 + Math.random() * 0.7) };
+}
 export function reviveCharacter(inst) {
   inst.dead = false; inst.deadT = 0;
   inst.model.rotation.x = 0;
+  inst.model.quaternion.identity(); inst.model.position.x = 0; inst.model.position.z = 0; inst.fall = null;
   if (inst.model.userData.baseY !== undefined) inst.model.position.y = inst.model.userData.baseY;
   if (inst.weapon) inst.weapon.visible = true;
 }
