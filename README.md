@@ -198,6 +198,46 @@ Cambiar Arma	Scroll Mouse
 
 ---
 
+---
+
+Cómo jugar en local (Windows)
+
+Doble clic en `iniciar-juego.bat` (levanta `servidor.ps1` y abre el navegador en http://localhost:5173).
+No hace falta Python ni Node. Abrir `index.html` con doble clic NO funciona (el navegador bloquea los .glb y los módulos JS).
+En el login hay un botón "JUGAR SIN CONEXIÓN" (el progreso se guarda en localStorage).
+
+---
+
+Modos
+
+- Campo de tiro (AIM 30 s) y mapa de campaña.
+- DEFUSE 5v5: T vs CT con bots. Rondas de 1:45 (compra 10 s), plantar/desactivar con E (mantener), bomba de 40 s,
+  economía (empiezas con $800), primero en ganar 4 rondas. TAB = marcador, B = tienda (solo en tu zona de spawn).
+- Exploración libre: Dust II, Italy y Office sin reglas.
+
+Mapas (game-client/assets/Mapas para tt vs ct) y logos (assets/Logos mapas): Dust II (`de_dust2_-_cs_map.glb`), Italy, Office.
+Italy y Office vienen con texturas de 8192/4096 px: se usan versiones reducidas en `optimizados/`
+(`herramientas/optimizar-mapas.bat` las regenera si cambias los originales).
+Las zonas de cada mapa (spawn T/CT y sitios A/B) están en `game-client/js/zonas.js`.
+Si un mapa está en `null` se calculan solas.
+Los mapas reducidos (Office) generan la malla de navegación de los bots con celda fina (`nav:{cell, headroom}` en `MAPS`).
+
+Vista en primera persona (viewmodel): arma y cuchillo se dibujan en un segundo pase (capa 1) con su propia cámara de FOV
+fijo (84° horizontal ≈ viewmodel_fov de CS), así no se deforman con el FOV del mundo ni atraviesan paredes. Las poses
+de cada arma y del cuchillo se ajustan en `buildPackWeapons` / `loadKnifeAnim` (`js/game.js`).
+El pack de armas no trae colores ni texturas (un único material negro): `js/characters.js` pinta cada triángulo por
+zona (madera / metal / polímero). `js/loaders.js` convierte `KHR_materials_pbrSpecularGlossiness` (r160 ya no lo soporta).
+
+Personajes: T = Phoenix y Leet, CT = FBI y ST6 (por el nombre interno del modelo: ctm_* = CT, tm_* = T).
+Armas: AK-47 (T), M4A4 (CT), AWP, Desert Eagle, cuchillo; granadas: flash (7), humo (8), HE (9), molotov (0); kit de defusa (CT).
+Los bots usan el pack "low poly weapon free pack". Las armas no llevan brazos; el cuchillo (`knife_animated (2).glb`) trae los suyos: estático, y con click derecho reproduce su animación de ataque.
+
+Calidad gráfica (Ajustes): BAJA / MEDIA / ALTA — resolución, sombras (el sol sigue al jugador), tone mapping, niebla y
+resolución de texturas de los mapas.
+
+Teclas: WASD, SHIFT agacharse, ESPACIO saltar, 1 AK · 2 cuchillo · 3 AWP · 4 Deagle · 5 M4A4 · 7-0 granadas,
+click izq disparar/lanzar, click der mirar, R recargar, F inspeccionar, E plantar/desactivar, TAB marcador.
+
 
 Contribuciones
 

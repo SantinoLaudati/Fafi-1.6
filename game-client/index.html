@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAFI 1.6 V2 - AIM PRACTICE</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/theme.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+    "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.3/build/index.module.js"
+  }
+}
+</script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+</head>
+<body>
+
+<div id="login-overlay">
+  <div class="auth-logo">FAFI <span>1.6</span></div>
+  <div id="login-box" class="auth-box">
+    <span class="fafi16-label">INICIAR SESIÓN</span>
+    <input type="text" id="login-user" class="fafi16-input" placeholder="Nombre de usuario">
+    <input type="password" id="login-pass" class="fafi16-input" placeholder="Contraseña">
+    <button class="fafi16-btn-standard fafi16-btn-success" style="margin-top:10px;" id="loginBtn">ENTRAR AL JUEGO</button>
+    <button class="fafi16-btn-standard" style="margin-top:8px;" id="offlineBtn">🎮 JUGAR SIN CONEXIÓN</button>
+    <div style="margin-top:15px;font-size:12px;color:#aaa;cursor:pointer;" id="showRegLink">¿No tienes cuenta? <span style="color:#d69f0f;">Regístrate aquí</span></div>
+  </div>
+  <div id="register-box" class="auth-box" style="display:none;">
+    <span class="fafi16-label">CREAR NUEVA CUENTA</span>
+    <input type="text" id="reg-user" class="fafi16-input" placeholder="Elige un usuario">
+    <input type="email" id="reg-email" class="fafi16-input" placeholder="Email">
+    <input type="password" id="reg-pass" class="fafi16-input" placeholder="Contraseña">
+    <button class="fafi16-btn-standard fafi16-btn-campaign" style="margin-top:10px;" id="regBtn">CREAR CUENTA</button>
+    <div style="margin-top:15px;font-size:12px;color:#aaa;cursor:pointer;" id="showLoginLink">Volver a <span style="color:#4ade80;">Iniciar Sesión</span></div>
+  </div>
+  <div class="fafi16-note">Guardado en la base de datos MySQL por usuario • Coins, skins, amigos y sensibilidad se conservan</div>
+</div>
+
+<div id="menus" style="display:none;">
+  <div class="fafi16-header">
+    <div class="fafi16-logo">FAFI <span>1.6</span></div>
+    <div class="fafi16-nav-tabs">
+      <div class="fafi16-tab-btn active" data-tab="jugar">Jugar</div>
+      <div class="fafi16-tab-btn fafi-locked" data-tab="equip" data-locked="1" style="opacity:.45;cursor:not-allowed;">Equipamiento 🔒</div>
+      <div class="fafi16-tab-btn fafi-locked" data-tab="tienda" data-locked="1" style="opacity:.45;cursor:not-allowed;">Tienda 🔒</div>
+      <div class="fafi16-tab-btn" data-tab="perfil">Perfil</div>
+      <div class="fafi16-tab-btn" data-tab="ajustes">Ajustes</div>
+    </div>
+    <div class="fafi16-header-right">
+      <div class="fafi16-coins" id="coins-display-menu">FAFI COINS: 2000</div>
+      <div id="player-profile" style="color:#d69f0f;font-weight:bold;text-transform:uppercase;font-size:12px;text-align:right;">JUGADOR: <span id="player-name" style="color:#fff;"></span><br><span style="color:#777;font-size:10px;text-transform:none;" id="profile-sub">DB Online (MySQL) • Motor V2 GLB</span></div>
+    </div>
+  </div>
+  <div class="fafi16-content-area">
+    <div id="fafi16-tab-jugar" class="fafi16-panel active">
+      <div class="fafi16-panel-title">Modos de Juego — Motor V2</div>
+      <span class="fafi16-label">Un jugador (este cliente V2 con GLBs + Dust2 real)</span>
+      <button class="fafi16-btn-standard fafi16-btn-success" id="fafiPlayAim">🎯 CAMPO DE TIRO (AIM 30s)</button>
+      <button class="fafi16-btn-standard fafi16-btn-success" id="fafiPlayDefuse">💣 DEFUSE 5v5 — T vs CT con bots</button>
+      <button class="fafi16-btn-standard fafi16-btn-campaign" id="fafiPlayDust2">🗺️ EXPLORACIÓN LIBRE — Dust II / Italy / Office</button>
+      <button class="fafi16-btn-standard" id="fafiOpenCampaign">★ MAPA DE CAMPAÑA (5 niveles → AIM progresivo)</button>
+      <div class="fafi16-note">AIM: 30s, todas las armas libres, blancos móviles. DUST II: cuchillo + $3000, <b style="color:#fff">B</b> compra (Deagle $700 / AK $2500 / M4A4 $3100 / AWP $4750). DEFUSE: rondas de 1:45, plantar/desactivar con <b style="color:#fff">E</b> (mantener), TAB marcador. Skins del inventario se aplican al modelo 3D.<br>WASD • SHIFT agacharse • ESPACIO saltar (Dust2) • 1:AK 2:Cuchillo 3:AWP 4:Deagle 5:M4A4 • Click der mira • R recargar • F inspeccionar.</div>
+      <div style="margin-top:14px;"><span class="fafi16-label">Skin equipada actual</span><div id="fafi-current-loadout" class="fafi-list-container" style="max-height:90px;"></div></div>
+    </div>
+    <div id="fafi16-tab-equip" class="fafi16-panel">
+      <div class="fafi16-panel-title">Equipamiento — Próximamente</div>
+      <div style="background:rgba(214,159,15,.08);border:1px solid rgba(214,159,15,.4);border-radius:8px;padding:26px;text-align:center;">
+        <div style="font-size:40px;">🔒</div>
+        <div style="font-size:18px;font-weight:900;letter-spacing:2px;color:#d69f0f;margin:8px 0;">PRÓXIMAMENTE</div>
+        <p style="color:#aaa;font-size:13px;">El inventario y las skins están deshabilitados en esta versión.<br>Tus armas V2 funcionan con el aspecto por defecto.</p>
+      </div>
+      <div id="equip-grid" style="display:none;"></div>
+      <button class="fafi16-btn-standard" id="openFullInvBtn" style="margin-top:12px;opacity:.45;cursor:not-allowed;" disabled>INVENTARIO DESHABILITADO — PRÓXIMAMENTE</button>
+    </div>
+    <div id="fafi16-tab-tienda" class="fafi16-panel">
+      <div class="fafi16-panel-title">Tienda — Próximamente</div>
+      <div style="background:rgba(214,159,15,.08);border:1px solid rgba(214,159,15,.4);border-radius:8px;padding:26px;text-align:center;margin-bottom:14px;">
+        <div style="font-size:40px;">🔒</div>
+        <div style="font-size:18px;font-weight:900;letter-spacing:2px;color:#d69f0f;margin:8px 0;">PRÓXIMAMENTE</div>
+        <p style="color:#aaa;font-size:13px;">La tienda de cajas está deshabilitada en esta versión.<br>Tus Fafi Coins se conservan para cuando se active.</p>
+      </div>
+      <div class="boxes-container" style="margin-top:10px;opacity:.4;pointer-events:none;filter:grayscale(80%);">
+        <div class="loot-box box-basic" style="border-bottom:4px solid #aaa;"><div class="box-title rarity-comun">Caja Básica</div><p style="font-size:12px;color:#aaa;">Comunes. Pequeña chance Épica.</p><div class="box-price">200 Coins</div><button class="btn-buy" data-box="basic">ABRIR</button></div>
+        <div class="loot-box box-advanced" style="border-bottom:4px solid #a335ee;"><div class="box-title rarity-epica">Caja Avanzada</div><p style="font-size:12px;color:#aaa;">Alta prob. Épicas.</p><div class="box-price">500 Coins</div><button class="btn-buy" data-box="advanced">ABRIR</button></div>
+        <div class="loot-box box-legendary" style="border-bottom:4px solid #d69f0f;"><div class="box-title rarity-legendaria">Caja Clasificada</div><p style="font-size:12px;color:#aaa;">Épica o Legendaria.</p><div class="box-price">1000 Coins</div><button class="btn-buy" data-box="legendary">ABRIR</button></div>
+      </div>
+      <div class="fafi16-note">Duplicada = reembolso (50/150/400). Ganas coins jugando AIM: +1 coin cada 10 pts.</div>
+    </div>
+    <div id="fafi16-tab-perfil" class="fafi16-panel">
+      <div class="fafi16-panel-title">Tu Perfil Fafi</div>
+      <span class="fafi16-label">Historial de Compras (Fafi Coins)</span>
+      <div class="fafi-list-container" id="purchase-history-list"></div>
+      <span class="fafi16-label">Lista de Amigos</span>
+      <div style="display:flex;gap:10px;margin-bottom:10px;"><input type="text" id="new-friend-id" class="fafi16-input" style="margin:0;" placeholder="Usuario del amigo"><button class="fafi16-btn-standard fafi16-btn-success" style="margin:0;width:auto;" id="addFriendBtn">AÑADIR</button></div>
+      <div class="fafi-list-container" id="friends-list"></div>
+      <span class="fafi16-label">Logros Desbloqueados</span>
+      <div class="fafi-list-container" id="achievements-list" style="max-height:170px;"></div>
+    </div>
+    <div id="fafi16-tab-ajustes" class="fafi16-panel">
+      <div class="fafi16-panel-title">Ajustes del Juego (se aplican al motor V2)</div>
+      <span class="fafi16-label">Sensibilidad de la Cámara (1-20, se guarda por usuario)</span>
+      <div class="fafi-sens-row"><span style="color:#777;font-size:12px;font-weight:bold;">BAJA</span><input type="range" id="sens-slider" min="1" max="20" value="5" style="flex-grow:1;margin:0 18px;accent-color:#d69f0f;"><span id="sens-val" style="color:#d69f0f;font-weight:bold;width:24px;text-align:right;">5</span></div>
+      <div class="fafi16-note" id="sens-desc">5 = 1.00x (base V2). Afecta a <b style="color:#fff">PointerLockControls.pointerSpeed</b> en AIM y Dust2, con y sin mira.</div>
+      <span class="fafi16-label" style="margin-top:16px;">Configuración visual</span>
+      <div class="q-row">
+        <button class="q-btn" data-q="low"><b>BAJA</b><small>Rendimiento</small></button>
+        <button class="q-btn" data-q="medium"><b>MEDIA</b><small>Equilibrado</small></button>
+        <button class="q-btn" data-q="high"><b>ALTA</b><small>Máxima calidad</small></button>
+      </div>
+      <div class="fafi16-note" id="q-desc"></div>
+      <div class="fafi16-note">Afecta a: resolución de render, sombras (tipo, tamaño y alcance), tone mapping, niebla y texturas de los mapas Italy y Office. Al cambiar la textura de un mapa se vuelve a cargar la próxima vez que lo elijas.</div>
+      <button class="fafi16-btn-standard" id="logoutBtn" style="margin-top:16px;">CERRAR SESIÓN</button>
+    </div>
+  </div>
+</div>
+
+<div id="campaign-map-overlay">
+  <h1 style="color:#d69f0f;font-size:34px;text-transform:uppercase;letter-spacing:5px;margin-bottom:26px;">Frente de Batalla — AIM progresivo</h1>
+  <div class="map-path" id="map-nodes-container"></div>
+  <p style="color:#aaa;margin-top:10px;max-width:560px;">Cada nivel es un AIM de 30s con más velocidad de blancos. Gana 600+ pts para desbloquear el siguiente. Tu nivel se guarda.</p>
+  <button class="fafi16-btn-standard" style="width:250px;margin-top:18px;" id="closeCampBtn">VOLVER AL MENÚ</button>
+</div>
+
+<div id="store-ui" class="overlay-menu">
+  <div class="overlay-header"><h2 class="overlay-title">Tienda de Cajas</h2><div class="fafi16-coins" id="coins-display-store">FAFI COINS: 2000</div><button class="close-btn" id="closeStoreBtn">VOLVER AL MENÚ</button></div>
+  <div class="boxes-container">
+    <div class="loot-box box-basic"><div class="box-title rarity-comun">Caja Básica</div><p style="font-size:12px;color:#aaa;">Comunes + chance Épica.</p><div class="box-price">200 Coins</div><button class="btn-buy" data-box="basic">ABRIR CAJA</button></div>
+    <div class="loot-box box-advanced"><div class="box-title rarity-epica">Caja Avanzada</div><p style="font-size:12px;color:#aaa;">Alta prob. Épicas.</p><div class="box-price">500 Coins</div><button class="btn-buy" data-box="advanced">ABRIR CAJA</button></div>
+    <div class="loot-box box-legendary"><div class="box-title rarity-legendaria">Caja Clasificada</div><p style="font-size:12px;color:#aaa;">Épica o Legendaria.</p><div class="box-price">1000 Coins</div><button class="btn-buy" data-box="legendary">ABRIR CAJA</button></div>
+  </div>
+</div>
+
+<div id="inventory-ui" class="overlay-menu">
+  <div class="overlay-header"><h2 class="overlay-title">Equipamiento</h2><button class="close-btn" id="closeInvBtn">VOLVER AL MENÚ</button></div>
+  <div class="inventory-layout">
+    <div class="inventory-list-container"><div id="inventory-list" class="inventory-grid"></div></div>
+    <div id="inventory-preview-container"><div id="preview-name" style="position:absolute;bottom:14px;text-align:center;width:100%;font-weight:bold;font-size:16px;text-transform:uppercase;">SELECCIONA UN ARMA</div></div>
+  </div>
+</div>
+
+<div id="roulette-container"><div id="roulette-selector"></div><div id="roulette-track"></div></div>
+
+<div id="skin-popup">
+  <h3 id="popup-title" style="margin-top:0;">¡NUEVA SKIN DESBLOQUEADA!</h3>
+  <h2 id="popup-skin-name" style="font-size:26px;margin:10px 0;color:#d69f0f;">Nombre Skin</h2>
+  <p id="popup-desc" style="color:#aaa;"></p>
+  <button class="fafi16-btn-standard" style="width:auto;margin-top:15px;" id="skinPopupOk">ACEPTAR</button>
+</div>
+
+<div id="menu">
+  <h1>FAFI <span>1.6</span> V2</h1>
+  <div class="subtitle">FAFI 1.6 — ELIGE MODO</div>
+  <div class="menu-card">
+      <h2>MODO DE JUEGO</h2>
+      <button class="btn btn-primary" id="playBtn">▶ AIM PRACTICE</button>
+      <button class="btn btn-primary" id="dust2Btn" style="margin-top:10px; background: linear-gradient(180deg,#ff8c2a,#ff3b18); box-shadow: 0 6px 18px rgba(255,60,20,0.5);">🗺️ DUST II — EXPLORACIÓN</button>
+      <div id="dust2Loading" style="display:none; margin-top:12px; font-size:12px; letter-spacing:1px; color:#ff8c2a; font-weight:700;">Cargando Dust2... 0%</div>
+    <div class="info">
+      <b>AIM:</b> 30s - blancos móviles en galería (todas las armas libres)<br>
+      <b>DUST II:</b> Empiezas con cuchillo + $3000 — <b>B</b> abre compra CS:GO (Deagle $700, AK $2500, M4A4 $3100, AWP $4750)<br>
+      WASD: Caminar • SHIFT: Agacharse/ Sprint • Mouse: Mirar<br>
+      1:AK 2:Cuchillo 3:AWP 4:Deagle 5:M4A4 / Q Rueda: Cambiar • Click Izq: Disparar/Apuñalar • Click Der: Mira/Zoom AWP • R: Recargar • F: Inspeccionar • B: Comprar (Dust2)
+    </div>
+  </div>
+</div>
+
+<div id="dfLoading"><div class="box"><div class="logo">FAFI <span>1.6</span></div><div class="msg">Cargando…</div><div class="barl"><i></i></div></div></div>
+<div id="teamOverlay">
+  <h1 style="font-size:clamp(28px,5vw,52px);letter-spacing:6px;font-weight:900;text-shadow:0 0 20px #3aa0ff, 0 0 40px #3aa0ff;">ELIGE TU BANDO</h1>
+  <div class="subtitle" style="letter-spacing:4px;color:#8aa0b8;font-size:14px;margin:8px 0 0;">ELIGE MAPA Y BANDO — EXPLORACIÓN</div>
+  <div id="mapPicker" class="map-picker"></div>
+  <div class="team-cards">
+    <div class="team-card t" id="teamT"><h3>TERRORISTAS</h3><p>Spawn terrorista</p></div>
+    <div class="team-card ct" id="teamCT"><h3>ANTITERRORISTAS</h3><p>Spawn antiterrorista</p></div>
+  </div>
+  <button class="btn btn-secondary" style="width:220px" id="teamBack">VOLVER</button>
+</div>
+
+<div id="game">
+  <div id="hud">
+    <div style="display:flex;gap:10px">
+      <div class="hud-item" id="hudScore"><div class="hud-label">PUNTOS</div><div class="hud-value accent" id="scoreEl">0</div></div>
+      <div class="hud-item" id="hudHits"><div class="hud-label">BLANCOS</div><div class="hud-value" id="hitsEl">0 / 0</div></div>
+      <div class="hud-item" id="hudAcc"><div class="hud-label">PRECISIÓN</div><div class="hud-value" id="accEl">0%</div></div>
+      <div class="hud-item" id="moneyBox" style="display:none;min-width:110px;border-color:rgba(122,255,122,0.5)"><div class="hud-label" style="color:#7aff7a">DINERO</div><div class="hud-value" id="moneyEl" style="color:#7aff7a">$3000</div></div>
+    </div>
+    <div class="hud-item" style="min-width:90px"><div class="hud-label">TIEMPO</div><div class="hud-value" id="timeEl">30.0</div></div>
+  </div>
+  <div id="fpsCounter">60 FPS</div>
+  <div id="minimapWrap"><canvas id="minimap" width="296" height="296"></canvas></div>
+  <div id="aimVignette"></div>
+  <div id="scopeOverlay"><div class="dot"></div></div>
+  <div id="crosshair"><div class="dot"></div></div>
+  <div id="hitMarker"></div>
+  <div id="reloadBar"><i id="reloadFill"></i></div>
+  <div id="reloadText">RECARGANDO...</div>
+  <div id="dfHud">
+    <div id="dfTop">
+      <div class="side ct"><span class="bw" id="dfBadgeCT"></span><b id="dfScoreCT">0</b><div class="pips" id="dfPipsCT"></div></div>
+      <div class="mid"><div id="dfTimer">1:45</div><small id="dfRound">RONDA 1</small></div>
+      <div class="side t"><div class="pips" id="dfPipsT"></div><b id="dfScoreT">0</b><span class="bw" id="dfBadgeT"></span></div>
+    </div>
+    <div id="dfHealth">
+      <div class="hp"><span class="cross">✚</span><b id="dfHealthNum">100</b></div>
+      <div class="bar"><div id="dfHealthBar"></div></div>
+      <div class="money" id="dfMoney">$800</div>
+      <div id="dfBombInfo"></div>
+    </div>
+    <div id="dfKillfeed"></div>
+    <div id="dfBanner"></div>
+    <div id="dfPrompt"></div>
+    <div id="dfProgress"><span>PLANTANDO</span><div><i></i></div></div>
+    <div id="dfScoreboard"></div>
+  </div>
+  <div id="dfDamage"></div>
+  <div id="dfFlash"></div>
+  <div id="gBar"></div>
+  <div id="wBar"></div>
+  <div id="weapon-info">
+    <div class="icon">🔫</div>
+    <div id="teamTag"><b>AK-47</b><br><span id="weaponMode">Cadera • Click disparar</span></div>
+    <div style="margin-left:12px;text-align:right"><b id="ammoEl" style="color:#3aa0ff">30 / 90</b><br><span>MUNICIÓN</span></div>
+  </div>
+  </div>
+  <div id="instructions">WASD Mover | SHIFT Agacharse | ESPACIO Saltar (Dust2) | CLICK IZQ Disparar/Cuchillo | CLICK DER Mira (AK mantener, AWP toggle) | R Recargar | F Inspeccionar | 1:AK 2:Cuchillo 3:AWP 4:Deagle 5:M4A4 Q/Rueda Cambiar | B Comprar (Dust2) | ESC Menú</div>
+
+  <div id="buyMenu">
+    <div class="buy-panel">
+      <div class="buy-header">
+        <h2>🔫 MENÚ DE COMPRA <span>— DUST II</span></h2>
+        <div class="buy-money" id="buyMoneyEl">$3000</div>
+      </div>
+      <div class="buy-inv" id="buyInvEl"></div>
+      <div class="buy-cat">PISTOLAS — SLOT SECUNDARIA</div>
+      <div class="buy-grid">
+        <div class="buy-card" id="buyCard-deagle">
+          <div class="slot">🔫 SECUNDARIA • TECLA 4</div>
+          <h3>Desert Eagle</h3>
+          <p>Pistola semiautomática de gran daño. Precisa quieto y agachado.</p>
+          <div class="price">$700</div>
+          <button class="buy-btn" id="buyBtn-deagle">COMPRAR</button>
+        </div>
+      </div>
+      <div class="buy-cat">RIFLES / FRANCOTIRADOR — SLOT PRIMARIA (solo 1: AK o AWP)</div>
+      <div class="buy-grid">
+        <div class="buy-card primary" id="buyCard-ak">
+          <div class="slot">🎯 PRIMARIA • TECLA 1</div>
+          <h3>AK-47</h3>
+          <p>Rifle automático 30/90. Versátil, bueno en ráfagas cortas.</p>
+          <div class="price">$2500</div>
+          <button class="buy-btn" id="buyBtn-ak">COMPRAR</button>
+        </div>
+        <div class="buy-card primary" id="buyCard-m4">
+          <div class="slot">🎯 PRIMARIA • TECLA 5</div>
+          <h3>M4A4</h3>
+          <p>Rifle automático 30/90 con animaciones de recarga e inspección. Click der = mira.</p>
+          <div class="price">$3100</div>
+          <button class="buy-btn" id="buyBtn-m4">COMPRAR</button>
+        </div>
+        <div class="buy-card primary" id="buyCard-awp">
+          <div class="slot">🎯 PRIMARIA • TECLA 3</div>
+          <h3>AWP</h3>
+          <p>Francotirador 10/30 de un tiro. Click der = mira telescópica.</p>
+          <div class="price">$4750</div>
+          <button class="buy-btn" id="buyBtn-awp">COMPRAR</button>
+        </div>
+        <div class="buy-card" id="buyCard-knife" style="opacity:0.85">
+          <div class="slot">🔪 CUCHILLO • TECLA 2</div>
+          <h3>Cuchillo táctico</h3>
+          <p>Siempre en inventario. Silencioso, +150 por baja en AIM.</p>
+          <div class="price" style="color:#cbd6e6">INCLUIDO</div>
+          <button class="buy-btn equipped" disabled>EN INVENTARIO</button>
+        </div>
+      </div>
+      <div class="buy-cat">UTILIDAD — TECLAS 7 · 8 · 9 · 0</div>
+      <div class="buy-grid util">
+        <div class="buy-card" id="buyCard-flash"><div class="slot">⚡ TECLA 7 • máx. 2</div><h3>Flashbang</h3><p>Ciega a quien la mire. Los bots no ven mientras están cegados.</p><div class="price">$200</div><button class="buy-btn" id="buyBtn-flash" data-util="flash">COMPRAR</button></div>
+        <div class="buy-card" id="buyCard-smoke"><div class="slot">☁ TECLA 8</div><h3>Humo</h3><p>Nube de 18 s que bloquea la visión de jugadores y bots.</p><div class="price">$300</div><button class="buy-btn" id="buyBtn-smoke" data-util="smoke">COMPRAR</button></div>
+        <div class="buy-card" id="buyCard-he"><div class="slot">💥 TECLA 9</div><h3>Granada HE</h3><p>Hasta 98 de daño en 6.5 m. Rebota en las paredes.</p><div class="price">$300</div><button class="buy-btn" id="buyBtn-he" data-util="he">COMPRAR</button></div>
+        <div class="buy-card" id="buyCard-molo"><div class="slot">🔥 TECLA 0</div><h3>Molotov</h3><p>Estalla al tocar el suelo y quema 7 s en 2.6 m.</p><div class="price">$400</div><button class="buy-btn" id="buyBtn-molo" data-util="molo">COMPRAR</button></div>
+        <div class="buy-card" id="buyCard-kit"><div class="slot">🛠 SOLO CT</div><h3>Kit de defusa</h3><p>Desactivas la bomba en 5 s en lugar de 10 s.</p><div class="price">$400</div><button class="buy-btn" id="buyBtn-kit" data-util="kit">COMPRAR</button></div>
+      </div>
+      <div class="buy-footer">
+        <span>Pulsa <b style="color:#fff">B</b> o ESC para cerrar • Empiezas con <b style="color:#7aff7a">$3000</b> • Comprar AK teniendo AWP (o viceversa) reemplaza la primaria</span>
+        <button class="buy-close" id="buyCloseBtn">CERRAR [B]</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pauseOverlay">
+    <h2 style="color:#fff;letter-spacing:3px">PAUSA</h2>
+    <p style="color:#8a9ab0;margin:10px 0 18px">Presiona ESC para volver al menú o CLICK para continuar</p>
+    <button class="btn btn-primary" style="width:220px" id="resumeBtn">CONTINUAR</button>
+    <button class="btn btn-secondary" style="width:220px;margin-top:10px" id="teamSwitchBtn">CAMBIAR DE BANDO</button>
+    <button class="btn btn-secondary" style="width:220px" id="menuBtnPause">VOLVER AL MENÚ</button>
+  </div>
+
+  <div id="resultOverlay">
+    <h2>¡TIEMPO!</h2>
+    <p style="color:#8a9ab0">Resultados AIM PRACTICE</p>
+    <div class="stats">
+      <div class="stat"><b id="rScore">0</b><span>PUNTOS</span></div>
+      <div class="stat"><b id="rHits">0</b><span>ACIERTOS</span></div>
+      <div class="stat"><b id="rAcc">0%</b><span>PRECISIÓN</span></div>
+    </div>
+    <p id="rRank" style="font-weight:800;letter-spacing:2px;color:#3aa0ff;margin-bottom:16px"></p>
+    <button class="btn btn-primary" style="width:240px" id="againBtn">JUGAR DE NUEVO</button>
+    <button class="btn btn-secondary" style="width:240px" id="menuBtn2">MENÚ PRINCIPAL</button>
+  </div>
+</div>
+
+<script type="module" src="js/game.js"></script>
+</body>
+</html>

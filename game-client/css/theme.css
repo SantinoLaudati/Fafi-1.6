@@ -1,0 +1,207 @@
+/* ===== FAFI 1.6 — tema visual (inspirado en CS:GO / Valorant) ===== */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Oswald:wght@500;600&display=swap');
+:root{
+  --bg0:#07090d; --bg1:#0d1219; --panel:rgba(14,19,27,.82); --line:rgba(255,255,255,.09);
+  --gold:#e0a82e; --gold2:#ffcb5c; --ct:#4aa3ff; --t:#ff9a3c; --danger:#ff4655; --ok:#3ddc84;
+  --font:'Rajdhani','Segoe UI',Arial,sans-serif; --font-d:'Oswald','Rajdhani',sans-serif;
+  --cut:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+}
+*{font-family:var(--font);}
+body{background:var(--bg0);letter-spacing:.2px}
+
+/* ---------- login / menú principal ---------- */
+#login-overlay,#menus{background:
+  radial-gradient(1200px 600px at 20% -10%,rgba(224,168,46,.10),transparent 60%),
+  radial-gradient(900px 500px at 100% 110%,rgba(74,163,255,.10),transparent 60%),
+  repeating-linear-gradient(135deg,rgba(255,255,255,.018) 0 2px,transparent 2px 22px),
+  linear-gradient(180deg,#0a0e14,#06080b);}
+#menus{backdrop-filter:none}
+.auth-logo,.fafi16-logo{font-family:var(--font-d);font-weight:600;letter-spacing:6px}
+.auth-logo{font-size:54px;text-shadow:0 0 30px rgba(224,168,46,.35)}
+.auth-logo span,.fafi16-logo span{color:var(--gold)}
+.auth-box{width:380px;background:var(--panel);border:1px solid var(--line);border-radius:0;clip-path:var(--cut);padding:36px;box-shadow:none;position:relative}
+.auth-box::before{content:"";position:absolute;left:0;top:0;width:100%;height:3px;background:linear-gradient(90deg,var(--gold),transparent)}
+.fafi16-header{background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,.35));border-bottom:1px solid var(--line);min-height:70px}
+.fafi16-tab-btn{font-family:var(--font-d);font-weight:500;letter-spacing:2px;font-size:15px;min-height:70px;transition:.15s}
+.fafi16-tab-btn.active{color:var(--gold2);border-bottom-color:var(--gold);text-shadow:0 0 14px rgba(224,168,46,.4)}
+.fafi16-coins{border-radius:0;clip-path:var(--cut)}
+.fafi16-panel{border-radius:0;clip-path:var(--cut);background:var(--panel);border:1px solid var(--line);width:620px}
+.fafi16-panel-title{font-family:var(--font-d);font-weight:500;letter-spacing:4px;color:var(--gold2);border-bottom:1px solid var(--line)}
+.fafi16-btn-standard{border-radius:0;clip-path:var(--cut);padding:16px;font-family:var(--font-d);font-weight:500;letter-spacing:2px;font-size:15px;transition:.15s;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.fafi16-btn-standard:hover{transform:translateX(4px);background:rgba(255,255,255,.1)}
+.fafi16-btn-success{border-color:rgba(61,220,132,.5);color:var(--ok);background:linear-gradient(90deg,rgba(61,220,132,.16),transparent)}
+.fafi16-btn-success:hover{background:var(--ok);color:#04130a}
+.fafi16-btn-campaign{border-color:rgba(224,168,46,.55);color:var(--gold2);background:linear-gradient(90deg,rgba(224,168,46,.16),transparent)}
+.fafi16-btn-campaign:hover{background:var(--gold);color:#120d00}
+.fafi16-input{border-radius:0;background:rgba(0,0,0,.55)}
+#offlineBtn{margin-top:8px}
+
+/* ---------- selector de mapa / bando ---------- */
+#teamOverlay{background:
+  radial-gradient(900px 500px at 50% 0%,rgba(224,168,46,.12),transparent 65%),
+  repeating-linear-gradient(135deg,rgba(255,255,255,.02) 0 2px,transparent 2px 22px),#06080b}
+#teamOverlay h1{font-family:var(--font-d)!important;font-weight:600;letter-spacing:10px!important;text-shadow:0 0 40px rgba(224,168,46,.5)!important}
+.map-pick{border-radius:0;clip-path:var(--cut);background:rgba(255,255,255,.04);border:1px solid var(--line);transition:.15s}
+.map-pick img{border-radius:0}
+.map-pick:hover{transform:translateY(-3px)}
+.map-pick.sel{box-shadow:0 0 0 1px var(--gold) inset,0 10px 30px rgba(224,168,46,.2)}
+.team-card{border-radius:0;clip-path:var(--cut);display:flex;flex-direction:column;align-items:center;gap:6px}
+.team-card .badge{width:74px;height:74px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
+.team-card h3{font-family:var(--font-d);font-weight:500;letter-spacing:4px}
+
+/* ---------- HUD en partida (estilo CS:GO) ---------- */
+#hud{background:none;padding:12px 18px}
+.hud-item{background:linear-gradient(180deg,rgba(14,19,27,.85),rgba(8,11,16,.85));border:1px solid var(--line);border-radius:0;clip-path:var(--cut);min-width:104px}
+.hud-label{font-family:var(--font-d);letter-spacing:3px;font-size:10px}
+.hud-value{font-family:var(--font-d);font-weight:500;font-size:22px}
+.hud-value.accent{color:var(--gold2)}
+#weapon-info{left:auto;right:22px;bottom:22px;flex-direction:row-reverse;background:linear-gradient(270deg,rgba(14,19,27,.9),rgba(14,19,27,.35));border:none;border-right:3px solid var(--gold);border-radius:0;padding:10px 18px;gap:16px;min-width:230px}
+#weapon-info .icon{background:none;font-size:26px;width:auto;height:auto;filter:drop-shadow(0 0 6px rgba(224,168,46,.5))}
+#weapon-info b{font-family:var(--font-d);font-weight:500}
+#weapon-info #ammoEl{font-size:34px;line-height:1}
+#teamTag{text-align:right}
+#reloadBar{background:rgba(255,255,255,.14);height:5px}
+#reloadBar i{background:linear-gradient(90deg,var(--gold),var(--gold2))}
+#reloadText{color:var(--gold2)}
+#crosshair::before,#crosshair::after{box-shadow:0 0 0 1px rgba(0,0,0,.65)}
+#crosshair .dot{background:transparent;box-shadow:none;width:2px;height:2px;left:11px;top:11px;background:#fff}
+#hitMarker::before,#hitMarker::after{background:#fff;box-shadow:0 0 6px rgba(0,0,0,.8)}
+#pauseOverlay,#resultOverlay{background:rgba(5,8,13,.88)}
+#fpsCounter{font-family:var(--font)}
+
+/* ---------- menú de compra ---------- */
+.buy-panel{background:linear-gradient(180deg,#121a26,#0a0f17);border:1px solid var(--line);border-radius:0;clip-path:var(--cut)}
+.buy-header{background:linear-gradient(90deg,rgba(224,168,46,.2),transparent 65%)}
+.buy-header h2{font-family:var(--font-d);font-weight:500;color:var(--gold2)}
+.buy-card{border-radius:0;clip-path:var(--cut);background:rgba(255,255,255,.045)}
+.buy-card.primary{border-color:rgba(224,168,46,.45)}
+.buy-btn{border-radius:0;font-family:var(--font-d);background:linear-gradient(180deg,var(--gold2),var(--gold));color:#150f00;letter-spacing:2px}
+
+/* ---------- DEFUSE: HUD ---------- */
+#dfHud,#dfDamage,#dfFlash{display:none}
+body.df-on #dfHud{display:block}
+#dfDamage,#dfFlash{display:block;position:fixed;inset:0;pointer-events:none;opacity:0}
+#dfDamage{background:radial-gradient(circle at 50% 50%,transparent 38%,rgba(190,10,20,.85) 100%);z-index:7;transition:opacity .35s}
+#dfFlash{background:#fff;z-index:30}
+body.df-on #hud,body.df-on #weapon-info #teamTag b{display:none!important}
+body.df-on #moneyBox{display:none!important}
+#dfHud{position:absolute;inset:0;pointer-events:none;z-index:6;font-family:var(--font-d)}
+#dfTop{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:stretch;filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
+#dfTop .side{display:flex;align-items:center;gap:10px;padding:6px 16px;background:linear-gradient(180deg,rgba(12,17,25,.92),rgba(7,10,15,.92));min-width:230px}
+#dfTop .side.ct{border-bottom:3px solid var(--ct);clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);justify-content:flex-start}
+#dfTop .side.t{border-bottom:3px solid var(--t);clip-path:polygon(14px 0,100% 0,100% 100%,0 100%);justify-content:flex-end}
+#dfTop .side b{font-size:34px;font-weight:600;line-height:1}
+#dfTop .side.ct b{color:var(--ct)} #dfTop .side.t b{color:var(--t)}
+#dfTop .bw .badge{width:34px;height:34px;display:block}
+#dfTop .pips{display:flex;gap:4px}
+#dfTop .pips i{width:9px;height:18px;background:rgba(255,255,255,.14);transform:skewX(-14deg)}
+#dfTop .side.ct .pips i.on{background:var(--ct)} #dfTop .side.t .pips i.on{background:var(--t)}
+#dfTop .pips i.me{box-shadow:0 0 0 1px #fff}
+#dfTop .mid{background:rgba(5,8,12,.95);padding:2px 22px;text-align:center;min-width:120px;display:flex;flex-direction:column;justify-content:center}
+#dfTimer{font-size:30px;font-weight:600;line-height:1.05;letter-spacing:2px}
+#dfTimer.low{color:var(--danger);animation:dfblink 1s steps(2) infinite}
+#dfTimer.bomb{color:var(--danger)} #dfTimer.freeze{color:var(--gold2)}
+#dfRound{font-size:11px;letter-spacing:3px;color:#9fb0c4}
+@keyframes dfblink{50%{opacity:.35}}
+#dfHealth{position:absolute;left:24px;bottom:22px;min-width:240px;padding:10px 18px 12px;background:linear-gradient(90deg,rgba(10,14,20,.9),rgba(10,14,20,.25));border-left:3px solid var(--gold)}
+#dfHealth .hp{display:flex;align-items:center;gap:12px}
+#dfHealth .cross{color:var(--ok);font-size:26px}
+#dfHealth b{font-size:48px;font-weight:600;line-height:1}
+#dfHealth .bar{height:5px;background:rgba(255,255,255,.14);margin:6px 0 8px;width:190px}
+#dfHealthBar{height:100%;width:100%;background:var(--ok);transition:width .2s}
+#dfHealthBar.low{background:var(--danger)}
+#dfHealth .money{font-size:24px;color:#9be37f;font-weight:600;letter-spacing:1px}
+#dfBombInfo{font-size:13px;color:var(--gold2);letter-spacing:1px;min-height:16px}
+#dfKillfeed{position:absolute;top:70px;right:16px;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+#dfKillfeed .kf{background:rgba(8,11,16,.78);padding:4px 12px;font-size:15px;border-right:3px solid #555;letter-spacing:.5px}
+#dfKillfeed .kf.me{outline:1px solid var(--gold);background:rgba(40,28,4,.85)}
+#dfKillfeed b.ct{color:var(--ct)} #dfKillfeed b.t{color:var(--t)} #dfKillfeed i{color:#aab6c6;font-style:normal;margin:0 6px;font-size:13px}
+#dfBanner{position:absolute;left:50%;top:22%;transform:translate(-50%,-10px);display:flex;align-items:center;gap:18px;padding:14px 34px;background:linear-gradient(90deg,transparent,rgba(6,9,14,.92) 20%,rgba(6,9,14,.92) 80%,transparent);opacity:0;transition:.35s;text-align:left}
+#dfBanner.show{opacity:1;transform:translate(-50%,0)}
+#dfBanner .badge{width:62px;height:62px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.7))}
+#dfBanner b{display:block;font-size:34px;font-weight:600;letter-spacing:4px;line-height:1.05}
+#dfBanner span{font-size:15px;color:#b6c4d6;letter-spacing:1.5px}
+#dfBanner.ct b{color:var(--ct)} #dfBanner.t b{color:var(--t)}
+#dfBanner.good b{color:var(--ok)} #dfBanner.bad b{color:var(--danger)}
+#dfPrompt{position:absolute;left:50%;bottom:26%;transform:translateX(-50%);padding:8px 20px;background:rgba(6,9,14,.85);border:1px solid var(--gold);color:var(--gold2);letter-spacing:2px;font-size:16px;display:none}
+#dfPrompt.show{display:block}
+#dfProgress{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);width:300px;text-align:center;display:none}
+#dfProgress.show{display:block}
+#dfProgress span{font-size:15px;letter-spacing:4px;color:var(--gold2)}
+#dfProgress div{height:10px;background:rgba(255,255,255,.16);margin-top:6px;border:1px solid rgba(0,0,0,.6)}
+#dfProgress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+#dfScoreboard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:none;gap:18px;background:rgba(5,8,13,.92);padding:20px 26px;border:1px solid var(--line);width:min(900px,92vw)}
+#dfScoreboard.show{display:flex}
+#dfScoreboard .team{flex:1}
+#dfScoreboard h3{display:flex;align-items:center;gap:10px;font-size:19px;letter-spacing:4px;margin-bottom:8px;border-bottom:2px solid}
+#dfScoreboard .team.ct h3{color:var(--ct)} #dfScoreboard .team.t h3{color:var(--t)}
+#dfScoreboard h3 .badge{width:28px;height:28px}
+#dfScoreboard h3 em{margin-left:auto;font-style:normal;font-size:28px}
+#dfScoreboard table{width:100%;border-collapse:collapse;font-size:16px}
+#dfScoreboard th{font-weight:500;color:#8aa0b8;text-align:left;font-size:12px;letter-spacing:2px;padding:3px 6px}
+#dfScoreboard td{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,.06)}
+#dfScoreboard td:nth-child(n+2){text-align:center;width:48px}
+#dfScoreboard tr.dead td{opacity:.45} #dfScoreboard tr.me td{background:rgba(224,168,46,.14)}
+/* en defuse el minimapa baja para no tapar el marcador */
+body.df-on #minimapWrap{top:14px;left:16px}
+
+/* ---------- pantalla de carga ---------- */
+#dfLoading{position:fixed;inset:0;z-index:20000;background:
+  radial-gradient(800px 400px at 50% 40%,rgba(224,168,46,.12),transparent 70%),#06080b;display:none;align-items:center;justify-content:center}
+#dfLoading.show{display:flex}
+#dfLoading .box{text-align:center;width:min(420px,86vw)}
+#dfLoading .logo{font-family:var(--font-d);font-size:46px;letter-spacing:8px;margin-bottom:22px}
+#dfLoading .logo span{color:var(--gold)}
+#dfLoading .msg{letter-spacing:3px;color:#9fb0c4;font-size:14px;margin-bottom:10px;text-transform:uppercase}
+#dfLoading .barl{height:6px;background:rgba(255,255,255,.12)}
+#dfLoading .barl i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .15s}
+
+/* utilidad en la tienda + barra de granadas */
+.buy-grid.util{grid-template-columns:repeat(5,1fr)}
+@media(max-width:900px){.buy-grid.util{grid-template-columns:repeat(2,1fr)}}
+.buy-grid.util .buy-card p{min-height:58px}
+#gBar{position:absolute;right:22px;bottom:96px;display:flex;gap:10px;font-size:22px;z-index:5;pointer-events:none}
+#gBar span{opacity:.55;position:relative;filter:drop-shadow(0 2px 4px #000)}
+#gBar span.sel{opacity:1;transform:scale(1.2);filter:drop-shadow(0 0 8px var(--gold))}
+#gBar sup{font-size:11px;font-family:var(--font-d);color:#fff;margin-left:1px}
+
+/* cabecera compacta en pantallas estrechas */
+@media(max-width:900px){
+  .fafi16-header{padding:0 14px;gap:6px;min-height:0}
+  .fafi16-logo{margin-right:12px;font-size:22px}
+  .fafi16-nav-tabs{gap:14px}
+  .fafi16-tab-btn{min-height:46px;font-size:13px;letter-spacing:1px}
+  .fafi16-header-right{width:100%;margin-left:0;justify-content:space-between;padding-bottom:8px}
+  .fafi16-content-area{padding:14px}
+}
+
+/* ---------- HUD v2: más compacto, escala con la ventana (--hs lo fija game.js) y barra de armas ---------- */
+:root{--hs:1}
+#minimapWrap,#dfTop,#dfHealth,#weapon-info,#gBar,#wBar,#dfKillfeed,#dfBanner,#dfPrompt,#dfProgress,#hud{zoom:var(--hs)}
+#dfTop{top:8px}
+#dfTop .side{min-width:178px;padding:4px 14px;gap:8px}
+#dfTop .side b{font-size:30px}
+#dfTimer{font-size:27px}
+#dfTop .mid{min-width:104px;padding:2px 16px}
+#dfRound{font-size:10px}
+#dfHealth{left:18px;bottom:18px;min-width:0;padding:8px 22px 9px 16px;background:linear-gradient(90deg,rgba(8,12,18,.9) 55%,rgba(8,12,18,0));border-left:3px solid var(--gold)}
+#dfHealth b{font-size:42px}
+#dfHealth .cross{font-size:22px}
+#dfHealth .bar{width:176px;height:4px;margin:5px 0 6px}
+#dfHealth .money{font-size:19px}
+#weapon-info{right:18px;bottom:18px;min-width:0;padding:8px 18px 8px 26px;background:linear-gradient(270deg,rgba(8,12,18,.9) 55%,rgba(8,12,18,0))}
+#weapon-info #ammoEl{font-size:38px}
+#weapon-info b{letter-spacing:1px}
+#weapon-info span{font-size:10px;letter-spacing:2px}
+body.df-on #weaponMode,body.df-on #weapon-info .icon{display:none}
+#gBar{right:20px;bottom:84px;font-size:20px}
+#dfKillfeed{top:62px;right:14px}
+#dfKillfeed .kf{font-size:13px;padding:3px 10px}
+#dfBanner b{font-size:30px}
+#wBar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:6px;z-index:5;pointer-events:none;font-family:var(--font-d)}
+#wBar span{display:flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(8,12,18,.62);border-bottom:2px solid transparent;color:#8394a8;font-size:12px;letter-spacing:1.5px;opacity:.8}
+#wBar span i{font-style:normal;font-size:11px;color:#c9a64a;border:1px solid rgba(201,166,74,.5);padding:0 4px}
+#wBar span.sel{color:#fff;opacity:1;border-bottom-color:var(--gold);background:rgba(20,26,36,.85)}
+#fpsCounter{font-size:10px;opacity:.55}
+#instructions{left:50%;right:auto;transform:translateX(-50%);bottom:64px;max-width:min(860px,82vw);text-align:center;font-size:11px;background:rgba(6,9,14,.7);animation:hintfade 12s forwards}
+@keyframes hintfade{0%,80%{opacity:.95}100%{opacity:0}}
