@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { makeLoader } from './loaders.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { makeBlobShadow, alignBlobToSun } from './quality.js';
+import { patchMaterial, setPattern } from './skinshader.js';
 
 export const CHAR_HEIGHT = 1.12;               // altura de un personaje en el mundo (m)
 const ASSET = 'assets/';
@@ -84,15 +85,33 @@ export async function loadCharacterAssets(teams = ['t', 'ct'], onProgress) {
 // El pack de armas trae UN solo material negro sin texturas ni colores de vértice: cada triángulo se pinta
 // según su zona (u: 0 culata → 1 boca del cañón, v: 0 abajo → 1 arriba) para distinguir madera, metal y polímero.
 const C = { wood: 0x8a5530, woodD: 0x58361d, steel: 0x474e58, steelD: 0x2b2f36, poly: 0x2f3339, chrome: 0xb7bfc9, olive: 0x59693f, mag: 0x373a40, magAk: 0x57402b };
+// Devuelve la CLAVE de zona (se guarda por vértice para poder repintar con una skin sin recalcular la geometría).
+const ZONE_KEYS = Object.keys(C);
 function weaponZone(id, mag, u, v) {
-  if (mag) return id === 'ak' ? C.magAk : C.mag;
+  if (mag) return id === 'ak' ? 'magAk' : 'mag';
   switch (id) {
-    case 'ak':     return u < 0.2 ? C.wood : (u > 0.5 && u < 0.8 && v < 0.78) ? C.wood : (u < 0.4 && v < 0.5) ? C.woodD : C.steel;
-    case 'm4':     return u < 0.22 ? C.poly : u > 0.82 ? C.steelD : v > 0.55 ? C.steel : C.poly;
-    case 'awp':    return u < 0.5 ? C.olive : v > 0.7 ? C.steelD : C.steel;
-    case 'deagle': return v > 0.5 ? C.chrome : u < 0.5 ? C.poly : C.steel;
-    default:       return C.steel;
+    case 'ak':     return u < 0.2 ? 'wood' : (u > 0.5 && u < 0.8 && v < 0.78) ? 'wood' : (u < 0.4 && v < 0.5) ? 'woodD' : 'steel';
+    case 'm4':     return u < 0.22 ? 'poly' : u > 0.82 ? 'steelD' : v > 0.55 ? 'steel' : 'poly';
+    case 'awp':    return u < 0.5 ? 'olive' : v > 0.7 ? 'steelD' : 'steel';
+    case 'deagle': return v > 0.5 ? 'chrome' : u < 0.5 ? 'poly' : 'steel';
+    default:       return 'steel';
   }
+}
+const _pc = new THREE.Color();
+// Repinta un arma ya creada con los colores de una skin (zones = { wood, steel, ... }); null vuelve al aspecto por defecto.
+// Aplica una skin completa: colores por zona + diseño (patrón). skin = null vuelve al aspecto estándar.
+export function setWeaponSkin(root, skin) {
+  repaintWeapon(root, skin && skin.zones);
+  root.traverse(o => { if (o.isMesh && o.material && o.material.userData.bb) setPattern(o.material, skin && skin.pattern, o.material.userData.bb); });
+}
+export function repaintWeapon(root, zones) {
+  const pal = Object.assign({}, C, zones || {});
+  root.traverse(o => {
+    if (!o.isMesh || !o.geometry || !o.geometry.attributes.zone) return;
+    const z = o.geometry.attributes.zone, col = o.geometry.attributes.color;
+    for (let i = 0; i < z.count; i++) { _pc.setHex(pal[ZONE_KEYS[z.getX(i)]]); col.setXYZ(i, _pc.r, _pc.g, _pc.b); }
+    col.needsUpdate = true;
+  });
 }
 function weaponBounds(meshes, mtx) {
   const bb = new THREE.Box3(), p = new THREE.Vector3();
@@ -102,18 +121,21 @@ function weaponBounds(meshes, mtx) {
   }
   return bb;
 }
-function paintWeaponGeometry(src, matrix, id, mag, bb) {
+function paintWeaponGeometry(src, matrix, id, mag, bb, pal = C) {
   const g = src.index ? src.toNonIndexed() : src.clone();
   const pos = g.attributes.position, n = pos.count;
-  const col = new Float32Array(n * 3), p = new THREE.Vector3(), c = new THREE.Color();
+  const col = new Float32Array(n * 3), zone = new Float32Array(n), p = new THREE.Vector3(), c = new THREE.Color();
   const dx = Math.max(1e-4, bb.max.x - bb.min.x), dy = Math.max(1e-4, bb.max.y - bb.min.y);
   for (let i = 0; i + 2 < n; i += 3) {
     let cx = 0, cy = 0;
     for (let k = 0; k < 3; k++) { p.fromBufferAttribute(pos, i + k).applyMatrix4(matrix); cx += p.x / 3; cy += p.y / 3; }
-    c.setHex(weaponZone(id, mag, THREE.MathUtils.clamp((cx - bb.min.x) / dx, 0, 1), THREE.MathUtils.clamp((cy - bb.min.y) / dy, 0, 1)));
-    for (let k = 0; k < 3; k++) { col[(i + k) * 3] = c.r; col[(i + k) * 3 + 1] = c.g; col[(i + k) * 3 + 2] = c.b; }
+    const zk = weaponZone(id, mag, THREE.MathUtils.clamp((cx - bb.min.x) / dx, 0, 1), THREE.MathUtils.clamp((cy - bb.min.y) / dy, 0, 1));
+    c.setHex(pal[zk]);
+    for (let k = 0; k < 3; k++) { zone[i + k] = ZONE_KEYS.indexOf(zk); col[(i + k) * 3] = c.r; col[(i + k) * 3 + 1] = c.g; col[(i + k) * 3 + 2] = c.b; }
   }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('zone', new THREE.BufferAttribute(zone, 1));
+  g.applyMatrix4(matrix);                      // la posición queda en el espacio del arma: el shader de diseños usa estas coordenadas
   return g;
 }
 
@@ -131,13 +153,16 @@ export function makeWorldWeapon(id, opts = {}) {
   const invRoot = rootNode.matrixWorld.clone().invert();
   const mtx = new Map();     // malla -> matriz dentro del pack (espacio del arma)
   for (const m of meshes) { m.updateWorldMatrix(true, false); mtx.set(m, new THREE.Matrix4().multiplyMatrices(invRoot, m.matrixWorld)); }
-  const bb = weaponBounds(meshes.filter(m => !/mag/i.test(m.name)), mtx);
+  const bb = weaponBounds(meshes.filter(m => !/mag(?!num)/i.test(m.name)), mtx);
+  const skin = opts.skin || null, pal = Object.assign({}, C, (skin && skin.zones) || {});
   const gunMat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.45, roughness: 0.5, side: THREE.DoubleSide });
+  gunMat.userData.bb = { min: bb.min.clone(), len: Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z) };
+  patchMaterial(gunMat); setPattern(gunMat, skin && skin.pattern, gunMat.userData.bb);
   if (!opts.forward) { gunMat.color.setScalar(1.8); gunMat.emissive.setHex(0x14161a); }   // en tercera persona: más claras para no perderse contra el chaleco
   for (const m of meshes) {
     const c = m.clone();
-    c.geometry = paintWeaponGeometry(m.geometry, mtx.get(m), id, /mag/i.test(m.name), bb);
-    c.matrixAutoUpdate = false; c.matrix.copy(mtx.get(m)); c.matrixWorld.copy(c.matrix);
+    c.geometry = paintWeaponGeometry(m.geometry, mtx.get(m), id, /mag(?!num)/i.test(m.name), bb, pal);
+    c.matrixAutoUpdate = false; c.matrix.identity(); c.matrixWorld.identity();
     c.material = gunMat;
     c.castShadow = true;
     holder.add(c);
@@ -373,7 +398,7 @@ export async function loadWeaponPack() {
   await new Promise(res => loader.load(WEAPON_PACK, g => { weaponPack = g.scene; res(); }, undefined, e => { console.warn('pack de armas', e); res(); }));
 }
 // Arma en primera persona: centrada en su origen y con el cañón hacia -Z
-export function makeViewWeapon(id, length) { return makeWorldWeapon(id, { length, dark: 0.4, forward: true }); }
+export function makeViewWeapon(id, length, skin) { return makeWorldWeapon(id, { length, dark: 0.4, forward: true, skin }); }
 
 // Punta del cañón en coordenadas de mundo (null si no tiene arma)
 export function muzzleWorld(inst, out) {

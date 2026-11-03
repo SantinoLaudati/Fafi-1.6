@@ -280,16 +280,16 @@ Fafi-1.6 toma inspiración en la jugabilidad táctica y precisión competitiva d
 
 > "Precisión táctica + diversión arcade = experiencia FPS única"
 
-Modo historia · Nivel 1 «Desembarco de Normandía» (`game-client/js/historia.js`)
-Secuencia de escenas de ~2 minutos (sin jugabilidad): armada, bombardeo naval, interior de una lancha LCVP, aproximación a Omaha,
-rampa y playa. «SALTAR» / Esc la cierra sin completarla; al terminar se desbloquea el nivel 2.
+Modo historia · mapa de hechos de la Segunda Guerra Mundial (`game-client/js/historia.js`, `storymap.js`, `mapa.js`)
+El modo historia es un mapa de Europa con 7 hechos que se van desbloqueando al verlos en orden: El ascenso del nazismo (1919-1933), Estalla la guerra (1939),
+La guerra en el mar (1940-41), Guerra total (1941-43), Los cielos de Europa (1943-44), Operación Overlord (1944) y El Día D (6 de junio de 1944).
+Se cuentan con planos de mapa animado, fotografías de época y escenas 3D, con locución, música y sonido real. El progreso se guarda.
 
-- Narrador: locución masculina en español (`assets/historia/audio/narr_NN.wav`, generada con la voz neuronal Piper `es_MX-claude-high`; ver `CREDITS.md`; también hay `herramientas/grabar-locucion.html` para grabar una voz humana)
-  con subtítulos. Si falta un archivo usa la voz del navegador. Puedes sustituir los `.wav` por una grabación humana con los mismos nombres.
-- Sonido: grabaciones reales (cañones, explosiones, fusiles, mar, lanchas, aviones, gritos) reproducidas por `js/sfx.js`; la música orquestal es procedural.
-- Modelos GLB reales (`js/modelos.js`): destructores y acorazados, cargueros de transporte, aviones, soldados con esqueleto y animaciones
-  (teñidos en verde oliva) con fusil de cerrojo, sacos de arena. Lanchas LCVP, erizos checos, búnkeres y carros son geometría propia.
-  Autores y licencias en `CREDITS.md`.
+- Contenido: `assets/WW2` (lancha Higgins LCVP, acorazado Bismarck, bombardero, soldado alemán, MP-40 en primera persona y las tres fotos). El bombardero,
+  el soldado y las texturas pesadas se usan en versión de 1024 px (`assets/WW2/optimizados`, generada con `herramientas/optimizar-glb.ps1`).
+- Guion y locución: `assets/historia/guion.json` (texto de cada plano) y `assets/historia/audio/cN_M.wav`. La duración de cada plano la marca el audio.
+  Para regenerar la voz con Piper: `herramientas/generar-voz-piper.ps1`; para grabar una voz humana: `herramientas/grabar-locucion.html` (usa los mismos nombres).
+- Para añadir un capítulo: añade su entrada al guion, genera sus `.wav` y escribe su constructor `CH[n]` en `historia.js` (planos de mapa, foto o 3D).
 
 Sonido del juego (`game-client/js/sfx.js`, muestras en `assets/audio/sfx`)
 Disparos por arma, recarga, cerrojo, cuchillo, impactos, granadas (rebote, flash, humo, HE, molotov), bomba (plantar, pitidos que se aceleran,
@@ -304,3 +304,9 @@ Realismo (sombras, agua, físicas)
 - Físicas: el jugador tiene inercia (acelera, frena con fricción, casi no controla el aire y pierde la velocidad contra las paredes); los bots caen
   por gravedad con vuelco, rebote y deslizamiento según la dirección del disparo; las granadas tienen resistencia del aire, rebote según la
   velocidad de impacto y giro al rodar; los impactos en paredes sueltan polvo y chispas con gravedad y dejan agujeros de bala.
+
+Cajas y skins
+- Tienda y Equipamiento activos (pestañas del menú). Tres cajas (200 / 500 / 1000 coins). Al abrir una se reproduce la animación de tapa del modelo
+  `assets/Cajas/…glb` (`js/cajas.js`) y el arma ganada sale flotando de la caja, con luz, haz y chispas del color de su rareza.
+- 32 skins (AK-47, M4A4, AWP, Desert Eagle, cuchillo) que recolorean las zonas del modelo de cada arma (madera, metal, polímero, corredera…): ver `fafiSkinsDB`
+  en `js/game.js` y `repaintWeapon` en `js/characters.js`. Las duplicadas se reembolsan (50 / 150 / 400). Se equipan en Equipamiento y se ven en primera persona.

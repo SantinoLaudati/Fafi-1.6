@@ -4,8 +4,11 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 import { QUALITY, SUN_DIR, loadQualityLevel, saveQualityLevel, applyQuality, updateSun, makeBlobShadow } from './quality.js';
 import { createDefuse, TEAM_BADGE } from './defuse.js';
 import { createGrenades, GRENADES } from './grenades.js';
-import { loadWeaponPack, makeViewWeapon } from './characters.js';
+import { loadWeaponPack, makeViewWeapon, makeWorldWeapon, repaintWeapon, setWeaponSkin } from './characters.js';
 import { ZONAS } from './zonas.js';
+import { openCrate, preloadCrate } from './cajas.js';
+import { SKINS_DB, skinById, applyKnifeSkin } from './skins.js';
+import * as menu2 from './menu2.js';
 import { SFX } from './sfx.js';
 
 
@@ -13,7 +16,7 @@ import { SFX } from './sfx.js';
 /* === FAFI 1.6 MAIN port: todo el menú + configurables sobre motor V2 (sin colisiones con V2) === */
 window.fafiCoins = 2000;
 window.userInventory = [];
-window.equippedSkins = { ak:null, awp:null, deagle:null, knife:null };
+window.equippedSkins = { ak:null, m4:null, awp:null, deagle:null, knife:null };
 window.currentUserId = null;
 window.purchaseHistory = [];
 window.friendsList = [];
@@ -29,21 +32,10 @@ window.achievements = [
   { id:'dust_explorer', name:'Explorador Dust2', desc:'Entra a Dust II por primera vez.', unlocked:false },
   { id:'aim_pro', name:'Aim Pro', desc:'Consigue 1000+ pts en AIM.', unlocked:false }
 ];
-const fafiSkinsDB = [
-  { id:'ak_oro', weapon:'ak', name:'AK-47 Oro Macizo', rarity:'legendaria', colors:{ metal:0xffd700, wood:0x111111 } },
-  { id:'ak_hielo', weapon:'ak', name:'AK-47 Glaciar', rarity:'epica', colors:{ metal:0x00aaff, wood:0x003366 } },
-  { id:'ak_tactical', weapon:'ak', name:'AK-47 Táctica', rarity:'comun', colors:{ metal:0x333333, wood:0x222222 } },
-  { id:'awp_void', weapon:'awp', name:'AWP Vacío', rarity:'legendaria', colors:{ dark:0x1a0033, metal:0x8a2be2 } },
-  { id:'awp_camo', weapon:'awp', name:'AWP Camuflaje', rarity:'comun', colors:{ dark:0x2e3b2c, metal:0x1f2e1e } },
-  { id:'awp_magma', weapon:'awp', name:'AWP Magma', rarity:'epica', colors:{ dark:0x330000, metal:0xff3300 } },
-  { id:'d_crimson', weapon:'deagle', name:'Deagle Carmesí', rarity:'epica', colors:{ metal:0xcc0000, dark:0x220000 } },
-  { id:'d_neon', weapon:'deagle', name:'Deagle Neón', rarity:'legendaria', colors:{ metal:0x111111, accent:0x00ffcc } },
-  { id:'d_desert', weapon:'deagle', name:'Deagle Desierto', rarity:'comun', colors:{ metal:0xc2b280, dark:0x5c4033 } },
-  { id:'k_karambit', weapon:'knife', name:'Cuchillo Zafiro', rarity:'legendaria', colors:{ metal:0x0f52ba, dark:0x000000 } },
-  { id:'k_blood', weapon:'knife', name:'Cuchillo Sangre', rarity:'epica', colors:{ metal:0xff0000, dark:0x111111 } },
-  { id:'k_tactical', weapon:'knife', name:'Cuchillo Táctico', rarity:'comun', colors:{ metal:0x888888, dark:0x222222 } }
-];
-function fafiSkinById(id){ return fafiSkinsDB.find(s=>s.id===id); }
+// Skins: `zones` recolorea las zonas del modelo del arma (ver characters.js: wood/woodD madera, steel/steelD metal, poly polímero,
+// chrome corredera, olive cuerpo del AWP, mag/magAk cargador). El cuchillo usa `colors.metal` (tinte del modelo).
+const fafiSkinsDB = SKINS_DB;
+function fafiSkinById(id){ return skinById(id); }
 function fafiSaveGameData(){
   if(!window.currentUserId) return;
   try{
@@ -83,7 +75,7 @@ function fafiDbOnline(){
   return !!(window.authService && window.authService.isAuthenticated() && !window.authService.isDevMode());
 }
 function fafiDbApplyEquippedFromServer(eq){
-  window.equippedSkins = { ak:null, awp:null, deagle:null, knife:null };
+  window.equippedSkins = { ak:null, m4:null, awp:null, deagle:null, knife:null };
   if(!eq || !eq.equipped_skins || typeof eq.equipped_skins!=='object') return;
   const wmap = { ak47:'ak', ak:'ak', sniper:'awp', awp:'awp', deagle:'deagle', knife:'knife' };
   for(const k in eq.equipped_skins){
@@ -131,7 +123,7 @@ async function fafiApiLoadProfile(){
     const camp = await window.apiService.getCampaignProgress();
     if(camp && camp.progress){
       const lvl = parseInt(camp.progress.ultimo_nivel||1);
-      if(!isNaN(lvl)) window.campaignLevel = Math.max(1, Math.min(5, lvl));
+      if(!isNaN(lvl)) window.campaignLevel = Math.max(1, Math.min(8, lvl));
     }
     const cfg = await window.apiService.getConfig();
     if(cfg && cfg.config && cfg.config.sensibilidad_mouse){
@@ -170,21 +162,23 @@ async function fafiDbPushEquipped(skinId){
   }catch(e){ console.warn('Fafi DB: equipar', e); }
 }
 function fafiResetUserState(){
-  window.fafiCoins=2000; window.userInventory=[]; window.equippedSkins={ak:null,awp:null,deagle:null,knife:null};
+  window.fafiCoins=2000; window.userInventory=[]; window.equippedSkins={ak:null,m4:null,awp:null,deagle:null,knife:null};
   window.purchaseHistory=[]; window.friendsList=[]; window.campaignLevel=1; window.fafiAimSpeedMult=1; window.fafiSensVal=5;
   for(const a of window.achievements){ a.unlocked=false; }
 }
+function fafiSetSkin(weapon, id){
+  window.equippedSkins[weapon]=id||null; fafiSaveGameData(); fafiApplyEquippedSkins(); fafiUpdateCoinsDisplay();
+  if(id) fafiDbPushEquipped(id);
+}
+window.fafiSetSkin=fafiSetSkin; window.fafiRefreshLoadout=()=>{ try{ menu2.renderLoadout(document.getElementById('fafi-current-loadout')); }catch(e){} };
 function fafiUpdateCoinsDisplay(){
   const a=document.getElementById('coins-display-menu'); if(a) a.textContent='FAFI COINS: '+window.fafiCoins;
   const b=document.getElementById('coins-display-store'); if(b) b.textContent='FAFI COINS: '+window.fafiCoins;
-  const c=document.getElementById('fafi-current-loadout');
-  if(c){
-    const parts=['ak','awp','deagle','knife'].map(w=>{
-      const id=window.equippedSkins[w]; const s=id?fafiSkinById(id):null;
-      return '<div class="fafi-list-item"><span>'+w.toUpperCase()+'</span><span>'+(s?s.name:'default')+'</span></div>';
-    }).join('');
-    c.innerHTML=parts+'<div class="fafi-list-item"><span>COINS</span><span>'+window.fafiCoins+'</span></div>';
-  }
+  const mc=document.getElementById('mm-coins'); if(mc) mc.textContent=(window.fafiCoins||0).toLocaleString('es');
+  const ms=document.getElementById('mm-skins'); if(ms) ms.textContent=(window.userInventory||[]).length+'/'+fafiSkinsDB.length;
+  const mh=document.getElementById('mm-story'); if(mh) mh.textContent=Math.min(Math.max((window.campaignLevel||1)-1,0),7)+'/7';
+  const mu=document.getElementById('mm-user'); if(mu) mu.textContent=window.currentUserId||'JUGADOR';
+  if(window.fafiRefreshLoadout) window.fafiRefreshLoadout();
 }
 function fafiUpdateProfileUI(){
   const hist=document.getElementById('purchase-history-list');
@@ -208,27 +202,15 @@ function fafiApplySensitivity(){
 function fafiApplyQuality(){ try{ applyGraphicsQuality(); }catch(e){} }
 function fafiApplyEquippedSkins(){
   try{
-    const paint=(model, skinId)=>{
-      if(!model) return;
-      const s=skinId?fafiSkinById(skinId):null;
-      if(!s||!s.colors) return;
-      const col = s.colors.metal ?? s.colors.accent ?? s.colors.wood ?? s.colors.dark;
-      if(col===undefined) return;
-      model.traverse(o=>{
-        if(o.isMesh && o.material && o.material.color){
-          if(!o.userData._origCol) o.userData._origCol=o.material.color.getHex();
-          if(o.material.vertexColors){ o.material.vertexColors=false; o.material.needsUpdate=true; o.userData._vc=true; }   // la skin sustituye la pintura por zonas
-          o.material.color.setHex(col);
-        }
-      });
-    };
-    const resetIfNone=(model, skinId)=>{ if(!model||skinId) return; model.traverse(o=>{ if(o.isMesh&&o.userData._origCol!==undefined&&o.material&&o.material.color){ o.material.color.setHex(o.userData._origCol); if(o.userData._vc){ o.material.vertexColors=true; o.material.needsUpdate=true; o.userData._vc=false; } } }); };
-    if(typeof akModel!=='undefined'){ if(window.equippedSkins.ak) paint(akModel, window.equippedSkins.ak); else resetIfNone(akModel, null); }
-    if(typeof awpModel!=='undefined'){ if(window.equippedSkins.awp) paint(awpModel, window.equippedSkins.awp); else resetIfNone(awpModel, null); }
-    if(typeof deagleModel!=='undefined'){ if(window.equippedSkins.deagle) paint(deagleModel, window.equippedSkins.deagle); else resetIfNone(deagleModel, null); }
-    if(typeof knifeModel!=='undefined'){ if(window.equippedSkins.knife) paint(knifeModel, window.equippedSkins.knife); else resetIfNone(knifeModel, null); }
-  }catch(e){}
+    const sk=(w)=>{ const id=window.equippedSkins[w]; return id?fafiSkinById(id):null; };
+    if(typeof akModel!=='undefined' && akModel) setWeaponSkin(akModel, sk('ak'));
+    if(typeof awpModel!=='undefined' && awpModel) setWeaponSkin(awpModel, sk('awp'));
+    if(typeof deagleModel!=='undefined' && deagleModel) setWeaponSkin(deagleModel, sk('deagle'));
+    if(animW && animW.m4) setWeaponSkin(animW.m4.model, sk('m4'));
+    if(typeof knifeModel!=='undefined' && knifeModel){ knifeModel.traverse(o=>{ if(o.isMesh && !o.userData._own){ o.userData._own=1; o.material=Array.isArray(o.material)?o.material.map(x=>x.clone()):o.material.clone(); } }); applyKnifeSkin(knifeModel, sk('knife')); }
+  }catch(e){ console.warn('skins',e); }
 }
+
 function fafiHideShell(){
   const m=document.getElementById('menus'); if(m) m.style.display='none';
   const c=document.getElementById('campaign-map-overlay'); if(c) c.style.display='none';
@@ -261,9 +243,9 @@ async function fafiFinalizeAuth(user, isLocal){
 }
 function fafiRenderEquipTab(){
   const g=document.getElementById('equip-grid'); if(!g) return;
-  const order=[['ak','AK-47'],['awp','AWP'],['deagle','Desert Eagle'],['knife','Cuchillo']];
+  const order=[['ak','AK-47'],['m4','M4A4'],['awp','AWP'],['deagle','Desert Eagle'],['knife','Cuchillo']];
   g.innerHTML=order.map(([w,label])=>{
-    const owned=fafiSkinsDB.filter(s=>s.weapon===w);
+    const owned=fafiSkinsDB.filter(s=>s.weapon===w && window.userInventory.includes(s.id));
     const eq=window.equippedSkins[w];
     const opts=owned.map(s=>"<div class='fafi-list-item'><span class='rarity-"+s.rarity+"'>"+s.name+"</span><button class='btn-equip "+(eq===s.id?'equipped':'')+"' data-eq='"+s.id+"' data-w='"+w+"' style='width:110px;'>"+(eq===s.id?'EQUIPADO':'EQUIPAR')+"</button></div>").join('');
     return "<div style='margin-bottom:12px;'><span class='fafi16-label'>"+label+" — "+(eq?(fafiSkinById(eq)?.name||eq):'default')+"</span><div class='fafi-list-container' style='max-height:130px;'>"+opts+"<div class='fafi-list-item'><span>Default V2</span><button class='btn-equip' data-eq='' data-w='"+w+"' style='width:110px;'>QUITAR</button></div></div></div>";
@@ -295,8 +277,13 @@ function fafiEquipSkin(skinId, weaponId){
   if(now) fafiDbPushEquipped(now);
 }
 let fafiPrevScene=null, fafiPrevCam=null, fafiPrevRen=null, fafiPrevModel=null, fafiPrevLoop=false;
-function fafiBuildPreviewMesh(weaponId, skinId){
+function fafiBuildPreviewMesh_old(weaponId, skinId){
   const g=new THREE.Group();
+  if(weaponId!=='knife'){
+    const sk0=skinId?fafiSkinById(skinId):null;
+    const real=makeWorldWeapon(weaponId,{ length:0.8, forward:false, skin: sk0&&sk0.zones?sk0.zones:undefined });
+    if(real.children.length){ real.rotation.y=-Math.PI/2; const wrap=new THREE.Group(); wrap.add(real); return wrap; }
+  }
   let cDark=0x111111, cGrey=0x2a2a2a, cMetal=0x555555, cAccent=0xff4655, cWood=0x5c3a21;
   const s=skinId?fafiSkinById(skinId):null;
   if(s&&s.colors){ if(s.colors.dark!==undefined)cDark=s.colors.dark; if(s.colors.body!==undefined)cGrey=s.colors.body; if(s.colors.metal!==undefined)cMetal=s.colors.metal; if(s.colors.accent!==undefined)cAccent=s.colors.accent; if(s.colors.wood!==undefined)cWood=s.colors.wood; }
@@ -340,37 +327,40 @@ function fafiPreviewSkin(skinId, weaponId){
   if(!fafiPrevScene) return;
   try{
     if(fafiPrevModel) fafiPrevScene.remove(fafiPrevModel);
-    fafiPrevModel=fafiBuildPreviewMesh(weaponId, skinId);
+    fafiPrevModel=fafiBuildPreviewMesh_old(weaponId, skinId);
     const box=new THREE.Box3().setFromObject(fafiPrevModel); const ctr=box.getCenter(new THREE.Vector3()); fafiPrevModel.position.sub(ctr);
     fafiPrevScene.add(fafiPrevModel);
     const sk=fafiSkinById(skinId); const el=document.getElementById('preview-name');
     if(el&&sk){ el.textContent=sk.name; el.className='rarity-'+sk.rarity; el.style.position='absolute'; el.style.bottom='14px'; el.style.width='100%'; }
   }catch(e){}
 }
-function fafiBuyBox(type){
-  alert('🕒 Tienda deshabilitada — PRÓXIMAMENTE.');
-  return;
+let fafiOpeningBox=false;
+async function fafiBuyBox(type){
+  if(fafiOpeningBox) return;
   const cost = type==='basic'?200:(type==='advanced'?500:1000);
   if(window.fafiCoins<cost){ alert('¡No tienes suficientes FafiCoins! Juega AIM para ganar.'); return; }
-  window.fafiCoins-=cost; window.purchaseHistory.push({box:type,cost});
-  fafiUnlock('rich_boy'); fafiUpdateCoinsDisplay(); fafiSaveGameData(); fafiUpdateProfileUI();
-  let roll=Math.random()*100, target='comun';
-  if(type==='basic') target = roll<15?'epica':'comun';
-  else if(type==='advanced') target = roll<20?'legendaria':(roll<70?'epica':'comun');
-  else target = roll<50?'legendaria':'epica';
-  let poss=fafiSkinsDB.filter(s=>s.rarity===target); if(!poss.length) poss=fafiSkinsDB;
-  const won=poss[Math.floor(Math.random()*poss.length)];
-  const rc=document.getElementById('roulette-container'), track=document.getElementById('roulette-track');
-  if(!rc||!track){ fafiGiveSkin(won, target); return; }
-  rc.style.display='block'; track.style.transition='none'; track.style.transform='translateX(0)'; track.innerHTML='';
-  const N=45, winI=38;
-  for(let i=0;i<N;i++){ const sk=(i===winI)?won:fafiSkinsDB[Math.floor(Math.random()*fafiSkinsDB.length)]; const el=document.createElement('div'); el.className='roulette-item rarity-'+sk.rarity; el.innerHTML='<div>'+sk.name+'</div><span>'+sk.weapon.toUpperCase()+'</span>'; track.appendChild(el); }
-  void track.offsetWidth;
-  const iw=160, cw=rc.clientWidth||800, off=(Math.random()-0.5)*100;
-  const tx=-(winI*iw)+(cw/2)-(iw/2)+off;
-  track.style.transition='transform 4.2s cubic-bezier(0.1,0.9,0.2,1)'; track.style.transform='translateX('+tx+'px)';
-  setTimeout(()=>{ rc.style.display='none'; fafiGiveSkin(won, target); }, 4500);
+  fafiOpeningBox=true;
+  try{
+    window.fafiCoins-=cost; window.purchaseHistory.push({box:type,cost});
+    fafiUnlock('rich_boy');
+    let roll=Math.random()*100, target='comun';
+    if(type==='basic') target = roll<15?'epica':'comun';
+    else if(type==='advanced') target = roll<20?'legendaria':(roll<70?'epica':'comun');
+    else target = roll<50?'legendaria':'epica';
+    let poss=fafiSkinsDB.filter(s=>s.rarity===target); if(!poss.length) poss=fafiSkinsDB;
+    const won=poss[Math.floor(Math.random()*poss.length)];
+    const dup=window.userInventory.includes(won.id);
+    const refund = dup ? (won.rarity==='legendaria'?400:(won.rarity==='epica'?150:50)) : 0;
+    if(dup) window.fafiCoins+=refund; else window.userInventory.push(won.id);
+    fafiSaveGameData(); fafiUpdateCoinsDisplay(); fafiUpdateProfileUI(); fafiRenderInventory(); fafiRenderEquipTab();
+    await loadWeaponPack();                    // el arma del premio se construye con el pack de armas
+    document.getElementById('menus')&&(document.getElementById('menus').style.visibility='hidden');
+    const st=document.getElementById('store-ui'); if(st) st.style.visibility='hidden';
+    try{ await openCrate({ skin:won, boxType:type, refund }); }
+    finally{ document.getElementById('menus')&&(document.getElementById('menus').style.visibility=''); if(st) st.style.visibility=''; }
+  } finally { fafiOpeningBox=false; }
 }
+
 function fafiGiveSkin(won, rarity){
   const t=document.getElementById('popup-title'), d=document.getElementById('popup-desc'), n=document.getElementById('popup-skin-name');
   if(window.userInventory.includes(won.id)){
@@ -982,6 +972,7 @@ async function buildPackWeapons(){
   camera.updateMatrixWorld(true);
 
   console.log('Armas del pack cargadas: AK-47, M4A4, AWP, Desert Eagle');
+  fafiApplyEquippedSkins();
   updateWeaponVisibility(); updateAmmoHUD();
 }
 
@@ -3603,15 +3594,8 @@ updateHUD();
 
 /* === Wiring FAFI16 shell -> motor V2 === */
 function fafiSwitchTab(id, el){
-  if(id==='equip' || id==='tienda'){
-    try{ if(typeof showFloating==='function' && typeof gameActive!=='undefined' && gameActive) showFloating('🔒 PRÓXIMAMENTE'); }catch(e){}
-    alert('🔒 '+(id==='equip'?'Inventario':'Tienda')+' deshabilitado — PRÓXIMAMENTE.');
-    document.querySelectorAll('.fafi16-tab-btn').forEach(b=>b.classList.remove('active'));
-    const jb=document.querySelector('.fafi16-tab-btn[data-tab="jugar"]'); if(jb) jb.classList.add('active');
-    document.querySelectorAll('.fafi16-panel').forEach(p=>p.classList.remove('active'));
-    const jp=document.getElementById('fafi16-tab-jugar'); if(jp) jp.classList.add('active');
-    return;
-  }
+  if(id==='equip'){ menu2.openInventory(); return; }
+  if(id==='tienda'){ menu2.openStore(); return; }
   document.querySelectorAll('.fafi16-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.fafi16-tab-btn').forEach(b=>b.classList.remove('active'));
   const map={jugar:'fafi16-tab-jugar', equip:'fafi16-tab-equip', tienda:'fafi16-tab-tienda', perfil:'fafi16-tab-perfil', ajustes:'fafi16-tab-ajustes'};
@@ -3674,34 +3658,27 @@ async function fafiDoRegister(){
   alert('Cuenta local creada.');
   window.currentUserId=u; fafiFinalizeAuth({username:u}, true);
 }
-async function fafiPlayNormandy(){
+async function fafiPlayChapter(id){
   try{
     const m=await import('./historia.js');
-    m.playNormandy({ onEnd:(done)=>{
+    document.getElementById('campaign-map-overlay').style.display='none';
+    m.playChapter(id, { onEnd:(done)=>{
       if(done){
-        if(window.campaignLevel<2) window.campaignLevel=2;
-        fafiUnlock('campaign_hero'); fafiSaveGameData(); fafiDbCompleteCampaign(1);
+        if(window.campaignLevel<=id) window.campaignLevel=id+1;
+        fafiUnlock('campaign_hero'); fafiSaveGameData(); fafiDbCompleteCampaign(id);
       }
       fafiOpenCampaign();
     }});
   }catch(e){ console.warn('historia',e); fafiOpenCampaign(); }
 }
-function fafiOpenCampaign(){
+async function fafiOpenCampaign(){
   document.getElementById('menus').style.display='none';
   const ov=document.getElementById('campaign-map-overlay'); ov.style.display='flex';
-  const cont=document.getElementById('map-nodes-container'); cont.innerHTML='';
-  for(let i=1;i<=5;i++){
-    const un=i<=window.campaignLevel;
-    const n=document.createElement('div'); n.className='map-node '+(un?'unlocked':'locked'); n.textContent=i;
-    if(i===1) n.title='Nivel 1 · Desembarco de Normandía (escenas)';
-    if(un) n.addEventListener('click',()=>{
-      if(i===1){ ov.style.display='none'; fafiPlayNormandy(); return; }   // nivel 1 = cinemática histórica, sin jugabilidad
-      window.campaignActiveLevel=i; window.fafiAimSpeedMult=1+(i-1)*0.35;
-      ov.style.display='none'; startGame('aim'); showFloating('CAMPAÑA NIVEL '+i+' — 600+ pts para avanzar');
-    });
-    cont.appendChild(n);
-    if(i<5){ const l=document.createElement('div'); l.className='map-line '+(i<window.campaignLevel?'unlocked':''); cont.appendChild(l); }
-  }
+  try{
+    const [mh, sm]=await Promise.all([import('./historia.js'), import('./storymap.js')]);
+    const chapters=await mh.getChapters();
+    sm.renderStoryMap(ov, chapters, window.campaignLevel, fafiPlayChapter);
+    }catch(e){ console.warn('mapa historia',e); }
 }
 try{
   document.querySelectorAll('.fafi16-tab-btn').forEach(b=>b.addEventListener('click',()=>fafiSwitchTab(b.getAttribute('data-tab'), b)));
@@ -3724,7 +3701,7 @@ try{
   document.querySelectorAll('.btn-buy[data-box]').forEach(b=>b.addEventListener('click',()=>fafiBuyBox(b.getAttribute('data-box'))));
   document.getElementById('closeStoreBtn')?.addEventListener('click',()=>{ document.getElementById('store-ui').style.display='none'; if(!gameActive) document.getElementById('menus').style.display='flex'; });
   document.getElementById('closeInvBtn')?.addEventListener('click',()=>{ document.getElementById('inventory-ui').style.display='none'; if(!gameActive) document.getElementById('menus').style.display='flex'; });
-  document.getElementById('openFullInvBtn')?.addEventListener('click',()=>{ alert('🔒 Inventario deshabilitado — PRÓXIMAMENTE.'); });
+  document.getElementById('openFullInvBtn')?.addEventListener('click',()=>{ window.openInventory(); });
   document.getElementById('skinPopupOk')?.addEventListener('click',()=>{ document.getElementById('skin-popup').style.display='none'; });
   document.getElementById('addFriendBtn')?.addEventListener('click',()=>{
     const v=(document.getElementById('new-friend-id').value||'').trim();
@@ -3738,9 +3715,9 @@ try{
   window.switchFafi16Tab=fafiSwitchTab; window.handleLogin=fafiDoLogin; window.handleRegister=fafiDoRegister;
   window.showRegister=()=>{ document.getElementById('login-box').style.display='none'; document.getElementById('register-box').style.display='block'; };
   window.showLogin=()=>{ document.getElementById('register-box').style.display='none'; document.getElementById('login-box').style.display='block'; };
-  window.openStore=()=>{ alert('🔒 Tienda deshabilitada — PRÓXIMAMENTE.'); };
+  window.openStore=()=>menu2.openStore();
   window.closeStore=()=>{ document.getElementById('store-ui').style.display='none'; if(!gameActive) document.getElementById('menus').style.display='flex'; };
-  window.openInventory=()=>{ alert('🔒 Inventario deshabilitado — PRÓXIMAMENTE.'); };
+  window.openInventory=()=>menu2.openInventory();
   window.closeInventory=()=>{ document.getElementById('inventory-ui').style.display='none'; if(!gameActive) document.getElementById('menus').style.display='flex'; };
   window.buyBox=fafiBuyBox; window.equipSkin=fafiEquipSkin; window.previewSkin=fafiPreviewSkin;
   window.addFriend=()=>document.getElementById('addFriendBtn')?.click();

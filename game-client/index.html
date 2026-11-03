@@ -6,6 +6,8 @@
 <title>FAFI 1.6 V2 - AIM PRACTICE</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/historia.css">
+<link rel="stylesheet" href="css/menu2.css">
 <script type="importmap">
 {
   "imports": {
@@ -47,8 +49,8 @@
     <div class="fafi16-logo">FAFI <span>1.6</span></div>
     <div class="fafi16-nav-tabs">
       <div class="fafi16-tab-btn active" data-tab="jugar">Jugar</div>
-      <div class="fafi16-tab-btn fafi-locked" data-tab="equip" data-locked="1" style="opacity:.45;cursor:not-allowed;">Equipamiento 🔒</div>
-      <div class="fafi16-tab-btn fafi-locked" data-tab="tienda" data-locked="1" style="opacity:.45;cursor:not-allowed;">Tienda 🔒</div>
+      <div class="fafi16-tab-btn" data-tab="equip">Equipamiento</div>
+      <div class="fafi16-tab-btn" data-tab="tienda">Tienda</div>
       <div class="fafi16-tab-btn" data-tab="perfil">Perfil</div>
       <div class="fafi16-tab-btn" data-tab="ajustes">Ajustes</div>
     </div>
@@ -59,38 +61,22 @@
   </div>
   <div class="fafi16-content-area">
     <div id="fafi16-tab-jugar" class="fafi16-panel active">
-      <div class="fafi16-panel-title">Modos de Juego — Motor V2</div>
-      <span class="fafi16-label">Un jugador (este cliente V2 con GLBs + Dust2 real)</span>
-      <button class="fafi16-btn-standard fafi16-btn-success" id="fafiPlayAim">🎯 CAMPO DE TIRO (AIM 30s)</button>
-      <button class="fafi16-btn-standard fafi16-btn-success" id="fafiPlayDefuse">💣 DEFUSE 5v5 — T vs CT con bots</button>
-      <button class="fafi16-btn-standard fafi16-btn-campaign" id="fafiPlayDust2">🗺️ EXPLORACIÓN LIBRE — Dust II / Italy / Office</button>
-      <button class="fafi16-btn-standard" id="fafiOpenCampaign">★ MAPA DE CAMPAÑA (5 niveles → AIM progresivo)</button>
-      <div class="fafi16-note">AIM: 30s, todas las armas libres, blancos móviles. DUST II: cuchillo + $3000, <b style="color:#fff">B</b> compra (Deagle $700 / AK $2500 / M4A4 $3100 / AWP $4750). DEFUSE: rondas de 1:45, plantar/desactivar con <b style="color:#fff">E</b> (mantener), TAB marcador. Skins del inventario se aplican al modelo 3D.<br>WASD • SHIFT agacharse • ESPACIO saltar (Dust2) • 1:AK 2:Cuchillo 3:AWP 4:Deagle 5:M4A4 • Click der mira • R recargar • F inspeccionar.</div>
-      <div style="margin-top:14px;"><span class="fafi16-label">Skin equipada actual</span><div id="fafi-current-loadout" class="fafi-list-container" style="max-height:90px;"></div></div>
-    </div>
-    <div id="fafi16-tab-equip" class="fafi16-panel">
-      <div class="fafi16-panel-title">Equipamiento — Próximamente</div>
-      <div style="background:rgba(214,159,15,.08);border:1px solid rgba(214,159,15,.4);border-radius:8px;padding:26px;text-align:center;">
-        <div style="font-size:40px;">🔒</div>
-        <div style="font-size:18px;font-weight:900;letter-spacing:2px;color:#d69f0f;margin:8px 0;">PRÓXIMAMENTE</div>
-        <p style="color:#aaa;font-size:13px;">El inventario y las skins están deshabilitados en esta versión.<br>Tus armas V2 funcionan con el aspecto por defecto.</p>
+      <div class="mm-hero">
+        <div class="mm-welcome"><div class="mm-hi">BIENVENIDO,</div><div class="mm-user" id="mm-user">JUGADOR</div><div class="mm-tip">«Precisión táctica + diversión arcade». Elige un modo y demuestra tu puntería.</div></div>
+        <div class="mm-stats">
+          <div class="mm-stat"><b id="mm-coins">0</b><span>Fafi Coins</span></div>
+          <div class="mm-stat"><b id="mm-skins">0</b><span>Skins</span></div>
+          <div class="mm-stat"><b id="mm-story">0/7</b><span>Hechos</span></div>
+        </div>
       </div>
-      <div id="equip-grid" style="display:none;"></div>
-      <button class="fafi16-btn-standard" id="openFullInvBtn" style="margin-top:12px;opacity:.45;cursor:not-allowed;" disabled>INVENTARIO DESHABILITADO — PRÓXIMAMENTE</button>
-    </div>
-    <div id="fafi16-tab-tienda" class="fafi16-panel">
-      <div class="fafi16-panel-title">Tienda — Próximamente</div>
-      <div style="background:rgba(214,159,15,.08);border:1px solid rgba(214,159,15,.4);border-radius:8px;padding:26px;text-align:center;margin-bottom:14px;">
-        <div style="font-size:40px;">🔒</div>
-        <div style="font-size:18px;font-weight:900;letter-spacing:2px;color:#d69f0f;margin:8px 0;">PRÓXIMAMENTE</div>
-        <p style="color:#aaa;font-size:13px;">La tienda de cajas está deshabilitada en esta versión.<br>Tus Fafi Coins se conservan para cuando se active.</p>
+      <div class="mm-modes">
+        <button class="mm-card mm-aim" id="fafiPlayAim"><i>🎯</i><em>ENTRENAMIENTO</em><b>Campo de tiro</b><span>30 s de blancos móviles. Todas las armas libres.</span></button>
+        <button class="mm-card mm-def" id="fafiPlayDefuse"><i>💣</i><em>5 vs 5 · BOTS</em><b>Defuse</b><span>Terroristas contra antiterroristas: planta o desactiva la bomba.</span></button>
+        <button class="mm-card mm-free" id="fafiPlayDust2"><i>🗺️</i><em>EXPLORACIÓN</em><b>Mapa libre</b><span>Dust II, Italy y Office sin reglas, para practicar.</span></button>
+        <button class="mm-card mm-story" id="fafiOpenCampaign"><i>★</i><em>CAMPAÑA</em><b>Modo historia</b><span>Los hechos de la Segunda Guerra Mundial hasta el Día D.</span></button>
       </div>
-      <div class="boxes-container" style="margin-top:10px;opacity:.4;pointer-events:none;filter:grayscale(80%);">
-        <div class="loot-box box-basic" style="border-bottom:4px solid #aaa;"><div class="box-title rarity-comun">Caja Básica</div><p style="font-size:12px;color:#aaa;">Comunes. Pequeña chance Épica.</p><div class="box-price">200 Coins</div><button class="btn-buy" data-box="basic">ABRIR</button></div>
-        <div class="loot-box box-advanced" style="border-bottom:4px solid #a335ee;"><div class="box-title rarity-epica">Caja Avanzada</div><p style="font-size:12px;color:#aaa;">Alta prob. Épicas.</p><div class="box-price">500 Coins</div><button class="btn-buy" data-box="advanced">ABRIR</button></div>
-        <div class="loot-box box-legendary" style="border-bottom:4px solid #d69f0f;"><div class="box-title rarity-legendaria">Caja Clasificada</div><p style="font-size:12px;color:#aaa;">Épica o Legendaria.</p><div class="box-price">1000 Coins</div><button class="btn-buy" data-box="legendary">ABRIR</button></div>
-      </div>
-      <div class="fafi16-note">Duplicada = reembolso (50/150/400). Ganas coins jugando AIM: +1 coin cada 10 pts.</div>
+      <div class="mm-sec"><div class="mm-h">TU EQUIPO</div><div id="fafi-current-loadout" class="lo-grid"></div></div>
+      <div class="mm-keys">Controles: <b>WASD</b> mover · <b>SHIFT</b> agacharse · <b>ESPACIO</b> saltar · <b>1</b> AK · <b>2</b> cuchillo · <b>3</b> AWP · <b>4</b> Deagle · <b>5</b> M4A4 · <b>7-0</b> granadas · <b>B</b> comprar · <b>E</b> plantar/desactivar · <b>TAB</b> marcador · <b>R</b> recargar · <b>F</b> inspeccionar.</div>
     </div>
     <div id="fafi16-tab-perfil" class="fafi16-panel">
       <div class="fafi16-panel-title">Tu Perfil Fafi</div>
@@ -120,12 +106,7 @@
   </div>
 </div>
 
-<div id="campaign-map-overlay">
-  <h1 style="color:#d69f0f;font-size:34px;text-transform:uppercase;letter-spacing:5px;margin-bottom:26px;">Modo Historia</h1>
-  <div class="map-path" id="map-nodes-container"></div>
-  <p style="color:#aaa;margin-top:10px;max-width:560px;">Nivel 1: «Desembarco de Normandía» (6 de junio de 1944), una secuencia de escenas con música y narrador. Niveles 2-5: AIM de 30 s con más velocidad de blancos (600+ pts para avanzar). Tu progreso se guarda.</p>
-  <button class="fafi16-btn-standard" style="width:250px;margin-top:18px;" id="closeCampBtn">VOLVER AL MENÚ</button>
-</div>
+<div id="campaign-map-overlay"></div>
 
 <div id="store-ui" class="overlay-menu">
   <div class="overlay-header"><h2 class="overlay-title">Tienda de Cajas</h2><div class="fafi16-coins" id="coins-display-store">FAFI COINS: 2000</div><button class="close-btn" id="closeStoreBtn">VOLVER AL MENÚ</button></div>

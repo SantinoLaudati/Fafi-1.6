@@ -1,0 +1,26 @@
+/* ===== Modo historia: mapa de hechos ===== */
+#campaign-map-overlay{padding:0;overflow:auto;justify-content:flex-start;background:radial-gradient(circle at 50% 35%,#242a2f 0%,#0a0c0f 100%)}
+#campaign-map-overlay .sm-head{text-align:center;padding:2.2vh 16px 0}
+#campaign-map-overlay .sm-head h1{color:#d69f0f;font-size:clamp(22px,3.6vw,38px);letter-spacing:6px;margin:0}
+#campaign-map-overlay .sm-sub{color:#b9b29a;letter-spacing:3px;font-size:clamp(11px,1.3vw,14px);margin:6px 0 10px;text-transform:uppercase}
+#campaign-map-overlay .sm-prog{position:relative;width:min(420px,80%);height:20px;margin:0 auto;background:#1b1f23;border:1px solid #3a3f44;border-radius:10px;overflow:hidden}
+#campaign-map-overlay .sm-prog i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#9a6c06,#e0a912)}
+#campaign-map-overlay .sm-prog span{position:relative;font-size:11px;letter-spacing:2px;line-height:20px;color:#fff;text-shadow:0 1px 3px #000}
+#campaign-map-overlay .sm-body{display:flex;gap:2vw;align-items:center;justify-content:center;padding:2vh 2vw;flex-wrap:wrap;width:100%;box-sizing:border-box}
+#campaign-map-overlay .sm-map{position:relative;border:2px solid rgba(214,159,15,.6);box-shadow:0 0 40px #000;flex:none}
+#campaign-map-overlay .sm-map canvas{position:absolute;inset:0;width:100%;height:100%}
+#campaign-map-overlay .sm-nodes{position:absolute;inset:0}
+#campaign-map-overlay .sm-node{position:absolute;transform:translate(-50%,-50%);background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;font-family:inherit;color:#fff}
+#campaign-map-overlay .sm-node span{width:clamp(30px,3.2vw,46px);height:clamp(30px,3.2vw,46px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:clamp(13px,1.5vw,19px);background:#262a2e;border:2px solid #666;transition:transform .2s}
+#campaign-map-overlay .sm-node em{font-style:normal;font-size:clamp(9px,.95vw,12px);background:rgba(0,0,0,.72);padding:1px 6px;margin-top:3px;white-space:nowrap;letter-spacing:1px}
+#campaign-map-overlay .sm-node.open span{background:#d69f0f;color:#111;border-color:#fff;box-shadow:0 0 16px #d69f0f;animation:smPulse 2s infinite}
+#campaign-map-overlay .sm-node.done span{background:#3f7d3a;color:#fff;box-shadow:0 0 10px #3f7d3a;animation:none}
+#campaign-map-overlay .sm-node.locked{cursor:not-allowed;opacity:.65}
+#campaign-map-overlay .sm-node.sel span{transform:scale(1.25);border-color:#fff}
+@keyframes smPulse{0%,100%{box-shadow:0 0 6px #d69f0f}50%{box-shadow:0 0 22px #ffcf40}}
+#campaign-map-overlay .sm-panel{flex:1 1 280px;max-width:420px;min-width:240px;background:rgba(10,12,14,.82);border:1px solid #3a3f44;border-left:4px solid #d69f0f;padding:18px 20px;text-align:left}
+#campaign-map-overlay .sm-panel .sm-n{color:#d69f0f;letter-spacing:4px;font-size:12px}
+#campaign-map-overlay .sm-panel h2{margin:6px 0 2px;font-size:clamp(20px,2.4vw,30px);letter-spacing:2px;text-transform:uppercase}
+#campaign-map-overlay .sm-panel .sm-place{color:#aeb7bd;font-size:13px;letter-spacing:2px;margin-bottom:10px;text-transform:uppercase}
+#campaign-map-overlay .sm-panel p{color:#cfd3d6;font-family:Georgia,serif;line-height:1.5;margin:8px 0 14px}
+#campaign-map-overlay .sm-back{width:250px;margin:6px auto 3vh}
