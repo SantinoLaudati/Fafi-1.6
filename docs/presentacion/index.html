@@ -1,0 +1,162 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>FAFI 1.6 — Presentación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+@page{size:1280px 720px;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#000;font-family:'Poppins','Segoe UI',Arial,sans-serif;color:#f2f2f2}
+.s{width:1280px;height:720px;position:relative;overflow:hidden;background:#050505;page-break-after:always;break-after:page;padding:56px 64px}
+.brand{position:absolute;top:34px;right:56px;text-align:right;font-size:15px;font-weight:700}
+.brand small{display:block;font-size:10px;font-weight:400;color:#bbb;margin-top:2px}
+.foot{position:absolute;left:56px;bottom:30px;font-size:12px;color:#ccc}
+.logo{position:absolute;right:50px;bottom:24px;width:40px;height:40px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;color:#eee;border:2px solid #ddd}
+h2{font-size:42px;font-weight:800;letter-spacing:-.5px;color:#e6e6e6;margin-bottom:26px;text-transform:uppercase}
+.card{background:#151515;border-radius:18px;padding:24px 26px}
+.card h3{font-size:12px;letter-spacing:1.5px;color:#9a9a9a;margin-bottom:12px;text-transform:uppercase;font-weight:600}
+.card p,.card li{font-size:17px;line-height:1.5;color:#e4e4e4}
+.card li{margin-left:20px;margin-bottom:6px}
+.img{border-radius:22px;overflow:hidden;background:#111}
+.img img{width:100%;height:100%;object-fit:cover;display:block}
+.cap{font-size:12px;color:#999;margin-top:8px}
+.row{display:flex;gap:22px}.col{display:flex;flex-direction:column;gap:18px}
+.pill{display:inline-block;background:#2a2a2a;border-radius:8px;padding:4px 12px;font-size:13px;font-weight:600;color:#ddd}
+.num{width:30px;height:30px;border-radius:8px;background:#262626;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;margin-right:14px;flex:none}
+.step{display:flex;align-items:center;background:#1d1d1d;border-radius:10px;padding:11px 14px;font-size:17px;margin-bottom:10px}
+.big{font-size:96px;font-weight:800;line-height:1}
+.key{background:#e9e9e9;color:#111;border-radius:8px;padding:5px 12px;font-size:14px;font-weight:700;min-width:130px;text-align:center;display:inline-block}
+.krow{display:flex;align-items:center;gap:16px;margin-bottom:13px;font-size:17px}
+</style></head><body>
+<!-- 1 -->
+<section class="s" style="padding:0">
+ <div style="position:absolute;left:56px;top:34px;font-size:238px;font-weight:800;line-height:.82;letter-spacing:-10px;color:#ededed">FAFI<br>1.6</div>
+ <div class="img" style="position:absolute;right:64px;top:76px;width:520px;height:300px"><img src="img/dust2.png"></div>
+ <div style="position:absolute;right:64px;top:400px;width:520px"><div style="font-size:17px;font-weight:700;letter-spacing:.5px">FPS TÁCTICO MULTIJUGADOR POR EQUIPOS</div><div style="font-size:15px;color:#aaa;margin-top:8px">Navegador web · PC · WW2 · Sin instalación</div></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div>
+ <div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 2 -->
+<section class="s"><h2>¿Quiénes somos?</h2>
+ <div class="row" style="justify-content:center;gap:90px;margin-top:20px">
+  <div style="text-align:center"><div class="img" style="width:230px;height:260px;margin:0 auto 18px"><img src="../../dev-website/assets/DanteIglesias.png" style="object-position:top"></div><b style="font-size:18px">DANTE IGLESIAS</b><div style="font-size:15px;margin-top:4px">Frontend Designer / Technical Writer</div></div>
+  <div style="text-align:center"><div class="img" style="width:230px;height:260px;margin:0 auto 18px"><img src="../../dev-website/assets/SantinoLaudati.png" style="object-position:top"></div><b style="font-size:18px">SANTINO LAUDATI</b><div style="font-size:15px;margin-top:4px">Lead Developer / R&amp;D</div></div>
+  <div style="text-align:center"><div class="img" style="width:230px;height:260px;margin:0 auto 18px"><img src="../../dev-website/assets/Pachus13.png" style="object-position:top"></div><b style="font-size:18px">IAN QUIROGA</b><div style="font-size:15px;margin-top:4px">Backend Developer</div></div>
+ </div>
+ <div style="text-align:center;margin-top:34px;color:#aaa;font-size:16px">TeamTstudio · estudio independiente de videojuegos</div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 3 -->
+<section class="s"><h2>Concepto y objetivo</h2>
+ <div class="row"><div class="card" style="width:500px;height:430px"><p>FPS táctico multijugador en el navegador, inspirado en <b>Valorant</b> y <b>Counter-Strike</b>, con estética low-poly.</p><br><p>Partidas rápidas, competitivas y accesibles: se abre y se juega, sin instalar nada.</p><br><p style="color:#aaa">Juego en Three.js r160, servido como web estática; backend PHP + MySQL para cuentas, inventario y social.</p></div>
+ <div class="card" style="flex:1;height:430px"><h3>Gameplay</h3>
+  <div class="step"><span class="num">1</span>Elegir personaje / bando</div><div class="step"><span class="num">2</span>Ingresar a la partida</div><div class="step"><span class="num">3</span>Coordinar la estrategia con el equipo</div><div class="step"><span class="num">4</span>Plantar la bomba o defender el área</div><div class="step"><span class="num">5</span>Eliminar enemigos para ganar rondas</div></div></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 4 -->
+<section class="s"><h2>Estilo visual</h2>
+ <div class="row"><div class="card" style="width:430px;height:430px"><h3>Arte</h3><ul><li>Diseño low-poly</li><li>Colores vibrantes</li><li>Efectos arcade y animaciones suaves</li><li>Interfaces tipo eSports / HUD competitivo</li><li>Sombras, agua y físicas (inercia, rebotes, ragdoll)</li></ul><br><p style="font-size:14px;color:#aaa"><b>Jugabilidad:</b> Valorant · Counter-Strike<br><b>Visual:</b> Team Fortress 2 · Overwatch</p></div>
+ <div class="img" style="flex:1;height:430px"><img src="img/dust2.png"></div></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 5 -->
+<section class="s"><h2>3 modos jugables</h2>
+ <div class="row" style="gap:22px">
+  <div class="card" style="flex:1;height:440px"><div class="img" style="height:170px;margin-bottom:16px"><img src="img/aim30.png"></div><b style="font-size:22px">AIM 30 s</b><p style="font-size:15px;margin-top:8px">Campo de tiro: blancos móviles, puntería y precisión. 30 segundos con AK-47, Deagle y AWP. Récord guardado.</p></div>
+  <div class="card" style="flex:1;height:440px"><div class="img" style="height:170px;margin-bottom:16px"><img src="img/dust2.png"></div><b style="font-size:22px">DEFUSE 5v5</b><p style="font-size:15px;margin-top:8px">T vs CT con bots. Rondas de 1:45, bomba de 40 s, economía y tienda. Mapas Dust II, Italy y Office.</p></div>
+  <div class="card" style="flex:1;height:440px"><div class="img" style="height:170px;margin-bottom:16px"><img src="../../dev-website/assets/fafi/story.png"></div><b style="font-size:22px">MODO HISTORIA</b><p style="font-size:15px;margin-top:8px">Mapa de Europa con 7 hechos de la Segunda Guerra Mundial. Disponible: «El desembarco de Normandía»; los demás, próximamente.</p></div>
+ </div>
+ <div style="margin-top:14px;font-size:13px;color:#aaa"><b>MENÚ:</b> Jugar · Equipamiento · Tienda · Perfil · Ajustes</div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 6 -->
+<section class="s"><h2>Defuse 5v5</h2>
+ <div class="row"><div class="img" style="width:700px;height:430px"><img src="img/dust2.png"></div>
+ <div class="col" style="flex:1"><div class="card"><h3>Reglas</h3><ul><li>Compra de 10 s · ronda de 1:45</li><li>Plantar / desactivar con <b>E</b> (mantener)</li><li>Bomba de 40 s · kit de defusa (CT)</li><li>Empiezas con $800 · gana quien llegue a 4 rondas</li></ul></div>
+ <div class="card"><h3>Mapas y bots</h3><p style="font-size:15px">Dust II, Italy y Office con zonas de spawn y sitios A/B. Los bots navegan con malla propia, disparan, plantan y desactivan.</p></div></div></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 7 -->
+<section class="s"><h2>Modo historia: Normandía</h2>
+ <div class="row"><div class="img" style="width:700px;height:420px"><img src="../../dev-website/assets/fafi/desembarco.webp"></div>
+ <div class="col" style="flex:1"><div class="card"><h3>6 de junio de 1944</h3><p style="font-size:16px">Cinemática de 8 planos con modelos GLB WW2: lancha Higgins, bombarderos, acorazado, búnkeres y soldados. Mar procedural con shader.</p></div>
+ <div class="card"><h3>Narración</h3><p style="font-size:16px">Locución masculina neuronal (Piper), con música y sonido real. La duración de cada plano la marca el audio.</p></div></div></div>
+ <div style="margin-top:12px"><span class="pill">1 hecho desbloqueado</span> <span class="pill">6 con candado</span></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 8 -->
+<section class="s"><h2>Arsenal base</h2>
+ <div class="row" style="gap:18px">
+  <div class="card" style="flex:1;height:390px"><b style="font-size:19px">AK-47</b><br><br><span class="pill">TECLA 1</span><div class="big" style="font-size:46px;margin:18px 0 10px">$2500</div><p style="font-size:14px">Cargador 30/90. Automático, versátil, bueno en ráfagas cortas.</p></div>
+  <div class="card" style="flex:1;height:390px"><b style="font-size:19px">AWP</b><br><br><span class="pill">TECLA 3</span><div class="big" style="font-size:46px;margin:18px 0 10px">$4750</div><p style="font-size:14px">Cargador 10/30. Francotirador de un tiro, mira telescópica.</p></div>
+  <div class="card" style="flex:1;height:390px"><b style="font-size:19px">DESERT EAGLE</b><br><br><span class="pill">TECLA 4</span><div class="big" style="font-size:46px;margin:18px 0 10px">$700</div><p style="font-size:14px">Semi-auto. Preciso, potente y agachado.</p></div>
+  <div class="card" style="flex:1;height:390px"><b style="font-size:19px">CUCHILLO</b><br><br><span class="pill">TECLA 2</span><div class="big" style="font-size:40px;margin:22px 0 10px">INCLUIDO</div><p style="font-size:14px">Siempre en inventario. Silencioso, con animación propia.</p></div>
+ </div><p style="margin-top:16px;font-size:14px;color:#aaa">También: M4A4 (CT), granadas flash · humo · HE · molotov (teclas 7–0) y kit de defusa. Vista en primera persona con segundo pase de render para que el arma nunca atraviese paredes.</p>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 9 -->
+<section class="s"><h2>Economía, cajas y skins</h2>
+ <div class="row"><div class="col" style="width:520px">
+  <div class="card" style="text-align:center"><div class="big" style="font-size:80px">2000</div><div style="font-size:13px;color:#aaa;letter-spacing:1px">FAFI COINS AL EMPEZAR · guardadas por usuario</div></div>
+  <div class="card" style="padding:14px 22px"><p><b>200</b> · Caja básica</p></div><div class="card" style="padding:14px 22px"><p><b>500</b> · Caja avanzada</p></div><div class="card" style="padding:14px 22px"><p><b>1000</b> · Caja clasificada</p></div>
+  <p style="font-size:14px;color:#aaa">32 skins · duplicadas reembolsan 50 / 150 / 400 coins.</p></div>
+ <div class="img" style="flex:1;height:440px"><img src="../../dev-website/assets/fafi/inv.png"></div></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 10 -->
+<section class="s"><h2>Menú y personalización</h2>
+ <div class="row"><div class="col" style="flex:1"><div class="img" style="height:290px"><img src="../../dev-website/assets/fafi/menu.png"></div><div class="cap">Menú principal</div></div><div class="col" style="flex:1"><div class="img" style="height:290px"><img src="../../dev-website/assets/fafi/selector.png"></div><div class="cap">Selector de personaje y bando</div></div></div>
+ <div class="row" style="margin-top:8px"><div class="card" style="flex:1"><h3>Personajes</h3><p style="font-size:15px">T: Phoenix y Leet · CT: FBI y ST6.</p></div><div class="card" style="flex:1"><h3>Perfil social</h3><p style="font-size:15px">Amigos, historial de compras, estadísticas y ranking por kills.</p></div><div class="card" style="flex:1"><h3>Logros</h3><p style="font-size:15px">Recluta · Inversor · Héroe de Guerra · Explorador Dust2 · Aim Pro.</p></div></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 11 -->
+<section class="s"><h2>Controles</h2>
+ <div class="row" style="gap:40px"><div class="card" style="flex:1"><div class="krow"><span class="key">WASD</span>Moverse</div><div class="krow"><span class="key">Mouse</span>Mirar</div><div class="krow"><span class="key">Click izq.</span>Disparar / lanzar</div><div class="krow"><span class="key">Click der.</span>Apuntar (AWP) / mirar</div><div class="krow"><span class="key">R</span>Recargar</div><div class="krow"><span class="key">F</span>Inspeccionar arma</div><div class="krow"><span class="key">E</span>Plantar / desactivar</div></div>
+ <div class="card" style="flex:1"><div class="krow"><span class="key">1 · 2 · 3 · 4 · 5</span>Cambiar arma</div><div class="krow"><span class="key">7 · 8 · 9 · 0</span>Granadas</div><div class="krow"><span class="key">Shift</span>Agacharse</div><div class="krow"><span class="key">Espacio</span>Saltar</div><div class="krow"><span class="key">Tab</span>Marcador</div><div class="krow"><span class="key">B</span>Tienda (en spawn)</div><div class="krow"><span class="key">Esc</span>Pausa / menú</div></div></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 12 -->
+<section class="s"><h2>Optimizado para PCs modestas</h2>
+ <div class="row"><div class="card" style="width:380px;height:440px;text-align:center"><div class="big" style="margin-top:50px">4 GB</div><p style="color:#aaa;margin-top:8px">de RAM son suficientes</p><br><p style="font-size:15px">El juego elige la calidad al abrirse según la memoria y los núcleos del equipo.</p></div>
+ <div class="col" style="flex:1"><div class="card"><h3>Calidad MÍNIMA</h3><p style="font-size:15px">70 % de resolución, sin antialiasing ni sombras, niebla corta, 4 bots, menos partículas y 30 FPS fijos. También: BAJA / MEDIA / ALTA.</p></div>
+ <div class="card"><h3>Memoria</h3><p style="font-size:15px">Los sonidos se decodifican solo al usarse (antes ocupaban cientos de MB). Texturas de mapas y modelos reducidos a 1k/2k.</p></div>
+ <div class="card"><h3>Sin instalar nada</h3><p style="font-size:15px">Funciona sin conexión con «Jugar sin conexión»; el progreso se guarda en el navegador.</p></div></div></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 13 -->
+<section class="s"><h2>Stack tecnológico</h2>
+ <div style="display:flex;flex-direction:column;gap:11px;font-size:16px">
+ <div class="card" style="padding:13px 22px"><b style="display:inline-block;width:200px;color:#aaa;font-size:13px">3D / RENDER</b>HTML5 + Three.js r160 · PointerLockControls · GLTFLoader (modelos .glb)</div>
+ <div class="card" style="padding:13px 22px"><b style="display:inline-block;width:200px;color:#aaa;font-size:13px">FRONTEND</b>game-client/index.html: Login → Menú → Selector de bando → Motor + HUD</div>
+ <div class="card" style="padding:13px 22px"><b style="display:inline-block;width:200px;color:#aaa;font-size:13px">AUDIO</b>WebAudio · muestras reales con sonido posicional · locución Piper TTS</div>
+ <div class="card" style="padding:13px 22px"><b style="display:inline-block;width:200px;color:#aaa;font-size:13px">BACKEND API</b>PHP 8 + MySQL + JWT: auth, inventario, social y juego</div>
+ <div class="card" style="padding:13px 22px"><b style="display:inline-block;width:200px;color:#aaa;font-size:13px">MULTIJUGADOR</b>PHP Ratchet WebSocket en /game (salas, disparos, daño y chat)</div>
+ <div class="card" style="padding:13px 22px"><b style="display:inline-block;width:200px;color:#aaa;font-size:13px">DESPLIEGUE</b>Nginx + PHP-FPM + MySQL + Redis, todo en Docker</div>
+ <div class="card" style="padding:13px 22px"><b style="display:inline-block;width:200px;color:#aaa;font-size:13px">CONFIG AUTO</b>apiBaseUrl y wsUrl se derivan de la URL de la página, sin editar nada</div></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 14 -->
+<section class="s"><h2>Despliegue con Docker</h2>
+ <div class="row"><div class="col" style="flex:1.4;gap:0"><div style="font-size:13px;color:#aaa;letter-spacing:1px;margin-bottom:12px">DEMO ESCOLAR EN 2 HORAS</div>
+ <div class="step"><span class="num">01</span><code>cp .env.docker .env</code>&nbsp;y ajustar DOMAIN, claves</div>
+ <div class="step"><span class="num">02</span><code>docker compose up -d --build</code></div>
+ <div class="step"><span class="num">03</span>Verificar: <code>http://&lt;IP&gt;/health</code></div>
+ <div class="step"><span class="num">04</span>Los jugadores entran a <code>http://&lt;IP&gt;/</code> en la misma red</div>
+ <p style="font-size:14px;color:#aaa;margin-top:8px">En Windows, sin Docker: doble clic en <b>iniciar-juego.bat</b> (servidor local en localhost:5173).</p></div>
+ <div class="col" style="flex:1"><div style="font-size:13px;color:#aaa;letter-spacing:1px">SERVICIOS</div><div class="card"><b>APP</b><p style="font-size:14px;color:#bbb">php8.2-fpm + nginx + supervisor</p></div><div class="card"><b>DB</b><p style="font-size:14px;color:#bbb">mysql 8 · base fafi_1_6</p></div><div class="card"><b>REDIS</b><p style="font-size:14px;color:#bbb">cache interna</p></div></div></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 15 -->
+<section class="s"><h2>Estado actual</h2>
+ <div class="row" style="gap:22px">
+ <div class="card" style="flex:1;height:440px"><div style="font-size:26px;font-weight:800;color:#777">01</div><h2 style="font-size:24px;margin:8px 0 14px">Logrado</h2><ul style="font-size:15px"><li>FPS jugable en la web</li><li>Defuse 5v5 con bots y 3 mapas</li><li>Compra, cajas y 32 skins</li><li>Modo historia: Normandía</li><li>Calidad MÍNIMA para 4 GB</li><li>Backend con login, inventario y social</li><li>Despliegue con Docker</li></ul></div>
+ <div class="card" style="flex:1;height:440px"><div style="font-size:26px;font-weight:800;color:#777">02</div><h2 style="font-size:24px;margin:8px 0 14px">En curso</h2><ul style="font-size:15px"><li>Multijugador completo por WebSocket</li><li>Pulido de bots y balance de armas</li><li>Más contenido WW2</li></ul></div>
+ <div class="card" style="flex:1;height:440px"><div style="font-size:26px;font-weight:800;color:#777">03</div><h2 style="font-size:24px;margin:8px 0 14px">Siguiente</h2><ul style="font-size:15px"><li>Capítulos 2 al 7 del modo historia</li><li>Team Deathmatch y más mapas</li><li>Más armas y skins</li><li>Ranking global online</li></ul></div></div>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="foot">teamtstudio@gmail.com</div><div class="logo">T</div>
+</section>
+<!-- 16 -->
+<section class="s"><div style="margin-top:130px;font-size:130px;font-weight:800;color:#ddd;letter-spacing:-3px">GRACIAS</div>
+ <p style="font-size:21px;margin-top:20px">FAFI 1.6: jugar al instante, precisión táctica estilo Valorant/CS, sin instalar nada.</p>
+ <p style="font-size:16px;margin-top:32px;color:#bbb">Repositorio: github.com/SantinoLaudati/Fafi-1.6</p>
+ <p style="font-size:16px;margin-top:8px;color:#bbb">Instagram: @teamtstudio · teamtstudio@gmail.com</p>
+ <p style="position:absolute;bottom:70px;font-size:12px;color:#777">© TeamTstudio · Proyecto escolar sin fines comerciales. Los modelos 3D de terceros están acreditados en CREDITS.md.</p>
+ <div class="brand">TeamTstudio<small>Presented By: Ian Q, Dante I, Santino L</small></div><div class="logo">T</div>
+</section>
+</body></html>
