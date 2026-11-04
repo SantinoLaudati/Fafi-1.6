@@ -176,7 +176,7 @@ function fafiUpdateCoinsDisplay(){
   const b=document.getElementById('coins-display-store'); if(b) b.textContent='FAFI COINS: '+window.fafiCoins;
   const mc=document.getElementById('mm-coins'); if(mc) mc.textContent=(window.fafiCoins||0).toLocaleString('es');
   const ms=document.getElementById('mm-skins'); if(ms) ms.textContent=(window.userInventory||[]).length+'/'+fafiSkinsDB.length;
-  const mh=document.getElementById('mm-story'); if(mh) mh.textContent=Math.min(Math.max((window.campaignLevel||1)-1,0),7)+'/7';
+  const mh=document.getElementById('mm-story'); if(mh) mh.textContent=((window.campaignLevel||1)>1?1:0)+"/1";
   const mu=document.getElementById('mm-user'); if(mu) mu.textContent=window.currentUserId||'JUGADOR';
   if(window.fafiRefreshLoadout) window.fafiRefreshLoadout();
 }
@@ -555,7 +555,7 @@ function initThree(){
   viewCamera.layers.set(1);
   vmRoot = new THREE.Group(); vmRoot.position.set(0,0,VM_PUSH); vmRoot.layers.set(1); camera.add(vmRoot);
 
-  renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer = new THREE.WebGLRenderer({ antialias: QUALITY[qualityLevel].aa!==false, powerPreference:'high-performance', precision: QUALITY[qualityLevel].fpsCap?'mediump':'highp' });
   renderer.setSize(innerWidth,innerHeight);
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   // attach canvas once
@@ -842,6 +842,11 @@ function loadMap(key, onDone){
 }
 function loadDust2Map(onDone){ loadMap(selectedMap, onDone); }
 
+const MAP_INFO = {
+  dust2:  { tag:'CLÁSICO', desc:'Dos sitios de bomba conectados por túneles largos y una plaza central abierta. Ideal para duelos de rifle y AWP.', stats:[['Sitios','A · B'],['Estilo','Abierto'],['Ritmo','Medio']] },
+  italy:  { tag:'CIUDAD', desc:'Callejones, plazas y mercados mediterráneos con muchos ángulos y cobertura. Premia moverse en equipo.', stats:[['Sitios','A · B'],['Estilo','Urbano'],['Ritmo','Medio']] },
+  office: { tag:'INTERIORES', desc:'Pasillos estrechos, oficinas y puertas: combate cercano donde la pistola y el rifle corto mandan.', stats:[['Sitios','A · B'],['Estilo','Cerrado'],['Ritmo','Rápido']] }
+};
 function refreshMapPicker(){
   const el=document.getElementById('mapPicker');
   if(!el) return;
@@ -849,7 +854,8 @@ function refreshMapPicker(){
     el.dataset.built='1';
     for(const k of Object.keys(MAPS)){
       const b=document.createElement('button');
-      b.className='map-pick'; b.dataset.map=k; b.innerHTML='<img src="'+encodeURI(MAPS[k].logo)+'" alt=""><span>'+MAPS[k].name+'<small>'+(MAPS[k].baked?'luz horneada':'luz dinámica')+'</small></span>';
+      const info=MAP_INFO[k]||{ tag:'', desc:'', stats:[] };
+      b.className='map-pick'; b.dataset.map=k; b.innerHTML='<div class="mp-art"><img src="'+encodeURI(MAPS[k].logo)+'" alt=""><i class="mp-load"><b></b></i></div><div class="mp-body"><em>'+info.tag+'</em><strong>'+MAPS[k].name+'</strong><p>'+info.desc+'</p><div class="mp-stats">'+info.stats.map(s=>'<span><b>'+s[1]+'</b>'+s[0]+'</span>').join('')+'</div></div>';
       b.addEventListener('click', ()=>selectMap(k));
       el.appendChild(b);
     }
@@ -1833,8 +1839,10 @@ document.querySelectorAll('[data-util]').forEach(b=>b.addEventListener('click',(
 
 let lastTime=performance.now();
 // === FPS chiquito arriba-derecha + MINIMAPA circular Dust2 (sup-izq) ===
+let lastCapT=0;
 function animate(){
   rafId=requestAnimationFrame(animate);
+  { const fc=QUALITY[qualityLevel].fpsCap; if(fc){ const n0=performance.now(); if(n0-lastCapT < 1000/fc-2) return; lastCapT=n0; } }   // tope de FPS en calidad mínima: menos CPU/GPU
   const now=performance.now();
   const dt = Math.min((now-lastTime)/1000, 0.05); lastTime=now;
   try{ updateFPS(now); }catch(e){}
@@ -2895,10 +2903,11 @@ function impactFx(hit, dir, hex=0xd8c2a0){
   SFX.at('bulletwall', hit.point, { vol: 0.9, ref: 4 });
 }
 
+const _pGeo=new THREE.SphereGeometry(0.04,4,4);
 function spawnParticles(pos, color){
-  const count=10;
+  const count=QUALITY[qualityLevel].fpsCap?4:10;
   for(let i=0;i<count;i++){
-    const p = new THREE.Mesh(new THREE.SphereGeometry(0.04,6,6), new THREE.MeshStandardMaterial({color}));
+    const p = new THREE.Mesh(_pGeo, new THREE.MeshBasicMaterial({color}));
     p.position.copy(pos);
     const vel = new THREE.Vector3((Math.random()-0.5)*6, (Math.random()-0.5)*6, (Math.random()-0.5)*6);
     scene.add(p);
@@ -3664,7 +3673,7 @@ async function fafiPlayChapter(id){
     document.getElementById('campaign-map-overlay').style.display='none';
     m.playChapter(id, { onEnd:(done)=>{
       if(done){
-        if(window.campaignLevel<=id) window.campaignLevel=id+1;
+        if(window.campaignLevel<2) window.campaignLevel=2;
         fafiUnlock('campaign_hero'); fafiSaveGameData(); fafiDbCompleteCampaign(id);
       }
       fafiOpenCampaign();

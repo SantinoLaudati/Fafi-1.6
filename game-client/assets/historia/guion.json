@@ -1,77 +1,24 @@
 {
   "chapters": [
     {
-      "id": 1, "title": "El ascenso del nazismo", "date": "1919 – 1933", "place": "Berlín, Alemania", "map": [13.4, 52.5],
-      "summary": "La derrota de 1918, la crisis y el ascenso de Hitler al poder.",
+      "id": 1, "playable": true, "title": "El desembarco de Normandía", "date": "6 de junio de 1944", "place": "Playas de Normandía, Francia", "map": [-0.9, 49.4],
+      "summary": "El Día D: la mayor invasión anfibia de la historia.",
       "beats": [
-        "En noviembre de mil novecientos dieciocho termina la Primera Guerra Mundial. Alemania es derrotada, y el Tratado de Versalles le impone duras sanciones económicas y territoriales.",
-        "La humillación y la crisis económica de mil novecientos veintinueve dejan a millones de alemanes sin trabajo. En ese clima de miedo y resentimiento, un partido extremista gana apoyo: el Partido Nazi.",
-        "Su líder, Adolf Hitler, promete orgullo nacional y culpa a otros pueblos de todos los males. Es una mentira, pero muchos quieren creerla.",
-        "El treinta de enero de mil novecientos treinta y tres, Hitler es nombrado canciller. En pocos meses destruye la democracia, elimina a sus opositores y gobierna como un dictador.",
-        "Mientras reconstruye el ejército en secreto, Europa mira hacia otro lado, con la esperanza de evitar otra guerra. No lo conseguirá."
+        "Seis de junio de mil novecientos cuarenta y cuatro. Antes del amanecer, la mayor flota de la historia cruza el Canal de la Mancha rumbo a las costas de Normandía.",
+        "Casi siete mil barcos y ciento cincuenta mil soldados británicos, canadienses y estadounidenses. En el cielo, miles de aviones abren el camino.",
+        "Sobre las olas, las lanchas Higgins llevan a treinta y seis hombres cada una. Muchos jamás han visto un combate. Casi nadie habla.",
+        "Desde el Muro del Atlántico, los defensores alemanes esperan. Búnkeres, ametralladoras, minas y obstáculos de acero cubren la playa.",
+        "Al acercarse a la orilla, el mar se llena de explosiones. Los proyectiles levantan columnas de agua alrededor de las lanchas.",
+        "La rampa cae. Los soldados saltan al agua helada, con el equipo a cuestas, bajo el fuego de las ametralladoras.",
+        "En la playa de Omaha la resistencia es feroz, y las pérdidas son enormes. Pero los hombres no se detienen. Paso a paso cruzan la arena.",
+        "Al caer la noche, los Aliados han conseguido pisar Francia. La liberación de Europa comenzó aquí, en las costas de Normandía."
       ]
     },
-    {
-      "id": 2, "title": "Estalla la guerra", "date": "1 de septiembre de 1939", "place": "Frontera germano-polaca", "map": [18.6, 52.0],
-      "summary": "La invasión de Polonia y el comienzo de la Segunda Guerra Mundial.",
-      "beats": [
-        "Con un ejército moderno y una nueva forma de combatir, la guerra relámpago, Alemania se anexiona Austria y Checoslovaquia sin disparar un solo tiro.",
-        "El primero de septiembre de mil novecientos treinta y nueve, antes del amanecer, las tropas alemanas esperan la orden de cruzar la frontera polaca.",
-        "Miles de tanques y aviones destruyen las defensas en pocas semanas. Polonia, atacada también por la Unión Soviética desde el este, deja de existir como estado independiente.",
-        "Francia y el Reino Unido habían prometido defender a Polonia. El tres de septiembre le declaran la guerra a Alemania. Comienza la Segunda Guerra Mundial."
-      ]
-    },
-    {
-      "id": 3, "title": "La guerra en el mar", "date": "1940 – 1941", "place": "Océano Atlántico", "map": [-10.5, 55.2],
-      "summary": "La caída de Francia, la resistencia británica y el Bismarck.",
-      "beats": [
-        "En la primavera de mil novecientos cuarenta, Alemania conquista Dinamarca, Noruega, los Países Bajos y Francia. En junio, París cae. Solo el Reino Unido sigue en pie, protegido por el mar.",
-        "Los británicos evacúan a más de trescientos mil soldados desde Dunkerque, y resisten los bombardeos alemanes en la Batalla de Inglaterra.",
-        "Para ahogar a la isla, Alemania intenta cortar sus suministros en el Atlántico. En mayo de mil novecientos cuarenta y uno sale a mar abierto el acorazado Bismarck, el barco de guerra más poderoso de su tiempo.",
-        "El Bismarck hunde al orgulloso Hood, pero la Marina Real lo persigue sin descanso. El veintisiete de mayo es hundido. El Atlántico queda a favor de los Aliados."
-      ]
-    },
-    {
-      "id": 4, "title": "Guerra total", "date": "1941 – 1943", "place": "Frente del Este", "map": [40, 50],
-      "summary": "Barbarroja, Pearl Harbor, Stalingrado y el Holocausto.",
-      "beats": [
-        "En junio de mil novecientos cuarenta y uno, Hitler rompe su pacto con Stalin e invade la Unión Soviética. Es el mayor ejército de la historia, y el frente más brutal de la guerra.",
-        "En diciembre, Japón ataca Pearl Harbor y Estados Unidos entra en la guerra. Ahora los Aliados reúnen la industria más grande del planeta.",
-        "En Stalingrado, entre mil novecientos cuarenta y dos y cuarenta y tres, el ejército soviético resiste casa por casa y rodea al Sexto Ejército alemán. Es el principio del fin de la expansión nazi.",
-        "Mientras tanto, el régimen nazi lleva a cabo el Holocausto: el asesinato sistemático de seis millones de judíos y de millones de otras personas. Es uno de los crímenes más terribles de la historia.",
-        "Los Aliados saben que para ganar deben liberar Europa occidental. Hay que cruzar el Canal de la Mancha."
-      ]
-    },
-    {
-      "id": 5, "title": "Los cielos de Europa", "date": "1943 – 1944", "place": "Cielos de Alemania y Francia", "map": [8, 51],
-      "summary": "Los bombardeos aliados y el Muro del Atlántico.",
-      "beats": [
-        "Antes de pisar tierra, hay que dominar el aire. Desde mil novecientos cuarenta y tres, miles de bombarderos aliados atacan fábricas, puentes y vías férreas en Alemania y Francia.",
-        "Cada misión es una apuesta con la muerte. Las tripulaciones vuelan durante horas, entre nubes y fuego antiaéreo, con la esperanza de volver a casa.",
-        "El objetivo: destruir la industria alemana y aislar las costas donde se esperará el desembarco.",
-        "Alemania, por su parte, levanta el Muro del Atlántico: búnkeres, minas y obstáculos a lo largo de miles de kilómetros de costa."
-      ]
-    },
-    {
-      "id": 6, "title": "Operación Overlord", "date": "Mayo – junio de 1944", "place": "Sur de Inglaterra", "map": [-3.2, 51.9],
-      "summary": "La preparación de la mayor invasión anfibia de la historia.",
-      "beats": [
-        "Durante meses, el general Dwight Eisenhower y los Aliados preparan en secreto la mayor operación anfibia de la historia: Overlord.",
-        "Para engañar a Alemania, simulan un ataque falso sobre Calais, y los alemanes esperan allí a su enemigo. Mientras tanto, miles de barcos y soldados se concentran en los puertos del sur de Inglaterra.",
-        "El tiempo empeora, y la invasión se retrasa un día. En la noche del cinco de junio, Eisenhower toma la decisión final: la invasión se hará mañana.",
-        "Es medianoche. Los paracaidistas aliados saltan sobre Normandía, y la flota del Canal se pone en marcha."
-      ]
-    },
-    {
-      "id": 7, "title": "El Día D", "date": "6 de junio de 1944", "place": "Playas de Normandía, Francia", "map": [-0.9, 49.4],
-      "summary": "El desembarco de Normandía.",
-      "beats": [
-        "Seis de junio de mil novecientos cuarenta y cuatro. Casi siete mil barcos cruzan el Canal con ciento cincuenta mil soldados británicos, canadienses y estadounidenses, rumbo a cinco playas: Utah, Omaha, Gold, Juno y Sword.",
-        "Los acorazados bombardean la costa y los aviones atacan las defensas. En las lanchas, los soldados apenas hablan. Muchos jamás han visto un combate.",
-        "Cuando se abren las rampas, los alemanes disparan desde los búnkeres. En Omaha la resistencia es feroz y las pérdidas son enormes.",
-        "Pero los soldados no se detienen. Paso a paso cruzan la playa bajo el fuego, y al caer la noche los Aliados han conseguido pisar Francia.",
-        "Once meses después, el ocho de mayo de mil novecientos cuarenta y cinco, Alemania se rinde. La libertad de Europa comenzó aquí, en las costas de Normandía."
-      ]
-    }
+    { "id": 2, "title": "El ascenso del nazismo", "date": "1919 – 1933", "place": "Berlín, Alemania", "map": [13.4, 52.5], "summary": "Próximamente.", "beats": [] },
+    { "id": 3, "title": "Estalla la guerra", "date": "1 de septiembre de 1939", "place": "Frontera germano-polaca", "map": [18.6, 52.0], "summary": "Próximamente.", "beats": [] },
+    { "id": 4, "title": "La guerra en el mar", "date": "1940 – 1941", "place": "Océano Atlántico", "map": [-10.5, 55.2], "summary": "Próximamente.", "beats": [] },
+    { "id": 5, "title": "Guerra total", "date": "1941 – 1943", "place": "Frente del Este", "map": [40, 50], "summary": "Próximamente.", "beats": [] },
+    { "id": 6, "title": "Los cielos de Europa", "date": "1943 – 1944", "place": "Cielos de Alemania y Francia", "map": [8, 51], "summary": "Próximamente.", "beats": [] },
+    { "id": 7, "title": "La caída de Berlín", "date": "1945", "place": "Berlín, Alemania", "map": [24, 56.5], "summary": "Próximamente.", "beats": [] }
   ]
 }

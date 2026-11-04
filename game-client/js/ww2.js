@@ -16,7 +16,8 @@ export const FILES = {
   bismarck: D + 'Barcos/lowpoly_kms_bismarck.glb',
   bomber: D + 'optimizados/bombardero_1k.glb',
   guard: D + 'optimizados/soldado_aleman_1k.glb',
-  mp40: D + 'Armas/mp-40_fps_animation.glb'
+  mp40: D + 'Armas/mp-40_fps_animation.glb',
+  hedgehog: D + 'Decoraciones/erizo_checo.glb', sandbags: D + 'Decoraciones/sacos_arena.glb', ammo: D + 'Decoraciones/caja_municion.glb'
 };
 export const PHOTOS = {
   hitler: D + 'Fotos para las ecenas de contexto/adolf-hitler-1889-1945-german-politician-leader-nazi-440nw-4423909a.jpg',
@@ -161,4 +162,18 @@ export async function makeMP40() {
   w.userData.mixer = mixer; w.userData.duration = g.animations[0] ? g.animations[0].duration : 1;
   w.userData.seek = (t) => { if (action) { action.time = t; mixer.update(0); } };
   return w;
+}
+
+// ---------------------------------------------------------------- decoración (erizo checo, sacos de arena, caja de munición)
+const decoT = {};
+// Devuelve una copia fundida del modelo, apoyada en y=0 y con su dimensión mayor = size metros (null si no cargó).
+export async function makeDeco(key, size) {
+  if (!decoT[key]) {
+    const g = await loadGLB(key); if (!g) return null;
+    const r = g.scene.clone(true); tame(r); decoT[key] = bakeStatic(r, []);
+  }
+  const m = decoT[key].clone(true); m.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(m), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+  const s = size / Math.max(sz.x, sz.y, sz.z), w = new THREE.Group(), g2 = new THREE.Group(); g2.add(m); w.add(g2);
+  g2.scale.setScalar(s); g2.position.set(-c.x * s, -b.min.y * s, -c.z * s); return w;
 }

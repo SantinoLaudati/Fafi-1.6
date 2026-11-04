@@ -281,9 +281,7 @@ Fafi-1.6 toma inspiración en la jugabilidad táctica y precisión competitiva d
 > "Precisión táctica + diversión arcade = experiencia FPS única"
 
 Modo historia · mapa de hechos de la Segunda Guerra Mundial (`game-client/js/historia.js`, `storymap.js`, `mapa.js`)
-El modo historia es un mapa de Europa con 7 hechos que se van desbloqueando al verlos en orden: El ascenso del nazismo (1919-1933), Estalla la guerra (1939),
-La guerra en el mar (1940-41), Guerra total (1941-43), Los cielos de Europa (1943-44), Operación Overlord (1944) y El Día D (6 de junio de 1944).
-Se cuentan con planos de mapa animado, fotografías de época y escenas 3D, con locución, música y sonido real. El progreso se guarda.
+El modo historia es un mapa de Europa con 7 hechos; por ahora solo está desbloqueado el primero, «El desembarco de Normandía» (6 de junio de 1944), una cinemática de 8 planos con modelos GLB (`assets/WW2`), música, sonido real y locución. Los otros 6 aparecen con candado (próximamente).
 
 - Contenido: `assets/WW2` (lancha Higgins LCVP, acorazado Bismarck, bombardero, soldado alemán, MP-40 en primera persona y las tres fotos). El bombardero,
   el soldado y las texturas pesadas se usan en versión de 1024 px (`assets/WW2/optimizados`, generada con `herramientas/optimizar-glb.ps1`).
@@ -310,3 +308,9 @@ Cajas y skins
   `assets/Cajas/…glb` (`js/cajas.js`) y el arma ganada sale flotando de la caja, con luz, haz y chispas del color de su rareza.
 - 32 skins (AK-47, M4A4, AWP, Desert Eagle, cuchillo) que recolorean las zonas del modelo de cada arma (madera, metal, polímero, corredera…): ver `fafiSkinsDB`
   en `js/game.js` y `repaintWeapon` en `js/characters.js`. Las duplicadas se reembolsan (50 / 150 / 400). Se equipan en Equipamiento y se ven en primera persona.
+
+Optimización para PC básicos (4 GB de RAM)
+- Calidad nueva **MÍNIMA** (Ajustes): 70 % de resolución, sin antialiasing ni sombras, niebla corta, 4 bots, texturas de mapa reducidas, menos partículas y 30 FPS fijos.
+  La primera vez el juego elige la calidad según la memoria y los núcleos del navegador (`js/quality.js`); en equipos de 4 GB o 2 núcleos arranca en MÍNIMA.
+- Los sonidos se descodifican solo la primera vez que suenan (antes se cargaban los 80 al abrir el juego y ocupaban cientos de MB de RAM): `js/sfx.js`.
+- Los mapas pesados usan siempre las versiones de 1k/2k de `assets/Mapas para tt vs ct/optimizados`, y los modelos grandes de WW2 se usan reducidos (`assets/WW2/optimizados`).

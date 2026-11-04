@@ -19,3 +19,7 @@ La música orquestal de las cinemáticas se genera en tiempo real con WebAudio (
 
 ## Mapas, armas, cuchillo, personajes, granadas y caja
 Archivos `.glb` aportados por el equipo en `game-client/assets` (ver README.md).
+
+## Decoración del desembarco (`game-client/assets/WW2/Decoraciones`)
+- `erizo_checo.glb` («Normandy landings obstruction») y `caja_municion.glb` («WW2 Ammo box») de Carwyn Pelley, CC-BY 3.0, vía Poly Pizza.
+- `sacos_arena.glb` («Sack Trench») de Quaternius, dominio público, vía Poly Pizza.

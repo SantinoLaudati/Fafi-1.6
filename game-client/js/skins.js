@@ -96,7 +96,13 @@ export async function buildSkinModel(skin) {
     const box = new THREE.Box3().setFromObject(m), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
     const s = 1.7 / Math.max(size.x, size.y, size.z);
     m.position.set(-c.x * s, -c.y * s, -c.z * s); m.scale.setScalar(s);
-    const w = new THREE.Group(); w.add(m); w.rotation.z = 0.0; out.add(w); out.userData.kind = 'knife';
+    const w = new THREE.Group(); w.add(m);
+    // la hoja se orienta con su eje mayor en X y su cara ancha hacia la cámara (Z = el eje más fino)
+    { const ext = [size.x, size.y, size.z], ord = [0, 1, 2].sort((a, b) => ext[b] - ext[a]), ax = [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)];
+      const bx = ax[ord[0]].clone(), by = ax[ord[1]].clone(), bz = new THREE.Vector3().crossVectors(bx, by);
+      // columnas = nuevos ejes expresados en el modelo; invertimos para llevar el modelo a X/Y/Z
+      const M = new THREE.Matrix4().makeBasis(bx, by, bz).invert(); w.quaternion.setFromRotationMatrix(M); }
+    out.add(w); out.userData.kind = 'knife';
     return out;
   }
   await loadWeaponPack();

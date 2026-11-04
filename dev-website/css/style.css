@@ -616,3 +616,38 @@ img {
 main {
   flex-grow: 1;
 }
+/* ============================================
+   FAFI 1.6 — sección del juego
+   ============================================ */
+.fx{padding:96px 0;background:linear-gradient(180deg,var(--canvas-base),#0c1214 60%,var(--canvas-base))}
+.fx .container{max-width:1180px;margin:0 auto;padding:0 24px}
+.fx-hero{display:grid;grid-template-columns:1fr 1.15fr;gap:40px;align-items:center}
+.fx-hero h2{font-family:'Space Grotesk',sans-serif;font-size:clamp(30px,4.4vw,54px);line-height:1.05;margin:12px 0 16px;color:#fff}
+.fx-hero p{color:var(--on-surface-variant);font-size:17px;line-height:1.65}
+.fx-cta{display:flex;gap:14px;flex-wrap:wrap;margin:26px 0 20px}
+.fx-ghost{display:inline-flex;align-items:center;padding:12px 22px;border:1px solid var(--outline);color:var(--on-surface);text-decoration:none;border-radius:6px;transition:.2s}
+.fx-ghost:hover{border-color:var(--primary-container);color:var(--primary-container)}
+.fx-badges{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0}
+.fx-badges li{font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 11px;border:1px solid var(--outline-variant);color:var(--primary-fixed);background:rgba(0,229,255,.06);border-radius:999px}
+.fx-hero-img img{width:100%;display:block;border-radius:12px;border:1px solid var(--outline-variant);box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 40px rgba(0,229,255,.12)}
+.fx-title{font-family:'Space Grotesk',sans-serif;font-size:clamp(24px,3vw,34px);margin:72px 0 26px;color:#fff;position:relative;padding-left:16px}
+.fx-title::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:5px;background:var(--primary-container);border-radius:3px}
+.fx-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.fx-card{background:var(--surface-card);border:1px solid var(--outline-variant);border-radius:12px;padding:24px;transition:.25s}
+.fx-card:hover{transform:translateY(-4px);border-color:var(--primary-container);box-shadow:0 14px 34px rgba(0,229,255,.1)}
+.fx-card i{font-style:normal;font-size:32px;display:block;margin-bottom:10px}
+.fx-card h4{font-family:'Space Grotesk',sans-serif;font-size:20px;margin-bottom:8px;color:#fff}
+.fx-card p{color:var(--on-surface-variant);line-height:1.6;font-size:15px}
+.fx-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+.fx-shot{margin:0;background:var(--surface-card);border:1px solid var(--outline-variant);border-radius:12px;overflow:hidden;transition:.25s}
+.fx-shot.wide{grid-column:1/-1}
+.fx-shot:hover{border-color:var(--primary-container);transform:translateY(-3px)}
+.fx-shot img{width:100%;display:block;aspect-ratio:16/9;object-fit:cover}
+.fx-shot.wide img{aspect-ratio:21/9}
+.fx-shot figcaption{padding:12px 16px;font-size:14px;color:var(--on-surface-variant)}
+.fx-specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:64px}
+.fx-specs>div{padding:22px;border-left:3px solid var(--primary-container);background:rgba(255,255,255,.03)}
+.fx-specs h4{font-family:'Space Grotesk',sans-serif;color:#fff;margin-bottom:8px;font-size:18px}
+.fx-specs p{color:var(--on-surface-variant);line-height:1.6;font-size:15px}
+.fx-specs code{background:rgba(0,229,255,.1);color:var(--primary-fixed);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:13px}
+@media(max-width:860px){.fx-hero{grid-template-columns:1fr}.fx-shot.wide img{aspect-ratio:16/9}}

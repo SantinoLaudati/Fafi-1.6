@@ -386,196 +386,19 @@ const RED = '#c0392b', GOLD = '#e8c050', BLUE = '#4a8fd6', GREY = '#aab4bc';
 // Un plano = { segs:[{ to, kind:'map'|'photo'|'card'|'3d', ..., caption, enter(), update(u, dt) }] } con `to` = fracción del plano.
 const CH = {};
 
-CH[1] = async () => {
-  const gerMap = (extra) => ({ zones: [{ poly: ZONE.alemania, color: RED, from: 0.05, to: 0.25 }], ...extra });
-  return [
-    { segs: [{ to: 1, kind: 'map', caption: 'Tratado de Versalles · 28 de junio de 1919', map: gerMap({ marks: [{ at: [13.4, 52.5], text: 'Berlín', from: 0.2 }, { at: [2.12, 48.8], text: 'Versalles · 1919', from: 0.4, color: GOLD }] }) }] },
-    { segs: [{ to: 1, kind: 'map', caption: 'Crisis de 1929 · más de seis millones de parados', map: gerMap({ marks: [{ at: [13.4, 52.5], text: 'Desempleo masivo', from: 0.15, color: GOLD }], zones: [{ poly: ZONE.alemania, color: '#7a2a22', from: 0, to: 0.2 }] }) }] },
-    { segs: [{ to: 1, kind: 'photo', photo: 'hitler', fit: 'contain', kb: [1.0, 0, 0, 1.18, 0, -0.02], caption: 'Adolf Hitler, líder del Partido Nazi' }] },
-    { segs: [{ to: 1, kind: 'photo', photo: 'hitler', fit: 'contain', kb: [1.14, 0, 0.02, 1.0, 0.02, 0], caption: '30 de enero de 1933 · Hitler es nombrado canciller' }] },
-    { segs: [{ to: 1, kind: 'map', caption: 'Rearme secreto · 1933 – 1938', map: { zones: [{ poly: ZONE.alemania, color: RED, from: 0, to: 0.15 }], arrows: [{ pts: [[13.4, 52.5], [10, 55.5]], color: GOLD, from: 0.3, to: 0.6, dash: 1 }, { pts: [[13.4, 52.5], [18.5, 51]], color: GOLD, from: 0.35, to: 0.65, dash: 1 }, { pts: [[13.4, 52.5], [8, 49.5]], color: GOLD, from: 0.4, to: 0.7, dash: 1 }], marks: [{ at: [13.4, 52.5], text: 'Ejército en preparación', from: 0.1 }] } }] }
-  ];
-};
-
-CH[2] = async (X) => {
-  const { S, A } = X, scene = S.scene;
-  S.setPreset('dawn'); S.setSea(0.4, 0); S.sea.visible = false;
-  const G = new THREE.Group(); G.visible = false; scene.add(G);
-  const field = makeField(G); const road = mesh(merge([P(BOX(9, 0.08, 1500), 0x34332f, 0, 0.04, -300)])); G.add(road);
-  // barrera fronteriza
-  { const parts = []; for (let i = 0; i < 8; i++) parts.push(P(BOX(1.4, 0.18, 0.18), i % 2 ? 0xf2f2ee : 0xc0392b, -4.9 + i * 1.4, 1.15, -38));
-    parts.push(P(BOX(0.25, 2.2, 0.25), 0x2b2b2b, -6.1, 1.1, -38), P(BOX(0.25, 2.2, 0.25), 0x2b2b2b, 6.1, 1.1, -38), P(BOX(4, 3, 3), 0x4a3f33, 11, 1.5, -40), P(BOX(4.4, 0.4, 3.4), 0x2e2822, 11, 3.2, -40));
-    G.add(mesh(merge(parts))); }
-  for (let i = 0; i < 70; i++) { const t = tree(R(7, 13)); const side = i % 2 ? 1 : -1; t.position.set(side * R(16, 90), 0, R(60, -520)); G.add(t); }
-  // soldados alemanes en filas, mirando hacia la frontera (-Z)
-  const guards = [];
-  for (let r = 0; r < 3; r++) for (let i = 0; i < 10; i++) {
-    const s = await W.makeGuard(Math.PI); if (!s) break;
-    s.position.set(-14.3 + i * 3.2 + R(-0.15, 0.15), 0.02, 4 + r * 3.6); s.rotation.y = R(-0.07, 0.07); s.scale.setScalar(R(0.97, 1.03)); G.add(s); guards.push(s);
-  }
-  const fires = [];
-  const col = (x, z) => ({ x, z, t: 0 });
-  const columns = [col(-130, -330), col(60, -400), col(150, -360), col(-40, -450), col(-190, -420)];
-  let lastBoom = 0;
-  const dawnSun = () => { };
-  const lane = -3.1;
-  const beats = [
-    { segs: [{ to: 1, kind: 'map', caption: '1938 – 1939 · Anexiones sin guerra', map: { zones: [{ poly: ZONE.alemania, color: RED, from: 0, to: 0.1 }, { poly: ZONE.austria, color: RED, from: 0.2, to: 0.4 }, { poly: ZONE.checos, color: RED, from: 0.55, to: 0.75 }], marks: [{ at: [16.4, 48.2], text: 'Austria · marzo 1938', from: 0.3, color: GOLD }, { at: [14.4, 50.1], text: 'Checoslovaquia · marzo 1939', from: 0.65, color: GOLD }] } }] },
-    { segs: [{ to: 1, kind: '3d', caption: 'Frontera germano-polaca · 1 de septiembre de 1939 · 04:45',
-      enter() { G.visible = true; S.setPreset('dawn'); S.sea.visible = false; A.ambience({ wind: 0.8 }); },
-      update(u) { lookCam(S.cam, [lane, lerp(1.6, 1.85, u), lerp(36, 19, e01(0, 1, u))], [lerp(-0.5, 2.0, u), 1.7, -40]); } }] },
-    { segs: [{ to: 1, kind: '3d', caption: 'La guerra relámpago',
-      enter() { G.visible = true; S.setPreset('dawn'); S.sea.visible = false; A.ambience({ wind: 0.6 }); lastBoom = 0; },
-      update(u, dt, X2) {
-        const k = e01(0, 1, u);
-        lookCam(S.cam, [lane + lerp(0, 4, k), lerp(3, 17, k), lerp(20, -30, k)], [lerp(0, 0, k), lerp(1.8, 9, k), -260]);
-        lastBoom -= dt;
-        if (lastBoom <= 0) { lastBoom = R(0.6, 1.3); const c = columns[Math.floor(R(0, columns.length))]; S.fire(V(c.x + R(-30, 30), 6, c.z + R(-30, 30)), R(40, 80), true); A.boom(R(0.45, 0.9), false, clamp(c.x / 200, -1, 1)); }
-        for (const c of columns) { c.t -= dt; if (c.t <= 0) { c.t = 0.22; S.smoke(V(c.x, 4, c.z), R(34, 52), R(10, 16), R(10, 16), R(2, 6), 0x2a2623); } }
-        if (Math.random() < dt * 4) A.burst(3, 0.14, R(-1, 1));
-      } }] },
-    { segs: [{ to: 1, kind: 'map', caption: '1 – 3 de septiembre de 1939', map: { zones: [{ poly: ZONE.polonia, color: RED, from: 0.15, to: 0.35 }], arrows: [{ pts: [[13.4, 52.5], [17.5, 52.2], [21, 52.2]], color: RED, from: 0.1, to: 0.45 }, { pts: [[34, 52.5], [28, 52.3], [24, 52.2]], color: '#d26a3a', from: 0.4, to: 0.6 }], marks: [{ at: [21.0, 52.2], text: 'Varsovia', from: 0.5 }, { at: [-0.1, 51.5], text: 'Londres declara la guerra · 3 sep', from: 0.65, color: BLUE }, { at: [2.35, 48.85], text: 'París', from: 0.78, color: BLUE }] } }] }
-  ];
-  return { beats, tick: (dt) => { if (G.visible) for (const g of guards) g.userData.mixer.update(dt); } };
-};
-
-CH[3] = async (X) => {
-  const { S, A } = X, scene = S.scene;
-  S.setPreset('over'); S.setSea(1.3, 0);
-  const ship = await W.makeBismarck(); const G = new THREE.Group(); G.visible = false; scene.add(G);
-  if (ship) G.add(ship);
-  const L = 250, draft = 9.3; let shipX = 0, shipZ = 0, sink = 0, emit = 0, salvo = 0;
-  const place = (t) => {
-    const hb = S.waveH(shipX, shipZ - 100), hs = S.waveH(shipX, shipZ + 100);
-    ship.position.set(shipX, (hb + hs) / 2 - draft - sink, shipZ);
-    ship.rotation.order = 'YXZ'; ship.rotation.set(Math.atan2(hb - hs, 200) * 0.8 + sink * 0.012, 0, Math.sin(t * 0.45) * 0.05 + sink * 0.03);
-  };
-  const smokeUp = (dt, t, dense) => { emit -= dt; if (emit <= 0) { emit = dense ? 0.07 : 0.14; for (const lz of [-10, 20]) S.smoke(V(shipX + R(-1, 1), 30 - sink, shipZ + lz), R(18, 28), R(8, 12), R(5, 9), R(8, 14), 0x6a6764); } };
-  return [
-    { segs: [{ to: 1, kind: 'map', caption: 'Primavera de 1940 · la guerra relámpago', map: { zones: [{ poly: ZONE.dinamarca, color: RED, from: 0.05, to: 0.12 }, { poly: ZONE.noruega, color: RED, from: 0.12, to: 0.2 }, { poly: ZONE.benelux, color: RED, from: 0.25, to: 0.32 }, { poly: ZONE.francia, color: RED, from: 0.35, to: 0.5 }], arrows: [{ pts: [[10, 54.5], [10, 57], [8.5, 58.5]], color: RED, from: 0.05, to: 0.2 }, { pts: [[7, 51.5], [3, 50], [2.35, 48.85]], color: RED, from: 0.25, to: 0.55 }], marks: [{ at: [2.35, 48.85], text: 'París cae · 14 de junio', from: 0.6, color: GOLD }] } }] },
-    { segs: [{ to: 1, kind: 'map', caption: 'Dunkerque · Batalla de Inglaterra · 1940', map: { zones: [{ poly: ZONE.francia, color: '#6d3a35', from: 0, to: 0.1 }, { poly: ZONE.inglaterra, color: '#35608f', from: 0.1, to: 0.3 }], arrows: [{ pts: [[2.37, 51.03], [1.2, 51.3], [-0.8, 51.2]], color: '#ffffff', from: 0.2, to: 0.6 }], marks: [{ at: [2.37, 51.03], text: 'Dunkerque · 300 000 evacuados', from: 0.3, color: GOLD }, { at: [-0.1, 51.5], text: 'Londres', from: 0.5, color: BLUE }] } }] },
-    { segs: [{ to: 1, kind: '3d', caption: 'Océano Atlántico · mayo de 1941 · acorazado Bismarck',
-      enter() { G.visible = true; S.setPreset('over'); S.setSea(1.3, 0); S.sea.visible = true; shipX = 0; shipZ = 0; sink = 0; A.ambience({ sea_bad: 0.8, wind: 0.7 }); },
-      update(u, dt) {
-        shipZ -= 10 * dt; place(S.t);
-        const a = lerp(0.55, 1.9, u), r = lerp(205, 175, u), h = lerp(26, 38, u);
-        lookCam(S.cam, [shipX + Math.sin(a) * r, h, shipZ + Math.cos(a) * r * 0.9], [shipX, 17, shipZ - 15 * (1 - u)]);
-        smokeUp(dt, S.t, false);
-      } }] },
-    { segs: [{ to: 1, kind: '3d', caption: 'El Bismarck, hundido el 27 de mayo de 1941',
-      enter() { G.visible = true; S.setPreset('over'); S.setSea(1.5, 0); S.sea.visible = true; sink = 0; salvo = 0; A.ambience({ sea_bad: 0.9, wind: 0.8 }); },
-      update(u, dt) {
-        shipZ -= 8 * dt; if (u > 0.55) sink = (u - 0.55) * 60; place(S.t);
-        const k = e01(0, 1, u);
-        lookCam(S.cam, [shipX + lerp(78, 150, k), lerp(11, 40, k), shipZ + lerp(-95, 30, k)], [shipX, lerp(13, 12, k), shipZ + lerp(-70, 0, k)]);
-        salvo -= dt;
-        if (u < 0.55 && salvo <= 0) {
-          salvo = R(2.2, 3.2);
-          for (const lz of [-78, -64]) { const p = V(shipX + R(-1.5, 1.5), 10.5, shipZ + lz - 14); S.flash(p, 38); S.smoke(p.clone(), 22, 7, 2, -3, 0x6a6560); }
-          A.boom(0.95, true, 0.4);
-          setTimeout(() => { S.plume(shipX + R(-80, 140), shipZ - R(380, 700), 2.2); A.boom(0.5, false, R(-1, 1)); }, 1700);
-        }
-        if (u > 0.5) { emit -= dt; if (emit <= 0) { emit = 0.18; S.smoke(V(shipX + R(-8, 8), 14 - sink * 0.5, shipZ + R(-60, 60)), R(22, 36), R(8, 12), R(6, 10), R(4, 10), 0x222020); if (Math.random() < 0.5) S.fire(V(shipX + R(-6, 6), 12 - sink * 0.5, shipZ + R(-50, 50)), R(10, 18), false); } }
-        else smokeUp(dt, S.t, true);
-      } }] }
-  ];
-};
-
-CH[4] = async () => [
-  { segs: [{ to: 1, kind: 'map', caption: '22 de junio de 1941 · Operación Barbarroja', map: { zones: [{ poly: ZONE.urss, color: '#7b3a2f', from: 0, to: 0.15 }], arrows: [{ pts: [[21, 54], [30.3, 59.9]], color: RED, from: 0.15, to: 0.5 }, { pts: [[21, 52], [30.5, 50.4], [37.6, 55.8]], color: RED, from: 0.2, to: 0.65 }, { pts: [[21, 50], [32, 48.5], [44.5, 48.7]], color: RED, from: 0.3, to: 0.8 }], marks: [{ at: [30.3, 59.9], text: 'Leningrado', from: 0.55 }, { at: [37.6, 55.8], text: 'Moscú', from: 0.7 }, { at: [44.5, 48.7], text: 'Stalingrado', from: 0.85, color: GOLD }] } }] },
-  { segs: [{ to: 1, kind: 'card', lines: ['7 DE DICIEMBRE DE 1941', 'Pearl Harbor', 'Estados Unidos entra en la guerra'] }] },
-  { segs: [{ to: 1, kind: 'photo', photo: 'ruins', fit: 'cover', kb: [1.04, -0.015, 0.0, 1.2, 0.03, -0.01], caption: 'Combates urbanos en el frente europeo' }] },
-  { segs: [{ to: 1, kind: 'card', lines: ['EL HOLOCAUSTO', 'Seis millones de judíos asesinados', 'In memoriam'] }] },
-  { segs: [{ to: 1, kind: 'map', caption: 'Inglaterra · la base de la invasión', map: { zones: [{ poly: ZONE.inglaterra, color: '#35608f', from: 0, to: 0.2 }, { poly: ZONE.francia, color: '#6d3a35', from: 0.1, to: 0.3 }], arrows: [{ pts: [[-1.1, 50.8], [-0.9, 49.4]], color: GOLD, from: 0.4, to: 0.75, dash: 1 }], marks: [{ at: [-1.1, 50.8], text: 'Inglaterra', from: 0.2, color: BLUE }, { at: [-0.9, 49.4], text: 'Normandía', from: 0.8, color: GOLD }] } }] }
-];
-
-CH[5] = async (X) => {
-  const { S, A } = X, scene = S.scene;
-  S.setPreset('gold'); S.setSea(0.3, 0);
-  // —— cielo: bombarderos sobre un mar de nubes
-  const sky = new THREE.Group(); sky.visible = false; scene.add(sky);
-  const clouds = [];
-  for (let i = 0; i < 170; i++) { const s = S.sprite(S.tex.cloud, V(R(-950, 950), R(-75, -18), R(-1700, 600)), R(170, 460), R(0.4, 0.8), false); s.material.fog = false; s.material.color.setHex(i % 3 ? 0xf6efe2 : 0xd9d2c8); sky.add(s); clouds.push(s); }
-  const planes = [];
-  const slots = [[0, 0], [-48, 30], [48, 30], [-96, 60], [96, 60], [-48, 90], [48, 90], [-144, 90], [144, 90]];
-  for (const [dx, dz] of slots) { const b = await W.makeBomber(); if (!b) break; b.userData.dx = dx; b.userData.dz = dz; b.userData.ph = R(0, 6.28); sky.add(b); planes.push(b); }
-  let flyZ = 0; const moveFormation = (dt, t) => { flyZ -= 62 * dt; for (const c of clouds) if (c.position.z > flyZ + 700) c.position.z -= 2400; for (const b of planes) { b.position.set(b.userData.dx, Math.sin(t * 0.5 + b.userData.ph) * 1.2, b.userData.dz + flyZ); b.rotation.set(0, 0, Math.sin(t * 0.35 + b.userData.ph) * 0.04); b.userData.mixer.update(dt); } };
-  // —— búnker del Muro del Atlántico, visto desde dentro
-  const BY = 32, bunker = new THREE.Group(); bunker.visible = false; scene.add(bunker);
-  { const c = 0x8d8a80, d = 0x6f6c63, parts = [P(BOX(9, 0.5, 8), d, 0, BY - 0.25, 0), P(BOX(9, 0.5, 8), c, 0, BY + 3.2, 0), P(BOX(0.5, 3.5, 8), c, -4.5, BY + 1.5, 0), P(BOX(0.5, 3.5, 8), c, 4.5, BY + 1.5, 0), P(BOX(9, 3.5, 0.5), c, 0, BY + 1.5, 4),
-      P(BOX(9, 1.35, 0.6), c, 0, BY + 0.68, -4), P(BOX(9, 1.45, 0.6), c, 0, BY + 2.72, -4), P(BOX(3.0, 0.4, 0.6), c, -3.0, BY + 1.55, -4), P(BOX(3.0, 0.4, 0.6), c, 3.0, BY + 1.55, -4), P(BOX(0.5, 3.5, 0.6), c, 4.3, BY + 1.5, -4), P(BOX(0.5, 3.5, 0.6), c, -4.3, BY + 1.5, -4),
-      P(BOX(2.2, 0.5, 1.4), 0x4b4a45, 2.9, BY + 0.25, 2.8), P(BOX(1.2, 0.9, 0.8), 0x3f3a30, -3.4, BY + 0.45, 2.4)];
-    bunker.add(mesh(merge(parts))); }
-  const watcher = await W.makeGuard(Math.PI); if (watcher) { watcher.position.set(-2.4, BY, -2.3); watcher.rotation.y = Math.PI + 0.25; bunker.add(watcher); }
-  const mp = await W.makeMP40(); if (mp) { mp.visible = false; S.cam.add(mp); }
-  const lamp = new THREE.PointLight(0xffd7a0, 0.0, 9, 1.6); lamp.position.set(0, BY + 2.6, 1.5); bunker.add(lamp);
-  const MP_POS = [0.13, -0.47, -0.28], MP_ROT = [0, Math.PI, 0], MP_S = 0.55;
-  let surf = 0;
-  const seaView = () => { S.sea.visible = true; S.setSea(0.5, 0); };
-  return [
-    { segs: [{ to: 1, kind: '3d', caption: 'Cielos de Europa · 1943',
-      enter() { sky.visible = true; bunker.visible = false; S.setPreset('gold'); S.sea.visible = false; flyZ = 0; A.ambience({ planes: 0.9, wind: 0.5 }); S.fovBase = 50; S.fit(); if (mp) mp.visible = false; },
-      update(u, dt) { moveFormation(dt, S.t); const k = e01(0, 1, u); lookCam(S.cam, [lerp(112, 82, k), lerp(20, 9, k), flyZ + lerp(-70, -25, k)], [0, 0, flyZ + 38]); } }] },
-    { segs: [{ to: 1, kind: '3d', caption: 'Misiones de ocho horas sobre territorio enemigo',
-      enter() { sky.visible = true; bunker.visible = false; S.setPreset('gold'); S.sea.visible = false; A.ambience({ planes: 1, wind: 0.6 }); },
-      update(u, dt) { moveFormation(dt, S.t); const k = e01(0, 1, u); lookCam(S.cam, [lerp(24, 21, k), lerp(6, 3.5, k), flyZ + lerp(-28, -22, k)], [0, 2, flyZ + 4], Math.sin(S.t * 0.4) * 0.02); } }] },
-    { segs: [{ to: 1, kind: 'map', caption: 'Objetivos: industria y transportes', map: { arrows: [{ pts: [[-1, 52.5], [5, 51.8], [7, 51.5]], color: BLUE, from: 0.05, to: 0.4 }, { pts: [[0.5, 53], [6, 53.8], [10, 53.5]], color: BLUE, from: 0.15, to: 0.5 }, { pts: [[0.5, 52], [8, 52.4], [13.4, 52.5]], color: BLUE, from: 0.25, to: 0.65 }, { pts: [[-0.5, 50.9], [1.8, 49.5], [2.35, 48.85]], color: BLUE, from: 0.3, to: 0.6 }], marks: [{ at: [7, 51.5], text: 'Ruhr', from: 0.4, color: GOLD }, { at: [10, 53.5], text: 'Hamburgo', from: 0.55, color: GOLD }, { at: [13.4, 52.5], text: 'Berlín', from: 0.7, color: GOLD }] } }] },
-    { segs: [{ to: 1, kind: '3d', caption: 'El Muro del Atlántico · 1944',
-      enter() { sky.visible = false; bunker.visible = true; seaView(); S.setPreset('bunker'); lamp.intensity = 4; A.ambience({ sea: 0.5, wind: 0.5 }); S.fovBase = 58; S.fit(); if (mp) { mp.visible = true; mp.position.set(...MP_POS); mp.rotation.set(...MP_ROT); mp.scale.setScalar(MP_S); } surf = 0; },
-      update(u, dt) {
-        lookCam(S.cam, [Math.sin(S.t * 0.3) * 0.12, BY + 1.62 + Math.sin(S.t * 0.8) * 0.01, 1.0], [Math.sin(S.t * 0.2) * 3.5, BY + 1.35 - u * 0.1, -60]);
-        if (mp) { mp.userData.seek(clamp((u * 1.6) % 1, 0, 0.999) * mp.userData.duration); }
-        if (watcher) watcher.userData.mixer.update(dt);
-        surf -= dt; if (surf <= 0) { surf = R(0.7, 1.6); S.plume(R(-90, 90), R(-420, -160), 1.1); A.boom(0.35, false, R(-1, 1)); }
-      } }] }
-  ];
-};
-
-CH[6] = async (X) => {
-  const { S, A } = X, scene = S.scene;
-  S.setPreset('night'); S.setSea(0.55, 0);
-  const G = new THREE.Group(); G.visible = false; scene.add(G);
-  const boats = [], lampTex = S.tex.flash;
-  for (let c = 0; c < 7; c++) for (let r = 0; r < 4; r++) {
-    const b = await W.makeBoat(); if (!b) break;
-    b.userData.x0 = -60 + c * 20 + R(-1.5, 1.5); b.userData.z0 = -r * 42 + R(-6, 6) + (c % 2) * 18; b.userData.ph = R(0, 6.28); G.add(b); boats.push(b);
-    const l = new THREE.Sprite(new THREE.SpriteMaterial({ map: lampTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.8, color: 0xffcf8a })); l.scale.setScalar(2.2); l.position.set(0.7, 3.0, 3.6); b.add(l);
-  }
-  const planes = []; const slots = [[0, 0], [-46, 28], [46, 28], [-92, 56], [92, 56], [-46, 90], [46, 90], [-138, 84], [138, 84], [0, 130], [-92, 140], [92, 140]];
-  for (const [dx, dz] of slots) { const b = await W.makeBomber(); if (!b) break; b.userData.dx = dx; b.userData.dz = dz; b.userData.ph = R(0, 6.28); G.add(b); planes.push(b); b.visible = false; }
-  const chutes = []; const chuteG = new THREE.SphereGeometry(1, 10, 6, 0, 6.283, 0, 1.45); const chuteM = new THREE.MeshLambertMaterial({ color: 0xcfd3c8, side: THREE.DoubleSide });
-  for (let i = 0; i < 46; i++) { const m = new THREE.Mesh(chuteG, chuteM); m.scale.set(2.4, 1.6, 2.4); m.userData = { x: R(-280, 280), z: R(-950, -560), y0: R(110, 230), sp: R(2.2, 3.4), ph: R(0, 6.28) }; m.visible = false; G.add(m); chutes.push(m); }
-  const speed = 5.6; let off = 0, flyZ = 0;
-  const moveBoats = (dt) => { off -= speed * dt; for (const b of boats) { S.ride(b, b.userData.x0, b.userData.z0 + off, 0, 0.9); b.userData.prop && (b.userData.prop.rotation.z += dt * 20); } };
-  return [
-    { segs: [{ to: 1, kind: 'map', caption: 'Preparativos · sur de Inglaterra · 1944', map: { zones: [{ poly: ZONE.inglaterra, color: '#35608f', from: 0, to: 0.15 }, { poly: ZONE.francia, color: '#6d3a35', from: 0.05, to: 0.2 }], arrows: [{ pts: [[-1.1, 50.8], [-0.9, 49.4]], color: GOLD, from: 0.5, to: 0.8 }], marks: [{ at: [-1.1, 50.8], text: 'Portsmouth · Southampton', from: 0.25, color: BLUE }, { at: [-0.9, 49.4], text: 'Normandía', from: 0.8, color: GOLD }] } }] },
-    { segs: [{ to: 1, kind: 'map', caption: 'Operación Fortitude · el ejército fantasma', map: { zones: [{ poly: ZONE.inglaterra, color: '#35608f', from: 0, to: 0.1 }, { poly: ZONE.francia, color: '#6d3a35', from: 0, to: 0.1 }], arrows: [{ pts: [[1.3, 51.1], [1.85, 50.95]], color: GREY, from: 0.15, to: 0.45, dash: 1 }, { pts: [[-1.1, 50.8], [-0.9, 49.4]], color: GOLD, from: 0.55, to: 0.85 }], marks: [{ at: [1.85, 50.95], text: 'Calais · ataque falso', from: 0.35, color: GREY }, { at: [-0.9, 49.4], text: 'Normandía · ataque real', from: 0.88, color: GOLD }] } }] },
-    { segs: [{ to: 1, kind: '3d', caption: 'Noche del 5 de junio de 1944 · el Canal de la Mancha',
-      enter() { G.visible = true; S.setPreset('night'); S.setSea(0.55, 0); S.sea.visible = true; off = 0; for (const p of planes) p.visible = false; for (const c of chutes) c.visible = false; A.ambience({ sea: 0.7, boat: 0.35, wind: 0.4 }); },
-      update(u, dt) { moveBoats(dt); const k = e01(0, 1, u); const z = off * 1.02; lookCam(S.cam, [-30 + k * 3, lerp(3.4, 4.2, k), z - 20 + 10], [-42 + k * 6, 2.0, z - 85]); } }] },
-    { segs: [{ to: 1, kind: '3d', caption: 'Medianoche · paracaidistas sobre Normandía',
-      enter() { G.visible = true; S.setPreset('night'); S.sea.visible = true; for (const p of planes) p.visible = true; for (const c of chutes) c.visible = true; flyZ = off + 240; A.ambience({ planes: 0.8, sea: 0.5, wind: 0.3 }); },
-      update(u, dt) {
-        moveBoats(dt); flyZ -= 55 * dt;
-        for (const p of planes) { p.position.set(p.userData.dx, 150 + Math.sin(S.t * 0.4 + p.userData.ph) * 1.5, p.userData.dz + flyZ); p.rotation.z = Math.sin(S.t * 0.3 + p.userData.ph) * 0.03; p.userData.mixer.update(dt); }
-        for (const c of chutes) { const d = c.userData; const y = Math.max(0, d.y0 - d.sp * (u * 9 + S.t * 0.2) * 3); c.position.set(d.x + Math.sin(S.t * 0.5 + d.ph) * 3, y + 1.6, d.z); }
-        const k = e01(0.5, 0.85, u), lead = [0, 150, flyZ - 30], far = [0, 70, off - 640];
-        lookCam(S.cam, [-62, 3.6, off - 12], mix3(lead, far, k));
-      } }] }
-  ];
-};
-
-CH[7] = async (X) => {
+CH[1] = async (X) => {
   const { S, A } = X, scene = S.scene;
   S.setPreset('dday'); S.setSea(1.0, 1);
   const G = new THREE.Group(); G.visible = false; scene.add(G);
   const { terrH } = makeBeach(G);
   // defensas: erizos checos y búnkeres con sus defensores
-  const hedges = []; for (let i = 0; i < 64; i++) { const h = hedgehog(); const x = R(-150, 150), z = R(-6, 22); h.position.set(x, Math.max(terrH(x, z), -0.8) + 0.05, z); h.rotation.y = R(0, 6.28); G.add(h); hedges.push(h); }
+  const hedges = []; for (let i = 0; i < 30; i++) { const h = (await W.makeDeco('hedgehog', R(2.2, 3.0))) || hedgehog(); const x = R(-150, 150), z = R(-6, 22); h.position.set(x, Math.max(terrH(x, z), -0.8) + 0.05, z); h.rotation.y = R(0, 6.28); G.add(h); hedges.push(h); }
   const bunkers = [[-60, -78], [-8, -86], [42, -80], [92, -84], [-110, -76]];
   const defenders = [];
+  // sacos de arena y cajas de munición junto a cada búnker
+  const decoBunker = async (bx, bz) => { for (let i = 0; i < 3; i++) { const s = await W.makeDeco("sandbags", 2.4); if (!s) break; const x = bx - 8 + i * 4, z = bz + 11 + (i % 2) * 0.6; s.position.set(x, terrH(x, z), z); s.rotation.y = R(-0.15, 0.15); G.add(s); } for (let i = 0; i < 2; i++) { const a = await W.makeDeco("ammo", 0.9); if (!a) break; const x = bx + 6.5 + i * 1.2, z = bz + 8; a.position.set(x, terrH(x, z) + 0.05, z); a.rotation.y = R(0, 6); G.add(a); } };
   for (const [bx, bz] of bunkers) {
-    const b = bunker(); b.position.set(bx, terrH(bx, bz) + 0.2, bz); G.add(b);
+    const b = bunker(); b.position.set(bx, terrH(bx, bz) + 0.2, bz); G.add(b); await decoBunker(bx, bz);
     for (const sx of [-1, 1]) { const g = await W.makeGuard(0); if (!g) continue; g.position.set(bx + sx * 6.8, terrH(bx + sx * 6.8, bz + 6.5) + 0.05, bz + 6.5); g.rotation.y = R(-0.4, 0.4); G.add(g); defenders.push(g); }
   }
   // lanchas Higgins
@@ -599,50 +422,98 @@ CH[7] = async (X) => {
   const shelling = (dt, rate, zr = [-30, 12]) => { boom -= dt; if (boom <= 0) { boom = R(0.25, 0.7) * rate; const x = R(-110, 110), z = R(zr[0], zr[1]); S.fire(V(x, terrH(x, z) + 1.5, z), R(9, 17), true); A.boom(R(0.4, 0.8), false, clamp(x / 100, -1, 1)); } };
   const defenderFire = (dt, tx, tz) => { trace -= dt; if (trace <= 0) { trace = R(0.07, 0.2); const [bx, bz] = bunkers[Math.floor(R(0, bunkers.length))]; const o = V(bx + R(-3, 3), terrH(bx, bz) + 3.6, bz + 4.3); S.flash(o, 3.5); for (let i = 0; i < 3; i++) setTimeout(() => S.tracer(o.clone(), V(tx + R(-8, 8), 1.2, tz + R(-12, 12)), 280), i * 55); if (Math.random() < 0.35) A.burst(3, 0.13, clamp(bx / 120, -1, 1)); } };
   const seaSmoke = (dt) => { smokeT -= dt; if (smokeT <= 0) { smokeT = 0.3; for (const p of [[-24, 2], [52, 4], [-70, -52], [80, -46]]) S.smoke(V(p[0] + R(-1, 1), 2, p[1]), R(8, 14), R(7, 11), R(4, 7), 3, 0x2b2927); } };
+  const heroCam = (a, b) => { const p = new THREE.Vector3(...a); hero.localToWorld(p); const tg = new THREE.Vector3(...b); hero.localToWorld(tg); S.cam.position.copy(p); S.cam.lookAt(tg); };
+  const common = (dt, sh = 1.2) => { moveBoats(dt); seaSmoke(dt); shelling(dt, sh, [-30, 8]); };
   return [
+    // 0 · la flota cruza el Canal al amanecer
     { segs: [{ to: 1, kind: '3d', caption: '6 de junio de 1944 · 06:30 · el Canal de la Mancha',
-      enter() { G.visible = true; S.setPreset('dday'); S.setSea(1.0, 1); S.sea.visible = true; off = 0; heroZ = 260; ramp = 0; flyZ = 300; A.ambience({ sea_bad: 0.5, boat: 0.7, wind: 0.5 }); if (hero) hero.visible = true; for (const g of defenders) g.visible = true; },
+      enter() { G.visible = true; S.setPreset('dday'); S.setSea(1.0, 1); S.sea.visible = true; off = 0; heroZ = 260; ramp = 0; flyZ = 300; A.ambience({ sea_bad: 0.5, boat: 0.7, wind: 0.5 }); },
       update(u, dt) {
-        moveBoats(dt); flyZ -= 90 * dt; bombers(dt, true); seaSmoke(dt); shelling(dt, 1.4, [-30, 8]);
-        const k = e01(0, 1, u);
-        const cz = 330 - off * 5.5 + 38;
+        common(dt, 1.6); flyZ -= 90 * dt; bombers(dt, true);
+        const k = e01(0, 1, u), cz = 330 - off * 5.5 + 38;
         lookCam(S.cam, [lerp(-8, 22, k), lerp(34, 11, k), cz + lerp(40, 26, k)], [0, lerp(8, 3, k), cz - 150 - k * 30]);
       } }] },
+    // 1 · los aviones abren el camino
+    { segs: [{ to: 1, kind: '3d', caption: 'Miles de aviones aliados sobrevuelan la costa',
+      enter() { G.visible = true; S.setPreset('dday'); S.sea.visible = true; flyZ = 330 - off * 5.5 + 200; A.ambience({ sea_bad: 0.4, planes: 0.9, wind: 0.4 }); },
+      update(u, dt) {
+        common(dt, 1.2); flyZ -= 80 * dt; bombers(dt, true);
+        const cz = 330 - off * 5.5 + 20;
+        lookCam(S.cam, [lerp(-40, -26, u), 7, cz], [0, 150, flyZ - 20]);
+      } }] },
+    // 2 · dentro de la lancha
     { segs: [{ to: 1, kind: '3d', caption: 'A bordo de una lancha de desembarco LCVP',
       enter() { G.visible = true; S.setPreset('dday'); S.sea.visible = true; heroZ = 250; ramp = 0; A.ambience({ sea_bad: 0.6, boat: 0.9, wind: 0.5 }); bombers(0, true); },
       update(u, dt) {
         heroZ = Math.max(70, heroZ - 7 * dt); heroX = Math.sin(S.t * 0.2) * 1.5; moveBoats(dt); flyZ -= 90 * dt; bombers(dt, true); seaSmoke(dt);
         boom -= dt; if (boom <= 0) { boom = R(0.35, 0.8); const x = heroX + R(-40, 40), z = heroZ - R(45, 160); S.plume(x, z, R(0.9, 1.6)); A.splash(0.45, clamp(x / 60, -1, 1)); A.boom(0.4, false, R(-1, 1)); }
-        // cámara dentro de la lancha, mirando hacia la proa
-        const p = new THREE.Vector3(0.35, 4.3, 1.6); hero.localToWorld(p); const tg = new THREE.Vector3(0, 2.2, -26); hero.localToWorld(tg);
-        S.cam.position.copy(p); S.cam.lookAt(tg); S.cam.rotateX(0.03 + 0.04 * Math.sin(S.t * 0.7)); S.cam.rotateZ(Math.sin(S.t * 0.9) * 0.015);
+        heroCam([0.35, 4.3, 1.6], [0, 2.2, -26]); S.cam.rotateX(0.03 + 0.04 * Math.sin(S.t * 0.7)); S.cam.rotateZ(Math.sin(S.t * 0.9) * 0.015);
       } }] },
+    // 3 · las defensas alemanas desde la playa
+    { segs: [{ to: 1, kind: '3d', caption: 'El Muro del Atlántico · búnkeres, erizos checos y sacos de arena',
+      enter() { G.visible = true; S.setPreset('dday'); S.sea.visible = true; bombers(0, false); A.ambience({ coast: 0.8, sea: 0.5, wind: 0.4 }); },
+      update(u, dt) {
+        moveBoats(dt); seaSmoke(dt); shelling(dt, 0.8, [-34, 14]); defenderFire(dt, lerp(-10, 20, u), 30);
+        const bx = -8, bz = -86, th = terrH(bx + 16, bz + 24), th2 = terrH(bx, bz + 8);
+        lookCam(S.cam, [bx + lerp(22, 12, u), th + 3.4, bz + lerp(28, 20, u)], [bx + lerp(3, -3, u), th2 + 2.6, bz + 8]);
+      } }] },
+    // 4 · el fuego sobre las lanchas
+    { segs: [{ to: 1, kind: '3d', caption: 'Obuses y ametralladoras sobre las lanchas',
+      enter() { G.visible = true; S.setPreset('dday'); S.sea.visible = true; heroZ = 140; A.ambience({ sea_bad: 0.6, boat: 0.7, coast: 0.5, wind: 0.5 }); },
+      update(u, dt) {
+        heroZ = Math.max(70, heroZ - 6 * dt); moveBoats(dt); seaSmoke(dt); shelling(dt, 0.8, [-34, 12]); defenderFire(dt, heroX, heroZ - 20);
+        boom -= dt * 2; if (boom <= 0) { boom = R(0.25, 0.6); const x = heroX + R(-35, 35), z = heroZ - R(15, 90); S.plume(x, z, R(1.0, 1.8)); A.splash(0.5, clamp(x / 60, -1, 1)); A.boom(0.5, false, R(-1, 1)); }
+        const p = new THREE.Vector3(lerp(24, 16, u), 4.5, 26); hero.localToWorld(p); const tg = new THREE.Vector3(0, 2, -18); hero.localToWorld(tg);
+        S.cam.position.copy(p); S.cam.lookAt(tg);
+      } }] },
+    // 5 · cae la rampa
     { segs: [{ to: 1, kind: '3d', caption: 'Playa de Omaha · las rampas se abren',
       enter() { this._r = false; G.visible = true; S.setPreset('dday'); S.sea.visible = true; A.ambience({ sea_bad: 0.5, boat: 0.5, coast: 0.8, wind: 0.4 }); bombers(0, false); },
       update(u, dt) {
         heroZ = Math.max(40, heroZ - 5 * dt); moveBoats(dt); seaSmoke(dt); shelling(dt, 0.9, [-34, 16]); defenderFire(dt, heroX, heroZ - 8);
         ramp = e01(0.12, 0.38, u); if (ramp > 0 && !this._r) { this._r = true; SFX.play('door', { vol: 0.8 }); }
         const k = e01(0, 1, u);
-        // cámara fuera, a un lado y por delante, viendo caer la rampa con la playa y los búnkeres al fondo
         const p = new THREE.Vector3(lerp(13, 10, k), lerp(5.0, 3.8, k), 11); hero.localToWorld(p); const tg = new THREE.Vector3(-0.5, 1.5, -12); hero.localToWorld(tg);
         S.cam.position.copy(p); S.cam.lookAt(tg.x, tg.y + k * 1.5, tg.z);
       } }] },
-    { segs: [{ to: 1, kind: 'photo', photo: 'landing', fit: 'cover', kb: [1.0, 0.02, 0, 1.16, -0.03, 0.01], caption: 'Soldados desembarcando en las playas de Normandía · 6 de junio de 1944' }] },
+    // 6 · la foto real y la playa
     { segs: [
-      { to: 0.5, kind: 'photo', photo: 'ruins', fit: 'cover', kb: [1.18, 0.02, 0, 1.02, -0.02, 0], caption: 'Mayo de 1945 · Europa en ruinas' },
-      { to: 1, kind: '3d', caption: 'Normandía · el comienzo de la liberación de Europa',
-        enter() { G.visible = true; S.setPreset('dusk'); S.setSea(0.8, 1); S.sea.visible = true; bombers(0, false); A.ambience({ coast: 0.9, sea: 0.4, wind: 0.3 }); this._t = 0; },
-        update(u, dt) { moveBoats(dt, false); seaSmoke(dt); const k = e01(0, 1, u); lookCam(S.cam, [lerp(-40, 30, k), lerp(5, 22, k), lerp(90, 62, k)], [lerp(0, 10, k), lerp(5, 12, k), -40]); } }
-    ] }
+      { to: 0.5, kind: 'photo', photo: 'landing', fit: 'cover', kb: [1.0, 0.02, 0, 1.16, -0.03, 0.01], caption: 'Soldados desembarcando en las playas de Normandía · 6 de junio de 1944' },
+      { to: 1, kind: '3d', caption: 'Omaha Beach · la resistencia es feroz',
+        enter() { G.visible = true; S.setPreset('dday'); S.sea.visible = true; A.ambience({ coast: 0.9, sea: 0.4, wind: 0.4 }); },
+        update(u, dt) { moveBoats(dt); seaSmoke(dt); shelling(dt, 0.6, [-30, 14]); defenderFire(dt, lerp(-30, 40, u), 12); lookCam(S.cam, [lerp(60, 20, u), lerp(14, 6, u), 70], [lerp(-20, 0, u), 3, 0]); } }
+    ] },
+    // 7 · anochece
+    { segs: [{ to: 1, kind: '3d', caption: 'Normandía · el comienzo de la liberación de Europa',
+      enter() { G.visible = true; S.setPreset('dusk'); S.setSea(0.8, 1); S.sea.visible = true; bombers(0, false); A.ambience({ coast: 0.9, sea: 0.4, wind: 0.3 }); },
+      update(u, dt) { moveBoats(dt, false); seaSmoke(dt); const k = e01(0, 1, u); lookCam(S.cam, [lerp(-40, 30, k), lerp(5, 22, k), lerp(90, 62, k)], [lerp(0, 10, k), lerp(5, 12, k), -40]); } }] }
   ];
 };
 
+// Locución: cadena de estudio (filtro grave, cuerpo cálido, presencia, compresión y un poco de sala) para que suene a narrador de documental
+let narrChain = null;
+function mastered(el) {
+  try {
+    SFX.init(); const ctx = SFX.ctx; if (!ctx) return;
+    if (!narrChain) {
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 75;
+      const warm = ctx.createBiquadFilter(); warm.type = 'lowshelf'; warm.frequency.value = 190; warm.gain.value = 5;
+      const pres = ctx.createBiquadFilter(); pres.type = 'peaking'; pres.frequency.value = 3000; pres.Q.value = 0.9; pres.gain.value = 2.5;
+      const air = ctx.createBiquadFilter(); air.type = 'highshelf'; air.frequency.value = 7500; air.gain.value = -3;
+      const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -22; comp.ratio.value = 3.2; comp.attack.value = 0.01; comp.release.value = 0.25;
+      const len = ctx.sampleRate * 1.5, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+      const conv = ctx.createConvolver(); conv.buffer = ir; const wet = ctx.createGain(); wet.gain.value = 0.16; const out = ctx.createGain(); out.gain.value = 1.35;
+      hp.connect(warm); warm.connect(pres); pres.connect(air); air.connect(comp); comp.connect(out); comp.connect(conv); conv.connect(wet); wet.connect(out); out.connect(ctx.destination);
+      narrChain = { input: hp };
+    }
+    ctx.createMediaElementSource(el).connect(narrChain.input);
+  } catch (e) { console.warn('[historia] cadena de voz', e); }
+}
+
 // ================================================================== reproductor de capítulos
-const NEEDS_3D = new Set([2, 3, 5, 6, 7]);
-const MOOD = {
-  1: (k) => 0.22 + 0.2 * k, 2: (k) => 0.3 + 0.5 * k, 3: (k) => 0.42 + 0.3 * Math.sin(k * 3.1), 4: (k) => 0.35 + 0.4 * k,
-  5: (k) => 0.45 + 0.3 * k, 6: (k) => 0.22 + 0.6 * k, 7: (k) => k < 0.7 ? 0.45 + 0.55 * (k / 0.7) : 0.55 - (k - 0.7) * 0.9
-};
+const NEEDS_3D = new Set([1]);
+const MOOD = { 1: (k) => k < 0.8 ? 0.4 + 0.6 * (k / 0.8) : 0.55 - (k - 0.8) * 1.2 };
 
 export async function getChapters() { return (await loadGuion()).chapters; }
 
@@ -701,7 +572,7 @@ export async function playChapter(id, { onEnd, beat: startBeat = 0 } = {}) {
     const enterBeat = (i) => {
       beatIdx = i; segIdx = -1;
       try { narr && narr.pause(); } catch (e) {}
-      narr = new Audio('assets/historia/audio/c' + id + '_' + i + '.wav'); narr.volume = 1; const p = narr.play(); if (p && p.catch) p.catch(() => {});
+      narr = new Audio('assets/historia/audio/c' + id + '_' + i + '.wav'); narr.volume = 1; mastered(narr); const p = narr.play(); if (p && p.catch) p.catch(() => {});
       ov.sub.textContent = meta.beats[i]; ov.sub.style.opacity = 1;
     };
     const enterSeg = (beat, si) => {

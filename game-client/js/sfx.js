@@ -183,8 +183,8 @@ export const SFX = {
     if (wanted) { if (ctx && ctx.state === 'suspended') ctx.resume(); return; }
     wanted = true; ensure();
     if (ctx && ctx.state === 'suspended') ctx.resume();
-    const files = new Set(); for (const d of Object.values(DEF)) d.f.forEach(f => files.add(f));
-    [...files].forEach(f => load(f));
+    // solo se precargan los sonidos esenciales; el resto se descodifica la primera vez que suena (ahorra cientos de MB de RAM)
+    for (const n of ['ui', 'hit', 'step', 'dry', 'draw', 'reload_out', 'reload_in', 'ak', 'm4', 'awp', 'deagle', 'knife']) { const d = DEF[n]; if (d) d.f.forEach(f => load(f)); }
   },
   preload(names) { ensure(); for (const n of names) { const d = DEF[n]; if (d) d.f.forEach(f => load(f)); const l = LOOPS[n]; if (l) load(l.f); } return Promise.all([...(names || [])].flatMap(n => (DEF[n] ? DEF[n].f : LOOPS[n] ? [LOOPS[n].f] : []).map(f => load(f)))); },
   play(name, o) { if (!wanted) return null; return start(name, o); },

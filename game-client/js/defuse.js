@@ -7,7 +7,7 @@ import { createChickens } from './chickens.js';
 import { loadCharacterAssets, createCharacter, giveWeapon, animateCharacter, killCharacter, reviveCharacter, muzzleWorld, CHAR_HEIGHT } from './characters.js';
 import { SFX } from "./sfx.js";
 
-const BOMB_FILE = 'assets/extras/cs_go_bomb.glb';
+const BOMB_FILE = 'assets/extras/optimizados/cs_go_bomb_1k.glb';
 
 // Insignias de bando (originales) para HUD, selector y marcador
 export const TEAM_BADGE = {

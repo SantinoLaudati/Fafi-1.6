@@ -105,3 +105,34 @@
 .fafi16-header{height:auto!important;flex-wrap:wrap}
 .fafi16-content-area{align-items:flex-start}
 @media (max-width:760px){.fafi16-header-right{order:3}.fafi16-nav-tabs{flex-wrap:wrap;gap:8px 14px}}
+
+/* ===== selección de mapa y bando (Defuse) ===== */
+#teamOverlay{background:radial-gradient(900px 500px at 50% -10%,rgba(224,168,46,.16),transparent 60%),radial-gradient(800px 500px at 100% 100%,rgba(60,120,210,.14),transparent 60%),linear-gradient(180deg,#0b0e12,#06080b)!important;overflow:auto;justify-content:flex-start;padding:4vh 4vw}
+#teamOverlay .ts-head{text-align:center}.ts-k{letter-spacing:7px;color:#e0a82e;font-size:12px}
+#teamOverlay h1{font-size:clamp(28px,4.6vw,54px)!important;letter-spacing:8px!important;text-shadow:none!important;margin:6px 0 4px;font-family:var(--font-d,Oswald,sans-serif);font-weight:700}
+.ts-step{display:flex;align-items:center;gap:12px;margin:22px 0 4px;letter-spacing:5px;font-size:13px;color:#aab3bb;font-family:var(--font-d,Oswald,sans-serif)}
+.ts-step span{width:26px;height:26px;border-radius:50%;background:#e0a82e;color:#111;display:flex;align-items:center;justify-content:center;font-weight:700;letter-spacing:0}
+#teamOverlay .map-picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;width:min(1100px,94%);margin:12px auto}
+#teamOverlay .map-pick{flex-direction:column;align-items:stretch;padding:0;gap:0;overflow:hidden;background:rgba(14,17,21,.9);border:1px solid rgba(255,255,255,.12);clip-path:none;text-align:left;transition:.2s;position:relative}
+.mp-art{position:relative;height:150px;background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.mp-art img{width:100%;height:100%;object-fit:cover;border:0;border-radius:0;opacity:.85;transition:.4s}
+.map-pick:hover .mp-art img{transform:scale(1.07);opacity:1}
+.mp-art::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(14,17,21,.95))}
+.mp-load{position:absolute;left:0;right:0;bottom:0;height:3px;z-index:2;display:none;background:rgba(255,255,255,.15)}.mp-load b{display:block;height:100%;width:40%;background:#e0a82e;animation:mpl 1s infinite linear}
+@keyframes mpl{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+.map-pick.loading .mp-load{display:block}
+.mp-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:5px;font-size:inherit!important}
+.mp-body em{font-style:normal;letter-spacing:5px;color:#e0a82e;font-size:10px}.mp-body strong{font-size:24px;letter-spacing:3px;text-transform:uppercase;font-family:var(--font-d,Oswald,sans-serif)}
+.mp-body p{font-family:Georgia,serif;font-size:13px;line-height:1.45;color:#b9c0c7;margin:2px 0 8px}
+.mp-stats{display:flex;gap:8px}.mp-stats span{flex:1;background:rgba(255,255,255,.06);padding:6px 8px;font-size:10px;letter-spacing:2px;color:#8d98a3;text-transform:uppercase;display:flex;flex-direction:column}.mp-stats b{font-size:14px;color:#fff;letter-spacing:1px}
+#teamOverlay .map-pick.sel{border-color:#e0a82e;box-shadow:0 0 0 1px #e0a82e,0 14px 34px rgba(224,168,46,.25)}
+#teamOverlay .map-pick.sel::before{content:'✓ SELECCIONADO';position:absolute;top:10px;right:10px;z-index:3;background:#e0a82e;color:#111;font-size:10px;letter-spacing:2px;font-weight:700;padding:3px 9px}
+#teamOverlay .team-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;width:min(1100px,94%);margin:12px auto 18px}
+#teamOverlay .team-card{position:relative;overflow:hidden;min-height:150px;padding:22px 24px;text-align:left;border:1px solid rgba(255,255,255,.14);transition:.2s;cursor:pointer;clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,0 100%)}
+#teamOverlay .team-card.t{background:linear-gradient(135deg,rgba(214,100,30,.35),rgba(30,16,8,.9));border-color:rgba(255,150,70,.5)}
+#teamOverlay .team-card.ct{background:linear-gradient(135deg,rgba(40,110,220,.35),rgba(8,16,32,.9));border-color:rgba(90,160,255,.5)}
+#teamOverlay .team-card:hover{transform:translateY(-5px);filter:brightness(1.15)}
+.tc-ic{position:absolute;right:14px;top:-4px;font-size:84px;font-weight:800;opacity:.14;font-family:var(--font-d,Oswald,sans-serif)}
+#teamOverlay .team-card h3{font-size:24px;letter-spacing:4px;margin-bottom:6px}#teamOverlay .team-card p{font-family:Georgia,serif;font-size:14px;line-height:1.45;color:#d5dae0;max-width:90%}
+.tc-go{display:inline-block;margin-top:12px;letter-spacing:4px;font-size:12px;font-weight:600}
+.team-card.t .tc-go{color:#ffb070}.team-card.ct .tc-go{color:#8fc0ff}

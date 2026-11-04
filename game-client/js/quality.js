@@ -7,13 +7,20 @@ import * as THREE from 'three';
 // dirección HACIA el sol (la usan el sol de game.js y las sombras de contacto)
 export const SUN_DIR = new THREE.Vector3(0.45, 0.78, 0.38).normalize();
 
-export const QUALITY_LEVELS = ['low', 'medium', 'high'];
+export const QUALITY_LEVELS = ['min', 'low', 'medium', 'high'];
 
 export const QUALITY = {
+  min: {
+    label: 'MÍNIMA',
+    desc: 'Para PC muy básicos (4 GB de RAM): 70 % de resolución, sin sombras ni antialiasing, menos bots y efectos, 30 FPS fijos.',
+    maxPixelRatio: 0.7, aa: false, fpsCap: 30,
+    shadows: false, shadowMapSize: 512, shadowType: THREE.BasicShadowMap, shadowRange: 0,
+    tone: false, fogMul: 0.5, fill: false, tex: 'low', maxBots: 4
+  },
   low: {
     label: 'BAJA',
     desc: 'Sin sombras en tiempo real, resolución reducida. Para equipos lentos.',
-    maxPixelRatio: 0.85,
+    maxPixelRatio: 0.85, aa: false,
     shadows: false, shadowMapSize: 512, shadowType: THREE.BasicShadowMap, shadowRange: 0,
     tone: false, fogMul: 0.75, fill: false, tex: 'low', maxBots: 6
   },
@@ -38,7 +45,11 @@ export function loadQualityLevel() {
     const q = localStorage.getItem('fafi_quality_level');
     if (QUALITY[q]) return q;
   } catch (e) {}
-  return 'high';
+  // primera vez: se elige según el equipo (memoria y núcleos del navegador)
+  const mem = navigator.deviceMemory || 8, cores = navigator.hardwareConcurrency || 4;
+  if (mem <= 4 || cores <= 2) return 'min';
+  if (mem <= 6 || cores <= 4) return 'low';
+  return cores <= 6 ? 'medium' : 'high';
 }
 export function saveQualityLevel(level) {
   try { localStorage.setItem('fafi_quality_level', level); } catch (e) {}

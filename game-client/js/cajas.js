@@ -5,7 +5,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { SFX } from './sfx.js';
 import { RARITY, WEAPON_LABEL, buildSkinModel } from './skins.js';
 
-const CRATE_FILE = 'assets/Cajas/metaretail_caja_ejercicio_1_-_esc_herm-es_pool.glb';
+const CRATE_FILE = 'assets/Cajas/optimizados/caja_1k.glb';
 export const CRATES = {
   basic: { id: 'basic', name: 'CAJA BÁSICA', tag: 'Equipo de campaña', price: 200, color: 0xb4bdc9, odds: { comun: 85, epica: 15, legendaria: 0 } },
   advanced: { id: 'advanced', name: 'CAJA AVANZADA', tag: 'Material de élite', price: 500, color: 0xa64df0, odds: { comun: 30, epica: 50, legendaria: 20 } },
