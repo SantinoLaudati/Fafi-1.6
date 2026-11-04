@@ -213,7 +213,12 @@ Modos
 - Campo de tiro (AIM 30 s) y mapa de campaña.
 - DEFUSE 5v5: T vs CT con bots. Rondas de 1:45 (compra 10 s), plantar/desactivar con E (mantener), bomba de 40 s,
   economía (empiezas con $800), primero en ganar 4 rondas. TAB = marcador, B = tienda (solo en tu zona de spawn).
-- Exploración libre: Dust II, Italy y Office sin reglas.
+  Tienda estilo CS:GO en columnas (Pistolas · Rifles · Equipo · Granadas): pulsa 1-4 para elegir columna y luego el número del objeto, o haz clic.
+  Equipo: chaleco ($650), chaleco + casco ($1000) y kit de defusa; el chaleco absorbe parte del daño y el casco protege la cabeza.
+  Bots: compran según su dinero (arma, chaleco y casco), oyen disparos, avisan a sus compañeros, devuelven el fuego, hacen strafe,
+  persiguen al último sitio donde vieron a un enemigo y se recolocan solos si se atascan (la malla de navegación solo usa la zona conectada principal).
+  Al acertar un disparo sale sangre y suena el impacto (carne, cabeza o casco metálico).
+- Exploración libre: Dust II, Italy y Office sin reglas, con dinero infinito en la tienda (B).
 
 Mapas (game-client/assets/Mapas para tt vs ct) y logos (assets/Logos mapas): Dust II (`de_dust2_-_cs_map.glb`), Italy, Office.
 Italy y Office vienen con texturas de 8192/4096 px: se usan versiones reducidas en `optimizados/`

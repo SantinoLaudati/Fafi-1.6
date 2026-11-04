@@ -192,6 +192,7 @@
     <div id="dfHealth">
       <div class="hp"><span class="cross">✚</span><b id="dfHealthNum">100</b></div>
       <div class="bar"><div id="dfHealthBar"></div></div>
+      <div id="dfArmor"><span class="ico">🛡</span><b id="dfArmorNum">0</b><em>CASCO</em></div>
       <div class="money" id="dfMoney">$800</div>
       <div id="dfBombInfo"></div>
     </div>
@@ -216,61 +217,13 @@
   <div id="buyMenu">
     <div class="buy-panel">
       <div class="buy-header">
-        <h2>🔫 MENÚ DE COMPRA <span>— DUST II</span></h2>
-        <div class="buy-money" id="buyMoneyEl">$3000</div>
+        <h2>MENÚ DE COMPRA <span id="buyModeEl"></span></h2>
+        <div class="buy-money" id="buyMoneyEl">$800</div>
       </div>
       <div class="buy-inv" id="buyInvEl"></div>
-      <div class="buy-cat">PISTOLAS — SLOT SECUNDARIA</div>
-      <div class="buy-grid">
-        <div class="buy-card" id="buyCard-deagle">
-          <div class="slot">🔫 SECUNDARIA • TECLA 4</div>
-          <h3>Desert Eagle</h3>
-          <p>Pistola semiautomática de gran daño. Precisa quieto y agachado.</p>
-          <div class="price">$700</div>
-          <button class="buy-btn" id="buyBtn-deagle">COMPRAR</button>
-        </div>
-      </div>
-      <div class="buy-cat">RIFLES / FRANCOTIRADOR — SLOT PRIMARIA (solo 1: AK o AWP)</div>
-      <div class="buy-grid">
-        <div class="buy-card primary" id="buyCard-ak">
-          <div class="slot">🎯 PRIMARIA • TECLA 1</div>
-          <h3>AK-47</h3>
-          <p>Rifle automático 30/90. Versátil, bueno en ráfagas cortas.</p>
-          <div class="price">$2500</div>
-          <button class="buy-btn" id="buyBtn-ak">COMPRAR</button>
-        </div>
-        <div class="buy-card primary" id="buyCard-m4">
-          <div class="slot">🎯 PRIMARIA • TECLA 5</div>
-          <h3>M4A4</h3>
-          <p>Rifle automático 30/90 con animaciones de recarga e inspección. Click der = mira.</p>
-          <div class="price">$3100</div>
-          <button class="buy-btn" id="buyBtn-m4">COMPRAR</button>
-        </div>
-        <div class="buy-card primary" id="buyCard-awp">
-          <div class="slot">🎯 PRIMARIA • TECLA 3</div>
-          <h3>AWP</h3>
-          <p>Francotirador 10/30 de un tiro. Click der = mira telescópica.</p>
-          <div class="price">$4750</div>
-          <button class="buy-btn" id="buyBtn-awp">COMPRAR</button>
-        </div>
-        <div class="buy-card" id="buyCard-knife" style="opacity:0.85">
-          <div class="slot">🔪 CUCHILLO • TECLA 2</div>
-          <h3>Cuchillo táctico</h3>
-          <p>Siempre en inventario. Silencioso, +150 por baja en AIM.</p>
-          <div class="price" style="color:#cbd6e6">INCLUIDO</div>
-          <button class="buy-btn equipped" disabled>EN INVENTARIO</button>
-        </div>
-      </div>
-      <div class="buy-cat">UTILIDAD — TECLAS 7 · 8 · 9 · 0</div>
-      <div class="buy-grid util">
-        <div class="buy-card" id="buyCard-flash"><div class="slot">⚡ TECLA 7 • máx. 2</div><h3>Flashbang</h3><p>Ciega a quien la mire. Los bots no ven mientras están cegados.</p><div class="price">$200</div><button class="buy-btn" id="buyBtn-flash" data-util="flash">COMPRAR</button></div>
-        <div class="buy-card" id="buyCard-smoke"><div class="slot">☁ TECLA 8</div><h3>Humo</h3><p>Nube de 18 s que bloquea la visión de jugadores y bots.</p><div class="price">$300</div><button class="buy-btn" id="buyBtn-smoke" data-util="smoke">COMPRAR</button></div>
-        <div class="buy-card" id="buyCard-he"><div class="slot">💥 TECLA 9</div><h3>Granada HE</h3><p>Hasta 98 de daño en 6.5 m. Rebota en las paredes.</p><div class="price">$300</div><button class="buy-btn" id="buyBtn-he" data-util="he">COMPRAR</button></div>
-        <div class="buy-card" id="buyCard-molo"><div class="slot">🔥 TECLA 0</div><h3>Molotov</h3><p>Estalla al tocar el suelo y quema 7 s en 2.6 m.</p><div class="price">$400</div><button class="buy-btn" id="buyBtn-molo" data-util="molo">COMPRAR</button></div>
-        <div class="buy-card" id="buyCard-kit"><div class="slot">🛠 SOLO CT</div><h3>Kit de defusa</h3><p>Desactivas la bomba en 5 s en lugar de 10 s.</p><div class="price">$400</div><button class="buy-btn" id="buyBtn-kit" data-util="kit">COMPRAR</button></div>
-      </div>
+      <div id="buyCols"></div>
       <div class="buy-footer">
-        <span>Pulsa <b style="color:#fff">B</b> o ESC para cerrar • Empiezas con <b style="color:#7aff7a">$3000</b> • Comprar AK teniendo AWP (o viceversa) reemplaza la primaria</span>
+        <span>Pulsa <b>1-4</b> para abrir una columna y luego el <b>número</b> del objeto · o haz clic · <b>B</b> / ESC para cerrar</span>
         <button class="buy-close" id="buyCloseBtn">CERRAR [B]</button>
       </div>
     </div>

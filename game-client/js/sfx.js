@@ -16,16 +16,22 @@ const DEF = {
   deagle:    { clips: [[CZ, 0.21, 0.4], [CZ, 2.81, 0.4], [CZ, 4.03, 0.4], [CZ, 5.52, 0.9]], v: 2.2, r: [0.72, 0.8], bus: "wep" },
   rifle:     { clips: [[SKS, 0.33, 1.3], [SKS, 2.28, 1.2], [SKS, 5.98, 1.5], [SKS, 9.7, 1.5], [MOSIN, 0.8, 0.85]], v: 1.7, r: [0.9, 1.15], bus: "wep" },
   shotgun:   { clips: [[SHOT, 0.12, 0.34], [SHOT, 0.44, 0.26]], v: 2.0, r: [0.85, 1.0], bus: "wep" },
-  dry:       { f: ['click_pistola'],              v: 0.70, r: [0.95, 1.05], bus: 'wep' },
+  dry:       { f: ['impactos/sin_balas.wav'],     v: 0.75, r: [0.95, 1.05], bus: 'wep', seg: [0, 0.4] },
   reload_out:{ f: ['cargador_sale'],              v: 0.80, r: [0.92, 1.0],  bus: 'wep' },
   reload_in: { f: ['engranaje_rapido'],           v: 0.70, r: [1.0, 1.1],   bus: 'wep' },
-  bolt:      { f: ['corredera_escopeta', 'corredera_larga'], v: 0.80, r: [0.95, 1.05], bus: 'wep' },
+  bolt:      { f: ['impactos/cerrojo_awp.wav'],  v: 0.9, r: [1.0, 1.1], bus: 'wep', seg: [3.95, 1.05] },
   draw:      { f: ['pistola_mov'],                v: 0.60, r: [0.9, 1.1],   bus: 'wep' },
   draw_knife:{ f: ['tajo_cota'],                  v: 0.35, r: [1.4, 1.6],   bus: 'wep', seg: [0, 0.5] },
   knife:     { f: ['tajo_cota'],                  v: 0.65, r: [1.1, 1.3],   bus: 'wep', seg: [0, 0.8] },
   knife_hit: { f: ['impacto_cuerpo', 'golpe_rapido'], v: 0.75, r: [1.1, 1.3], bus: 'wep', seg: [0, 0.7] },
   inspect:   { f: ['engranaje'],                  v: 0.45, r: [0.9, 1.0],   bus: 'wep' },
-  // impactos
+  // impactos: grabaciones reales (OpenGameArt, ver CREDITS.md)
+  hit_flesh: { f: ['impactos/carne_bala1.wav', 'impactos/carne_bala2.wav', 'impactos/carne_bala3.wav'], v: 1.0, r: [0.92, 1.12], bus: 'wep', seg: [0, 0.55] },
+  hit_head:  { f: ['impactos/carne_perfora.wav'], v: 1.1, r: [0.95, 1.1], bus: 'wep', seg: [0, 0.6] },
+  hit_helmet:{ f: ['impactos/casco1.ogg', 'impactos/casco2.ogg', 'impactos/casco3.ogg', 'impactos/casco4.ogg', 'impactos/casco5.ogg'], v: 1.35, r: [1.15, 1.45], bus: 'wep' },
+  pain:      { f: ['impactos/dolor1.wav', 'impactos/dolor2.wav', 'impactos/dolor3.wav'], v: 0.85, r: [0.95, 1.05], bus: 'wep' },
+  death:     { f: ['impactos/muerte1.wav', 'impactos/muerte2.wav'], v: 0.95, r: [0.95, 1.05], bus: 'wep' },
+  armor:     { f: ['impactos/chaleco.wav'], v: 0.8, r: [1.0, 1.0], bus: 'ui' },
   hit:       { f: ['click_duro'],                 v: 0.55, r: [1.5, 1.7],   bus: 'ui' },
   headshot:  { f: ['golpe_metal'],                v: 0.80, r: [1.2, 1.3],   bus: 'ui', seg: [0, 0.6] },
   hurt:      { f: ['golpe_armadura', 'impacto_cuerpo'], v: 0.75, r: [0.9, 1.0], bus: 'wep', seg: [0, 0.8] },
@@ -73,6 +79,7 @@ const DEF = {
 };
 
 for (const k in DEF) if (DEF[k].clips) DEF[k].f = [...new Set(DEF[k].clips.map(c => c[0]))];
+for (const k of ['ak', 'm4', 'awp', 'deagle', 'rifle', 'shotgun']) DEF[k].rev = k === 'awp' ? 0.34 : 0.24;   // envío a la reverberación
 
 // bucles de ambiente
 const LOOPS = {
@@ -88,7 +95,7 @@ const LOOPS = {
   warzone: { f: 'guerra_explosiones', v: 0.0 },
 };
 
-let ctx = null, master = null, buses = {}, comp = null;
+let ctx = null, master = null, buses = {}, comp = null, reverb = null;
 const bufs = {};            // archivo -> AudioBuffer
 const pending = {};         // archivo -> Promise
 const slices = {};          // archivo -> [{t, d}] golpes detectados
@@ -105,6 +112,13 @@ function ensure() {
   master = ctx.createGain(); master.gain.value = vol.master;
   master.connect(comp); comp.connect(ctx.destination);
   for (const b of ['wep', 'foot', 'ui', 'mus']) { buses[b] = ctx.createGain(); buses[b].gain.value = vol[b]; buses[b].connect(master); }
+  // reverberación sintética (cola de ruido que decae): da cuerpo y eco a los disparos como en exteriores
+  try {
+    const len = Math.floor(ctx.sampleRate * 1.4), imp = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = imp.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+    const conv = ctx.createConvolver(); conv.buffer = imp; const wet = ctx.createGain(); wet.gain.value = 0.55;
+    conv.connect(wet); wet.connect(buses.wep); reverb = conv;
+  } catch (e) { reverb = null; }
   return ctx;
 }
 
@@ -152,6 +166,7 @@ function start(name, o = {}) {
   else if (d.slice) { const h = slices[file] || [0]; off = pick(h); dur = d.slice; }
   else if (d.seg) { off = d.seg[0]; dur = d.seg[1]; }
   const g = ctx.createGain();
+  src.connect(g);                      // (faltaba esta conexión: los efectos puntuales no sonaban)
   const t0 = ctx.currentTime + (o.delay || 0);
   const level = d.v * (o.vol == null ? 1 : o.vol);
   g.gain.setValueAtTime(level, t0);
@@ -168,6 +183,7 @@ function start(name, o = {}) {
   }
   if (o.lowpass) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = o.lowpass; node.connect(f); node = f; }
   node.connect(buses[d.bus] || master);
+  if (d.rev && reverb) { const s = ctx.createGain(); s.gain.value = d.rev; node.connect(s); s.connect(reverb); }
   if (dur) {
     const real = dur / src.playbackRate.value;
     g.gain.setValueAtTime(level, t0 + Math.max(0, real - 0.12));
@@ -184,7 +200,7 @@ export const SFX = {
     wanted = true; ensure();
     if (ctx && ctx.state === 'suspended') ctx.resume();
     // solo se precargan los sonidos esenciales; el resto se descodifica la primera vez que suena (ahorra cientos de MB de RAM)
-    for (const n of ['ui', 'hit', 'step', 'dry', 'draw', 'reload_out', 'reload_in', 'ak', 'm4', 'awp', 'deagle', 'knife']) { const d = DEF[n]; if (d) d.f.forEach(f => load(f)); }
+    for (const n of ['ui', 'hit', 'step', 'dry', 'draw', 'reload_out', 'reload_in', 'ak', 'm4', 'awp', 'deagle', 'knife', 'hit_flesh', 'hit_head', 'hit_helmet', 'pain']) { const d = DEF[n]; if (d) d.f.forEach(f => load(f)); }
   },
   preload(names) { ensure(); for (const n of names) { const d = DEF[n]; if (d) d.f.forEach(f => load(f)); const l = LOOPS[n]; if (l) load(l.f); } return Promise.all([...(names || [])].flatMap(n => (DEF[n] ? DEF[n].f : LOOPS[n] ? [LOOPS[n].f] : []).map(f => load(f)))); },
   play(name, o) { if (!wanted) return null; return start(name, o); },

@@ -85,9 +85,25 @@ export class NavGrid {
       done++;
       if (performance.now() - lastYield > 40) { lastYield = performance.now(); if (onProgress) onProgress(0.5 + done / this.nodes.length * 0.5); await new Promise(r => setTimeout(r, 0)); }
     }
+    this.labelComponents();
     this.ready = true;
     return this;
   }
+
+  // Etiqueta las zonas conectadas: los bots solo usan la mayor (evita bolsillos aislados donde se quedaban atascados).
+  labelComponents() {
+    const N = this.nodes; let c = 0; const size = [];
+    for (const n of N) n.comp = -1;
+    for (let i = 0; i < N.length; i++) {
+      if (N[i].comp >= 0) continue;
+      let cnt = 0; const st = [i]; N[i].comp = c;
+      while (st.length) { const k = st.pop(); cnt++; for (const l of N[k].links) if (N[l].comp < 0) { N[l].comp = c; st.push(l); } }
+      size.push(cnt); c++;
+    }
+    let best = 0; for (let i = 1; i < size.length; i++) if (size[i] > size[best]) best = i;
+    this.main = best;
+  }
+  isMain(id) { return this.main === undefined || this.nodes[id].comp === this.main; }
 
   nearest(x, y, z, maxR = 6) {
     const [cx, cz] = this.cellOf(x, z);
@@ -100,6 +116,7 @@ export class NavGrid {
         if (!ids) continue;
         for (const id of ids) {
           const nd = this.nodes[id];
+          if (!this.isMain(id)) continue;
           const d = (nd.x - x) ** 2 + (nd.z - z) ** 2 + (y === undefined || y === null ? 0 : ((nd.y - y) * 2) ** 2);
           if (d < bd) { bd = d; best = id; }
         }
@@ -189,7 +206,7 @@ export class NavGrid {
     for (let dz = -R; dz <= R; dz++) for (let dx = -R; dx <= R; dx++) {
       if (dx * dx + dz * dz > R * R) continue;
       const ids = this.cells.get(this.key(cx + dx, cz + dz)); if (!ids) continue;
-      for (const id of ids) if (this.nodes[id].wall < 2) cand.push(id);
+      for (const id of ids) if (this.nodes[id].wall < 2 && this.isMain(id)) cand.push(id);
     }
     if (!cand.length) return null;
     const nd = this.nodes[cand[Math.floor(rng() * cand.length)]];

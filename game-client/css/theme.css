@@ -205,3 +205,31 @@ body.df-on #weaponMode,body.df-on #weapon-info .icon{display:none}
 #fpsCounter{font-size:10px;opacity:.55}
 #instructions{left:50%;right:auto;transform:translateX(-50%);bottom:64px;max-width:min(860px,82vw);text-align:center;font-size:11px;background:rgba(6,9,14,.7);animation:hintfade 12s forwards}
 @keyframes hintfade{0%,80%{opacity:.95}100%{opacity:0}}
+
+/* === TIENDA estilo CS:GO (columnas) y armadura === */
+#buyMenu .buy-panel{width:min(1040px,96vw)}
+#buyCols{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:6px 20px 14px}
+@media(max-width:860px){#buyCols{grid-template-columns:repeat(2,1fr)}}
+.bz-col{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.1);padding:0 0 6px;transition:.15s}
+.bz-col.sel{border-color:var(--gold2,#ffc44d);box-shadow:0 0 0 1px var(--gold2,#ffc44d),0 0 18px rgba(255,196,77,.25);background:rgba(255,196,77,.07)}
+.bz-col h4{display:flex;align-items:center;gap:8px;margin:0 0 4px;padding:9px 10px;font-size:13px;letter-spacing:2px;color:#cfd8e6;background:rgba(0,0,0,.35);border-bottom:1px solid rgba(255,255,255,.1)}
+.bz-col h4 i{font-style:normal;display:inline-grid;place-items:center;width:20px;height:20px;background:var(--gold2,#ffc44d);color:#150f00;font-weight:900;font-size:12px}
+.bz-row{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;margin:0;border:0;border-bottom:1px solid rgba(255,255,255,.06);background:transparent;color:#e9eef6;text-align:left;cursor:pointer;font:inherit}
+.bz-row:hover{background:rgba(255,196,77,.14)}
+.bz-row .k{flex:0 0 18px;height:18px;display:grid;place-items:center;font-size:11px;font-weight:800;color:#9fb0c6;border:1px solid rgba(255,255,255,.25)}
+.bz-col.sel .bz-row .k{color:#150f00;background:var(--gold2,#ffc44d);border-color:var(--gold2,#ffc44d)}
+.bz-row .n{flex:1;font-size:14px;font-weight:700;line-height:1.15}
+.bz-row .n small{display:block;font-size:10.5px;font-weight:500;color:#8aa0b8;margin-top:2px}
+.bz-row .p{font-size:14px;font-weight:800;color:#8cf08c;white-space:nowrap}
+.bz-row.cant .p{color:#ff6b6b}
+.bz-row.cant{opacity:.65}
+.bz-row.eq .p{color:#7fd4ff;font-size:11px;letter-spacing:1px}
+.bz-row.own .p{color:#ffc44d;font-size:11px;letter-spacing:1px}
+#buyInvEl span{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:6px 12px;font-size:11px;letter-spacing:1px;color:#8aa0b8}
+#buyInvEl span b{color:#fff;margin-left:6px;font-weight:700}
+#dfArmor{display:none;align-items:center;gap:8px;margin:0 0 6px;color:#9ec8ff}
+#dfArmor.on{display:flex}
+#dfArmor .ico{font-size:17px}
+#dfArmor b{font-size:22px;font-weight:600}
+#dfArmor em{display:none;font-style:normal;font-size:10px;letter-spacing:2px;color:#ffc44d;border:1px solid #ffc44d;padding:1px 5px}
+#dfArmor.helm em{display:inline}

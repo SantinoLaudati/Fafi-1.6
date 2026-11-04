@@ -690,7 +690,7 @@ const bvhPromise = import('three-mesh-bvh').then(m=>{
 }).catch(e=>{ console.warn('three-mesh-bvh no disponible', e); return false; });
 
 function loadSpawnOverrides(key){
-  const sfx = '_'+key+'_v3';   // v3: las marcas guardadas de mapas anteriores ya no valen (cambió el glb de Dust II)
+  const sfx = '_'+key+'_v4';   // v4: las marcas guardadas con zonas anteriores ya no valen (spawns y sitios corregidos con los overview oficiales)
   tSpawnOverride=null; ctSpawnOverride=null;
   try{
     const okSp = (v)=> v && isFinite(v.x) && isFinite(v.z) && Math.abs(v.x)<200 && Math.abs(v.z)<200;
@@ -1137,7 +1137,8 @@ const defuse = createDefuse({
   explosionFx:(pos,R)=>explosionEffect(pos,R), acquireLight:(c,i,d,p)=>acquireLight(c,i,d,p), releaseLight:(l)=>releaseLight(l),
   damageFlash:(f)=>{ const e=document.getElementById('dfDamage'); if(e){ e.style.opacity=Math.min(0.85,0.25+f*0.6); setTimeout(()=>{ e.style.opacity=0; }, 140); } },
   botShotFx:()=>{}, colScale:()=>colScale,
-  hitFeedback:(pos,head)=>{ SFX.play(head?'headshot':'hit'); hitMarker.classList.add('show'); setTimeout(()=>hitMarker.classList.remove('show'),120); spawnParticles(pos, head?0xffd23a:0xff3b3b); if(head) showFloating('HEADSHOT'); },
+  hitFeedback:(pos,head,helmet,dir)=>{ SFX.play(helmet?'hit_helmet':head?'headshot':'hit',{vol:helmet?0.9:1}); hitMarker.classList.add('show'); setTimeout(()=>hitMarker.classList.remove('show'),120); if(helmet){ sparkFx(pos,dir); } else bloodFx(pos,dir,head); if(head) showFloating(helmet?'CASCO':'HEADSHOT'); },
+  bloodFx:(pos,dir,head)=>bloodFx(pos,dir,head),
   flashScreen:(sec)=>flashScreenFx(sec)
 });
 function updateFlashOverlay(dt){
@@ -1230,34 +1231,6 @@ function updateGrenadeView(dt){
   }
   h.position.lerp(p,0.45); h.rotation.x=THREE.MathUtils.lerp(h.rotation.x,rx,0.35);
 }
-function buyUtil(k){
-  if(defuse.active && !defuse.canBuy()){ showFloating(defuse.buyReason()); return; }
-  if(gameMode!=='dust2'||!gameActive) return;
-  const price=WEAPON_PRICES[k];
-  if(money<price){ showFloating('Sin dinero suficiente ($'+price+')'); return; }
-  if(k==='kit'){
-    if(defuse.team!=='ct' || defuse.hasKit) return;
-    SFX.play('buy'); money-=price; defuse.setHasKit(true); showFloating('Kit de defusa comprado');
-  } else {
-    if(grenadeStock[k]>=GRENADES[k].max){ showFloating('Máximo '+GRENADES[k].max+' '+GRENADES[k].label); return; }
-    SFX.play('buy'); money-=price; setStock(k, grenadeStock[k]+1); showFloating(GRENADES[k].label+' comprada -$'+price);
-  }
-  if(defuse.active && defuse.player) defuse.player.money=money;
-  updateMoneyHUD(); updateBuyMenu();
-}
-function updateUtilCards(){
-  for(const k of ['flash','smoke','he','molo','kit']){
-    const card=document.getElementById('buyCard-'+k), btn=document.getElementById('buyBtn-'+k); if(!card||!btn) continue;
-    if(k==='kit' && !(defuse.active ? defuse.team==='ct' : true)){ card.style.display='none'; continue; }
-    card.style.display='';
-    const price=WEAPON_PRICES[k];
-    const have = k==='kit' ? (defuse.hasKit ? 1 : 0) : grenadeStock[k];
-    const max = k==='kit' ? 1 : GRENADES[k].max;
-    card.classList.toggle('owned', have>=max);
-    btn.textContent = have>=max ? 'COMPLETO ('+have+'/'+max+')' : (money>=price ? 'COMPRAR — $'+price : 'SIN DINERO ($'+price+')');
-    btn.disabled = have>=max || money<price;
-  }
-}
 
 // === MANOS EN PRIMERA PERSONA (las del cuchillo) para el resto de armas y granadas ===
 // (las manos de las armas se quitaron: solo el cuchillo muestra brazos, que vienen en su propio modelo)
@@ -1322,9 +1295,9 @@ function clearBullets(){
 // === TIENDA CS:GO Dust2 ===
 function updateMoneyHUD(){
   const m=document.getElementById('moneyEl');
-  if(m) m.textContent='$'+money;
+  if(m) m.textContent=infiniteMoney()?'$ ∞':'$'+money;
   const bm=document.getElementById('buyMoneyEl');
-  if(bm) bm.textContent='$'+money;
+  if(bm) bm.textContent=infiniteMoney()?'$ ∞':'$'+money;
   const box=document.getElementById('moneyBox');
   if(box) box.style.display = (gameMode==='dust2' && gameActive) ? 'block' : 'none';
 }
@@ -1334,48 +1307,109 @@ function nextOwnedWeapon(){
   if(gameMode!=='dust2') return order;
   return order.filter(w=>owned[w]);
 }
+// === TIENDA estilo CS:GO (tecla B) ===
+// Columnas: Pistolas · Rifles · Equipo (chaleco, casco, kit) · Granadas. Pulsa 1-4 para abrir una columna y luego el número del objeto.
+// En el modo exploración (sin Defuse) el dinero es infinito.
+function infiniteMoney(){ return gameMode==='dust2' && !defuse.active; }
+let expArmor=0, expHelmet=false, buyCol=null;
+function getArmor(){ return defuse.active ? { a:defuse.armor||0, h:!!defuse.helmet } : { a:expArmor, h:expHelmet }; }
+function setArmorState(a,h){ if(defuse.active) defuse.setArmor(a,h); else { expArmor=a; expHelmet=h; } }
+function spend(price){
+  if(infiniteMoney()) return true;
+  if(money<price){ showFloating('Sin dinero suficiente ($'+price+')'); return false; }
+  money-=price; if(defuse.active && defuse.player) defuse.player.money=money;
+  return true;
+}
+const BUY_COLS = [
+  { name:'PISTOLAS', items:[ { id:'deagle', kind:'gun', label:'Desert Eagle', sub:'7 balas · gran daño' } ] },
+  { name:'RIFLES', items:[
+    { id:'ak', kind:'gun', label:'AK-47', sub:'Automático · 30/90' },
+    { id:'m4', kind:'gun', label:'M4A4', sub:'Automático · 30/90' },
+    { id:'awp', kind:'gun', label:'AWP', sub:'Francotirador · 10/30' } ] },
+  { name:'EQUIPO', items:[
+    { id:'vest', kind:'armor', label:'Chaleco', sub:'Reduce el daño al cuerpo' },
+    { id:'helm', kind:'armor', label:'Chaleco + casco', sub:'Protege también la cabeza' },
+    { id:'kit', kind:'util', label:'Kit de defusa', sub:'Desactivas en 5 s (solo CT)' } ] },
+  { name:'GRANADAS', items:[
+    { id:'flash', kind:'util', label:'Flashbang', sub:'Ciega · máx. 2' },
+    { id:'smoke', kind:'util', label:'Humo', sub:'Bloquea la visión' },
+    { id:'he', kind:'util', label:'Granada HE', sub:'Explosiva' },
+    { id:'molo', kind:'util', label:'Molotov', sub:'Fuego 7 s' } ] }
+];
+function buyVisible(it){
+  if(it.kind==='gun') return defuse.teamAllows(it.id);
+  if(it.id==='kit') return defuse.active && defuse.team==='ct';
+  return true;
+}
+function buyPrice(it){
+  if(it.id==='helm'){ const {a,h}=getArmor(); return (a>0 && !h) ? 350 : 1000; }
+  if(it.id==='vest') return 650;
+  return WEAPON_PRICES[it.id];
+}
+function buyState(it){
+  const price=buyPrice(it), free=infiniteMoney();
+  if(it.kind==='gun'){
+    if(owned[it.id]) return { txt: currentWeapon===it.id ? 'EQUIPADA' : 'EQUIPAR', cls: currentWeapon===it.id ? 'eq' : 'own' };
+  } else if(it.kind==='armor'){
+    const {a,h}=getArmor();
+    if(it.id==='vest' && a>0) return { txt:'COMPRADO', cls:'eq' };
+    if(it.id==='helm' && a>0 && h) return { txt:'COMPRADO', cls:'eq' };
+  } else if(it.id==='kit'){
+    if(defuse.hasKit) return { txt:'COMPRADO', cls:'eq' };
+  } else if(grenadeStock[it.id]>=GRENADES[it.id].max){
+    return { txt:'COMPLETO '+grenadeStock[it.id]+'/'+GRENADES[it.id].max, cls:'eq' };
+  }
+  if(!free && money<price) return { txt:'$'+price, cls:'cant' };
+  return { txt:'$'+price, cls:'' };
+}
 function updateBuyMenu(){
   updateMoneyHUD();
+  const bme=document.getElementById('buyModeEl'); if(bme) bme.textContent='— '+(defuse.active?'DEFUSE':'EXPLORACIÓN · DINERO INFINITO');
+  const root=document.getElementById('buyCols'); if(!root) return;
+  const cols=BUY_COLS.map(c=>({ name:c.name, items:c.items.filter(buyVisible) })).filter(c=>c.items.length);
+  if(buyCol!==null && buyCol>=cols.length) buyCol=null;
+  root.innerHTML = cols.map((c,ci)=>{
+    const rows=c.items.map((it,ii)=>{
+      const st=buyState(it);
+      const label = it.id==='helm' ? ((()=>{ const {a,h}=getArmor(); return a>0&&!h ? 'Casco' : it.label; })()) : it.label;
+      return '<button class="bz-row '+st.cls+'" data-id="'+it.id+'"><span class="k">'+(ii+1)+'</span><span class="n">'+label+'<small>'+it.sub+'</small></span><span class="p">'+st.txt+'</span></button>';
+    }).join('');
+    return '<div class="bz-col'+(buyCol===ci?' sel':'')+'" data-ci="'+ci+'"><h4><i>'+(ci+1)+'</i>'+c.name+'</h4>'+rows+'</div>';
+  }).join('');
   const inv=document.getElementById('buyInvEl');
   if(inv){
-    const prim = owned.awp ? 'AWP' : owned.ak ? 'AK-47' : owned.m4 ? 'M4A4' : '— (sin primaria)';
-    const sec = owned.deagle ? 'Desert Eagle' : '— (sin pistola)';
-    inv.innerHTML = '<span class="inv-slot">🔪 <b>Cuchillo</b> ✓</span>'
-      + '<span class="inv-slot">🔫 <b>Secundaria:</b> '+sec+'</span>'
-      + '<span class="inv-slot">🎯 <b>Primaria:</b> '+prim+' <span style="color:#8aa0b8">(AK, M4A4 o AWP)</span></span>'
-      + '<span class="inv-slot">💰 <b>$'+money+'</b></span>';
+    const {a,h}=getArmor();
+    const prim = owned.awp ? 'AWP' : owned.ak ? 'AK-47' : owned.m4 ? 'M4A4' : '—';
+    const gr = Object.keys(grenadeStock).filter(k=>grenadeStock[k]>0).map(k=>GRENADES[k].icon+(grenadeStock[k]>1?'×'+grenadeStock[k]:'')).join(' ') || '—';
+    inv.innerHTML = '<span>PRIMARIA <b>'+prim+'</b></span><span>PISTOLA <b>'+(owned.deagle?'Desert Eagle':'—')+'</b></span>'
+      + '<span>CHALECO <b>'+(a>0?(h?'Kevlar + casco':'Kevlar'):'—')+'</b></span><span>GRANADAS <b>'+gr+'</b></span>';
   }
-  const defs=[['ak','buyCard-ak','buyBtn-ak'],['m4','buyCard-m4','buyBtn-m4'],['awp','buyCard-awp','buyBtn-awp'],['deagle','buyCard-deagle','buyBtn-deagle']];
-  for(const [w,cardId,btnId] of defs){
-    const card=document.getElementById(cardId), btn=document.getElementById(btnId);
-    if(!card||!btn) continue;
-    card.style.display = defuse.teamAllows(w) ? '' : 'none';
-    const price=WEAPON_PRICES[w];
-    card.classList.toggle('owned', !!owned[w]);
-    card.classList.toggle('cant', !owned[w] && money<price);
-    if(owned[w]){
-      const isEquipped=(currentWeapon===w);
-      btn.textContent = isEquipped ? 'EQUIPADA ✓' : 'EQUIPAR';
-      btn.disabled=false;
-      btn.classList.toggle('equipped', isEquipped);
-      btn.onclick=()=>{ switchWeapon(w); updateBuyMenu(); };
-    } else {
-      btn.classList.remove('equipped');
-      if(money>=price){ btn.textContent='COMPRAR — $'+price; btn.disabled=false; btn.onclick=()=>tryBuy(w); }
-      else { btn.textContent='SIN DINERO ($'+price+')'; btn.disabled=true; btn.onclick=null; }
-    }
-  }
-  updateUtilCards();
+}
+function buyItem(it){
+  if(!gameActive || gameMode!=='dust2') return;
+  if(defuse.active && !defuse.canBuy()){ showFloating(defuse.buyReason()); return; }
+  if(it.kind==='gun') tryBuy(it.id);
+  else if(it.kind==='armor') buyArmor(it.id);
+  else buyUtil(it.id);
+  buyCol=null; updateBuyMenu();
+}
+function buyArmor(id){
+  const {a,h}=getArmor(); let price, nh;
+  if(id==='vest'){ if(a>0){ showFloating('Ya tienes chaleco'); return; } price=650; nh=false; }
+  else { if(a>0 && h){ showFloating('Ya tienes chaleco y casco'); return; } price = a>0 ? 350 : 1000; nh=true; }
+  if(!spend(price)) return;
+  setArmorState(100, nh); SFX.play('armor');
+  showFloating((id==='vest'?'Chaleco':'Chaleco + casco')+' comprado'+(infiniteMoney()?'':' -$'+price));
+  updateMoneyHUD();
 }
 function tryBuy(w){
   if(defuse.active && !defuse.canBuy()){ showFloating(defuse.buyReason()); return; }
   if(gameMode!=='dust2'||!gameActive) return;
   if(owned[w]){ switchWeapon(w); updateBuyMenu(); return; }
   const price=WEAPON_PRICES[w];
-  if(money<price){ showFloating('Sin dinero suficiente ($'+price+')'); return; }
-  money-=price; if(defuse.active && defuse.player) defuse.player.money=money;
+  if(!spend(price)) return;
   SFX.play('buy');
-  // Primaria excluyente: AK o AWP, no las dos (como pedir rifle o awp)
+  // Primaria excluyente: una sola entre AK, M4 y AWP
   if(PRIMARIES.includes(w)){
     for(const p of PRIMARIES){ if(p!==w && owned[p]){ owned[p]=false; showFloating(WEAPON_LABEL[p]+' reemplazada por '+WEAPON_LABEL[w]); } }
   }
@@ -1395,13 +1429,40 @@ function tryBuy(w){
     if(ANIM_WEAPONS[w]){ maxMag=ANIM_WEAPONS[w].mag; ammoInMag=animAmmo[w].ammo; reserveAmmo=animAmmo[w].reserve; animWeaponDraw(w); }
     updateWeaponVisibility();
   }
-  showFloating(WEAPON_LABEL[w]+' comprada -$'+price);
-  updateBuyMenu(); updateHUD();
+  showFloating(WEAPON_LABEL[w]+' comprada'+(infiniteMoney()?'':' -$'+price));
+  updateMoneyHUD(); updateHUD();
+}
+function buyUtil(k){
+  if(defuse.active && !defuse.canBuy()){ showFloating(defuse.buyReason()); return; }
+  if(gameMode!=='dust2'||!gameActive) return;
+  const price=WEAPON_PRICES[k];
+  if(k==='kit'){
+    if(defuse.team!=='ct' || defuse.hasKit) return;
+    if(!spend(price)) return;
+    SFX.play('buy'); defuse.setHasKit(true); showFloating('Kit de defusa comprado');
+  } else {
+    if(grenadeStock[k]>=GRENADES[k].max){ showFloating('Máximo '+GRENADES[k].max+' '+GRENADES[k].label); return; }
+    if(!spend(price)) return;
+    SFX.play('buy'); setStock(k, grenadeStock[k]+1); showFloating(GRENADES[k].label+' comprada'+(infiniteMoney()?'':' -$'+price));
+  }
+  updateMoneyHUD(); updateBuyMenu();
+}
+function updateUtilCards(){}
+// teclado dentro de la tienda: 1-4 columna, luego número del objeto; B/Esc cierran
+function buyKey(e){
+  if(e.code==='Escape' || e.code==='KeyB'){ e.preventDefault(); setBuyMenu(false); return true; }
+  const m=/^(?:Digit|Numpad)(\d)$/.exec(e.code); if(!m) return false;
+  e.preventDefault();
+  const n=+m[1];
+  const cols=BUY_COLS.map(c=>c.items.filter(buyVisible)).filter(c=>c.length);
+  if(buyCol===null){ if(n>=1 && n<=cols.length){ buyCol=n-1; updateBuyMenu(); } return true; }
+  if(n>=1 && n<=cols[buyCol].length) buyItem(cols[buyCol][n-1]); else { buyCol=null; updateBuyMenu(); }
+  return true;
 }
 function setBuyMenu(open){
   if(open && defuse.active && !defuse.canBuy()){ showFloating(defuse.buyReason()); return; }
   if(gameMode!=='dust2'||!gameActive) open=false;
-  buyMenuOpen=open;
+  buyMenuOpen=open; buyCol=null;
   const el=document.getElementById('buyMenu');
   if(el) el.classList.toggle('show', open);
   if(open){
@@ -1409,11 +1470,16 @@ function setBuyMenu(open){
     try{ controls.unlock(); }catch(e){}
     // Evitar que el unlock dispare la pausa mientras compras
     pauseOverlay.classList.remove('show');
+    isHoldingShoot=false;
   } else {
     if(gameActive && !resultOverlay.classList.contains('show')){ try{ controls.lock(); }catch(e){} }
   }
 }
 function toggleBuyMenu(){ setBuyMenu(!buyMenuOpen); }
+document.getElementById('buyCols')?.addEventListener('click', (e)=>{
+  const row=e.target.closest('.bz-row'); if(!row) return;
+  for(const c of BUY_COLS){ const it=c.items.find(i=>i.id===row.dataset.id); if(it){ buyItem(it); return; } }
+});
 
 
 
@@ -1584,7 +1650,7 @@ function markSpawn(team){
   if(gameMode!=='dust2' || !gameActive){ showFloating('Marca spawns solo en DUST II'); return; }
   const p = { x: camera.position.x, z: camera.position.z };
   try{
-    const sfx = '_'+currentMapKey+'_v3';
+    const sfx = '_'+currentMapKey+'_v4';
     if(team==='t'){ tSpawnOverride=p; localStorage.setItem('fafi_spawn_t'+sfx, JSON.stringify(p)); }
     else { ctSpawnOverride=p; localStorage.setItem('fafi_spawn_ct'+sfx, JSON.stringify(p)); }
   }catch(err){ console.warn(err); }
@@ -2807,6 +2873,7 @@ function shoot(){
   }; tick();
 
   SFX.play(['ak','awp','deagle','m4'].includes(currentWeapon)?currentWeapon:'rifle');
+  if(defuse.active) defuse.noise(camera.position, currentWeapon==='awp'?60:38);
   if(currentWeapon==='awp') setTimeout(()=>SFX.play('bolt',{vol:0.9}), 520);
 
   // dirección con dispersión: AWP muy precisa con mira, AK progresivo
@@ -2901,6 +2968,67 @@ function impactFx(hit, dir, hex=0xd8c2a0){
   emitDebris(hit.point, n, 0xffc060, 4, 5.5, floorY);           // chispas
   bulletHole(hit.point, n);
   SFX.at('bulletwall', hit.point, { vol: 0.9, ref: 4 });
+}
+
+// === SANGRE: chorro de gotas con gravedad + neblina roja + manchas en suelo/pared (feedback de impacto) ===
+const _bGeo=new THREE.SphereGeometry(0.03,5,4);
+const _bMatA=new THREE.MeshBasicMaterial({color:0xb30d0d}), _bMatB=new THREE.MeshBasicMaterial({color:0x6e0606});
+const _bTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,2,32,32,30); gr.addColorStop(0,'rgba(190,12,12,.9)'); gr.addColorStop(.55,'rgba(130,6,6,.5)'); gr.addColorStop(1,'rgba(90,0,0,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
+const _bDecalGeo=new THREE.CircleGeometry(0.13,10), _bDecalMat=new THREE.MeshBasicMaterial({color:0x6a0707, transparent:true, opacity:0.82, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
+const bloodDecals=[], _bRay=new THREE.Raycaster(), _bDown=new THREE.Vector3(0,-1,0), _bn=new THREE.Vector3();
+_bRay.firstHitOnly=true;
+function bloodDecal(point, nrm, size){
+  const m=new THREE.Mesh(_bDecalGeo,_bDecalMat);
+  m.position.copy(point).addScaledVector(nrm,0.012); m.lookAt(point.clone().add(nrm)); m.rotation.z=Math.random()*6.28; m.scale.setScalar(size);
+  scene.add(m); bloodDecals.push(m);
+  if(bloodDecals.length>40) scene.remove(bloodDecals.shift());
+}
+function bloodFx(pos, dir, head){
+  if(!pos) return;
+  const low=!!QUALITY[qualityLevel].fpsCap;
+  const p0=new THREE.Vector3(pos.x,pos.y,pos.z);
+  const fwd=dir ? new THREE.Vector3(dir.x,dir.y,dir.z).normalize() : new THREE.Vector3(0,0,0);
+  // neblina de sangre
+  for(let i=0;i<(low?1:2);i++){
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:_bTex, transparent:true, depthWrite:false, fog:false}));
+    sp.position.copy(p0).addScaledVector(fwd,0.08*i); sp.scale.setScalar(0.18); scene.add(sp);
+    const t0=performance.now();
+    const tick=()=>{ const k=(performance.now()-t0)/330; if(k>=1){ scene.remove(sp); sp.material.dispose(); return; } sp.scale.setScalar(0.18+k*(head?0.75:0.55)); sp.material.opacity=0.9*(1-k); sp.position.addScaledVector(fwd,0.012); requestAnimationFrame(tick); };
+    tick();
+  }
+  // gotas: salen en el sentido de la bala, con dispersión y caída
+  const n=low?5:(head?16:10), parts=[];
+  for(let i=0;i<n;i++){
+    const m=new THREE.Mesh(_bGeo, i%3?_bMatA:_bMatB); m.position.copy(p0); m.scale.setScalar(0.6+Math.random()*1.1);
+    const v=new THREE.Vector3((Math.random()-0.5)*2.6,(Math.random()-0.2)*2.4,(Math.random()-0.5)*2.6).addScaledVector(fwd,1.5+Math.random()*3);
+    scene.add(m); parts.push({m,v});
+  }
+  let last=performance.now(), life=0.7;
+  const tick=()=>{
+    const now=performance.now(), dt=Math.min(0.05,(now-last)/1000); last=now; life-=dt;
+    for(const p of parts){ p.v.y-=9.8*dt; p.m.position.addScaledVector(p.v,dt); }
+    if(life<=0){ for(const p of parts) scene.remove(p.m); return; }
+    requestAnimationFrame(tick);
+  };
+  tick();
+  // manchas: en el suelo bajo el impacto y en la pared que haya detrás
+  if(dust2Colliders && dust2Colliders.length){
+    _bRay.set(p0,_bDown); _bRay.far=5;
+    const g=_bRay.intersectObjects(dust2Colliders,false)[0];
+    if(g && g.face){ _bn.copy(g.face.normal).transformDirection(g.object.matrixWorld); if(_bn.y>0.5) setTimeout(()=>bloodDecal(g.point,_bn.clone(),0.7+Math.random()*0.8),180); }
+    if(dir && !low){
+      _bRay.set(p0,fwd); _bRay.far=3.2;
+      const w=_bRay.intersectObjects(dust2Colliders,false)[0];
+      if(w && w.face){ _bn.copy(w.face.normal).transformDirection(w.object.matrixWorld); if(_bn.dot(fwd)>0) _bn.negate(); bloodDecal(w.point,_bn.clone(),0.9+Math.random()*0.9); }
+    }
+  }
+}
+// impacto en casco: chispas metálicas en vez de sangre
+function sparkFx(pos, dir){
+  const p=new THREE.Vector3(pos.x,pos.y,pos.z);
+  spawnParticles(p, 0xffe9a0);
+  const back=dir ? new THREE.Vector3(-dir.x,-dir.y,-dir.z).normalize() : new THREE.Vector3(0,1,0);
+  spawnParticles(p.clone().addScaledVector(back,0.05), 0xffffff);
 }
 
 const _pGeo=new THREE.SphereGeometry(0.04,4,4);
@@ -3015,6 +3143,8 @@ window.addEventListener('keydown', (e)=>{
   // debug desactivado en producción (descomenta si necesitas calibrar teclado)
   // console.log('tecla:', e.code, 'key:', e.key, 'keyCode:', e.keyCode);
   keys[e.code]=true;
+  if(buyMenuOpen){ if(buyKey(e)) return; }
+  if(e.code==='KeyB' && !e.repeat && gameActive && gameMode==='dust2' && !resultOverlay.classList.contains('show')){ e.preventDefault(); toggleBuyMenu(); return; }
   // 1/2/3/4 y Q/Rueda para cambiar arma (en Dust2 solo si la posees)
   if(e.code==='Digit1' || e.code==='Numpad1'){ e.preventDefault(); switchWeapon('ak'); return; }
   if(e.code==='Digit2' || e.code==='Numpad2'){ e.preventDefault(); switchWeapon('knife'); return; }
@@ -3484,68 +3614,87 @@ function updateFPS(now){
     if(c) c.textContent=fpsVal+' FPS';
   }
 }
+// === MINIMAPA: vista cenital de TODO el mapa cargado (se renderiza una vez por mapa y se guarda) ===
+const mmCache={};
+function buildMinimapImage(key){
+  const b=dust2Group && dust2Group.userData.bounds; if(!b || !renderer || !scene) return null;
+  const mw=b.max.x-b.min.x, mh=b.max.z-b.min.z;
+  const S=Math.min(14, 720/Math.max(mw,mh)), W=Math.max(8,Math.ceil(mw*S)), H=Math.max(8,Math.ceil(mh*S));
+  const cut=b.min.y+(b.max.y-b.min.y)*0.9;                       // corta los techos para ver los pasillos
+  const cam=new THREE.OrthographicCamera(b.min.x,b.max.x,-b.min.z,-b.max.z,0.1,400);
+  cam.position.set(0,b.max.y+40,0); cam.up.set(0,0,-1); cam.lookAt(0,0,0);
+  const rt=new THREE.WebGLRenderTarget(W,H); rt.texture.colorSpace=THREE.SRGBColorSpace;
+  // estado a restaurar
+  const oldRT=renderer.getRenderTarget(), oldClip=renderer.clippingPlanes, oldAlpha=renderer.getClearAlpha(), oldCol=renderer.getClearColor(new THREE.Color());
+  const oldBg=scene.background, oldFog=scene.fog, hid=[];
+  scene.children.forEach(o=>{ if(o!==dust2Group && !o.isLight && o.visible){ o.visible=false; hid.push(o); } });
+  const chars=[]; dust2Group.traverse(o=>{ if((o.userData&&o.userData.isChar)||o.isSprite){ if(o.visible){ o.visible=false; chars.push(o); } } });
+  scene.background=null; scene.fog=null;
+  renderer.clippingPlanes=[new THREE.Plane(new THREE.Vector3(0,-1,0), cut)];
+  renderer.setClearColor(0x000000,0);
+  let px=null;
+  try{
+    renderer.setRenderTarget(rt); renderer.clear(); renderer.render(scene,cam);
+    px=new Uint8Array(W*H*4); renderer.readRenderTargetPixels(rt,0,0,W,H,px);
+  }catch(e){ console.warn('minimapa', e); }
+  renderer.setRenderTarget(oldRT); renderer.clippingPlanes=oldClip; renderer.setClearColor(oldCol,oldAlpha);
+  scene.background=oldBg; scene.fog=oldFog; hid.forEach(o=>{ o.visible=true; }); chars.forEach(o=>{ o.visible=true; }); rt.dispose();
+  if(!px) return null;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d'); const id=g.createImageData(W,H);
+  const gain=1.55;
+  for(let y=0;y<H;y++){
+    const src=(H-1-y)*W*4, dst=y*W*4;
+    for(let x=0;x<W*4;x+=4){
+      const a=px[src+x+3];
+      if(a<8){ id.data[dst+x+3]=0; continue; }
+      id.data[dst+x]=Math.min(255,px[src+x]*gain); id.data[dst+x+1]=Math.min(255,px[src+x+1]*gain); id.data[dst+x+2]=Math.min(255,px[src+x+2]*gain); id.data[dst+x+3]=235;
+    }
+  }
+  g.putImageData(id,0,0);
+  return cv;
+}
 function drawMinimap(){
-  const cv=document.getElementById('minimap');
-  if(!cv || typeof camera==='undefined' || !camera) return;
-  const ctx=cv.getContext('2d');
-  const W=cv.width, H=cv.height, cx=W/2, cy=H/2, R=W/2-4;
-  // bounds del mapa
+  const cv=document.getElementById('minimap'), wrap=document.getElementById('minimapWrap');
+  if(!cv || !wrap || typeof camera==='undefined' || !camera) return;
   let minX=wallLimit.xmin, maxX=wallLimit.xmax, minZ=wallLimit.zmin, maxZ=wallLimit.zmax;
   try{
     const b=(typeof dust2Group!=='undefined'&&dust2Group&&dust2Group.userData.bounds)?dust2Group.userData.bounds:null;
     if(b){ minX=b.min.x; maxX=b.max.x; minZ=b.min.z; maxZ=b.max.z; }
   }catch(e){}
   if(!(isFinite(minX)&&isFinite(maxX)&&isFinite(minZ)&&isFinite(maxZ))||maxX<=minX||maxZ<=minZ) return;
-  const pad=2;
-  const sx=(W-pad*2)/(maxX-minX), sz=(H-pad*2)/(maxZ-minZ);
-  const s=Math.min(sx,sz);
-  const offX=cx-(minX+maxX)/2*s, offY=cy-(minZ+maxZ)/2*s;
-  const mapX=(x)=>offX+x*s, mapY=(z)=>offY+z*s;
-  // fondo + clip circular
-  ctx.save();
-  ctx.clearRect(0,0,W,H);
-  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.clip();
-  ctx.fillStyle='rgba(10,16,26,0.95)'; ctx.fillRect(0,0,W,H);
-  // retícula
-  ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=1;
-  for(let gx=cx-120;gx<cx+120;gx+=24){ ctx.beginPath(); ctx.moveTo(gx,cy-R); ctx.lineTo(gx,cy+R); ctx.stroke(); }
-  for(let gy=cy-120;gy<cy+120;gy+=24){ ctx.beginPath(); ctx.moveTo(cx-R,gy); ctx.lineTo(cx+R,gy); ctx.stroke(); }
-  // área del mapa
-  ctx.fillStyle='rgba(70,90,110,0.55)';
-  ctx.fillRect(mapX(minX),mapY(minZ),(maxX-minX)*s,(maxZ-minZ)*s);
-  ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=2;
-  ctx.strokeRect(mapX(minX),mapY(minZ),(maxX-minX)*s,(maxZ-minZ)*s);
-  // sites A/B (refs de loadDust2Map)
+  // el recuadro toma la proporción del mapa (Italy es alto, Office ancho) y siempre cabe entero
+  const mw=maxX-minX, mh=maxZ-minZ, k=Math.min(260/mw, 340/mh);
+  const cssW=Math.round(mw*k), cssH=Math.round(mh*k), D=2;
+  if(cv.width!==cssW*D || cv.height!==cssH*D){ cv.width=cssW*D; cv.height=cssH*D; wrap.style.width=cssW+'px'; wrap.style.height=cssH+'px'; }
+  const ctx=cv.getContext('2d'), W=cv.width, H=cv.height, s=W/mw;
+  const mapX=(x)=>(x-minX)*s, mapY=(z)=>(z-minZ)*s;
+  const ck=currentMapKey+'|'+currentMapFile;
+  if(!(ck in mmCache)){ try{ mmCache[ck]=buildMinimapImage(currentMapKey); }catch(e){ mmCache[ck]=null; } }
+  ctx.save(); ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='rgba(8,13,22,0.82)'; ctx.fillRect(0,0,W,H);
+  const img=mmCache[ck];
+  if(img) ctx.drawImage(img,0,0,W,H);
+  else { ctx.fillStyle='rgba(70,90,110,0.55)'; ctx.fillRect(0,0,W,H); }
+  // spawns T / CT (zonas oficiales)
   try{
-    if(defuse.active) defuse.drawRadar(ctx, mapX, mapY, s);
-    else { const zz=MAPS[currentMapKey].zones; if(zz){ ctx.font='bold 20px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='rgba(255,176,32,0.95)'; ctx.fillText('A',mapX(zz.A.x),mapY(zz.A.z)); ctx.fillText('B',mapX(zz.B.x),mapY(zz.B.z)); } }
-  }catch(e){}
-  // spawns T/CT
-  try{
-    if(!defuse.active && (typeof tSpawnOverride!=='undefined'||typeof DEFAULT_T_SPAWN!=='undefined')){
-      const t=(typeof tSpawnOverride!=='undefined'&&tSpawnOverride)?tSpawnOverride:(typeof DEFAULT_T_SPAWN!=='undefined'?DEFAULT_T_SPAWN:null);
-      const ct=(typeof ctSpawnOverride!=='undefined'&&ctSpawnOverride)?ctSpawnOverride:(typeof DEFAULT_CT_SPAWN!=='undefined'?DEFAULT_CT_SPAWN:null);
-      if(t){ ctx.fillStyle='#ff8c2a'; ctx.beginPath(); ctx.arc(mapX(t.x),mapY(t.z),5,0,Math.PI*2); ctx.fill(); }
-      if(ct){ ctx.fillStyle='#3aa0ff'; ctx.beginPath(); ctx.arc(mapX(ct.x),mapY(ct.z),5,0,Math.PI*2); ctx.fill(); }
+    const zz=MAPS[currentMapKey].zones;
+    if(zz){
+      const lab=(z,t,c)=>{ ctx.fillStyle=c; ctx.strokeStyle='#000'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(mapX(z.x),mapY(z.z),8*D/1.4,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.fillStyle='#fff'; ctx.font='bold '+(9*D)+'px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(t,mapX(z.x),mapY(z.z)+1); };
+      lab(zz.t,'T','#e07a1f'); lab(zz.ct,'CT','#2f7fe0');
+      if(!defuse.active){ ctx.font='bold '+(13*D)+'px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; for(const k of ['A','B']){ ctx.lineWidth=4; ctx.strokeStyle='#000'; ctx.strokeText(k,mapX(zz[k].x),mapY(zz[k].z)); ctx.fillStyle='rgba(255,196,60,0.98)'; ctx.fillText(k,mapX(zz[k].x),mapY(zz[k].z)); } }
     }
   }catch(e){}
-  // jugador: punto + flecha de dirección
+  // sitios, bots visibles y bomba (modo Defuse)
+  try{ if(defuse.active) defuse.drawRadar(ctx, mapX, mapY, s); }catch(e){}
+  // jugador: flecha de dirección
   try{
-    const px=camera.position.x, pz=camera.position.z;
     const dir=new THREE.Vector3(); camera.getWorldDirection(dir);
-    const ang=Math.atan2(dir.x,-dir.z);
-    const mx=mapX(px), my=mapY(pz);
-    ctx.fillStyle = (playerTeam==='t') ? '#ffb066' : '#7af';
-    ctx.strokeStyle='#000'; ctx.lineWidth=2;
-    ctx.save(); ctx.translate(mx,my); ctx.rotate(ang);
-    ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(7,7); ctx.lineTo(0,3.5); ctx.lineTo(-7,7); ctx.closePath();
-    ctx.fill(); ctx.stroke(); ctx.restore();
-    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(mx,my,2.5,0,Math.PI*2); ctx.fill();
+    const ang=Math.atan2(dir.x,-dir.z), mx=mapX(camera.position.x), my=mapY(camera.position.z);
+    ctx.fillStyle=(playerTeam==='t')?'#ffb066':'#7af'; ctx.strokeStyle='#000'; ctx.lineWidth=3;
+    ctx.save(); ctx.translate(mx,my); ctx.rotate(ang); ctx.scale(D/1.3,D/1.3);
+    ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(7,7); ctx.lineTo(0,3.5); ctx.lineTo(-7,7); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
   }catch(e){}
   ctx.restore();
-  // anillo
-  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
-  ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=3; ctx.stroke();
 }
 // evitar menú contextual con click derecho (apuntar)
 document.addEventListener('contextmenu', e=> e.preventDefault());
@@ -3737,6 +3886,8 @@ try{
 try{ menu.style.display='none'; }catch(e){}
 try{ fafiApplySensitivity(); }catch(e){}
 try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }catch(e){}
+
+
 
 
 

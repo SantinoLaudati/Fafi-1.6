@@ -174,7 +174,8 @@ export function createDefuse(A) {
       weaponId: 'deagle', pos: new THREE.Vector3(), yaw: 0, speed: 0, path: null, pathIdx: 0, goal: null,
       target: null, nextThink: Math.random() * 0.4, nextShot: 0, burstLeft: 0, aimT: 0, alertUntil: 0, flashedUntil: 0,
       skill: rand(0.75, 1.1), hasBomb: false, plantT: 0, defuseT: 0, role: null, stuckT: 0, lastPos: new THREE.Vector3(),
-      lastSeenT: 0, kit: false, spotted: 0, char: null
+      lastSeenT: 0, kit: false, spotted: 0, char: null,
+      armor: 0, helmet: false, lastSeenPos: new THREE.Vector3(), hint: null, hintT: 0, chaseUntil: 0, strafeT: 0, strafeDir: 1, strafeFor: 0, watchYaw: 0, lookT: 0, badGoals: 0
     };
     if (!isPlayer) {
       u.char = createCharacter(team, variant);
@@ -182,14 +183,22 @@ export function createDefuse(A) {
     }
     return u;
   }
-  function botLoadout(u) {
-    // ronda de pistolas: deagle; luego rifles. El dinero del equipo decide.
-    const r = D.round;
-    const rich = r >= 3 || Math.random() < 0.18 + (r - 1) * 0.15;
-    const isCT = u.team === 'ct';
-    let w = 'deagle';
-    if (rich) w = Math.random() < 0.14 ? 'awp' : (isCT ? 'm4' : 'ak');
-    u.weaponId = w; if (u.char) giveWeapon(u.char, w);
+  // Compra de los bots según su dinero (como un jugador): primaria si alcanza, chaleco/casco con lo que sobre.
+  const PRICE = { deagle: 700, ak: 2500, m4: 3100, awp: 4750 };
+  function botLoadout(u, keepGun) {
+    const isCT = u.team === 'ct', rifle = isCT ? 'm4' : 'ak';
+    if (!keepGun || u.weaponId === 'deagle') {                  // quien conserva una primaria no vuelve a comprar
+      u.weaponId = 'deagle';                                   // pistola de serie gratis
+      if (u.money >= PRICE[rifle] + 650 || (u.money >= PRICE[rifle] && Math.random() < 0.5)) {
+        u.weaponId = (u.money >= PRICE.awp + 650 && Math.random() < 0.18) ? 'awp' : rifle;
+        u.money -= PRICE[u.weaponId];
+      }
+    }
+    if (u.armor <= 0) {
+      if (u.money >= 1000) { u.armor = 100; u.helmet = true; u.money -= 1000; }
+      else if (u.money >= 650) { u.armor = 100; u.helmet = false; u.money -= 650; }
+    }
+    if (u.char) giveWeapon(u.char, u.weaponId);
   }
   function placeUnit(u, p, lookAt) {
     u.pos.set(p.x, p.y, p.z);
@@ -284,12 +293,12 @@ export function createDefuse(A) {
       const p = pts[idx[u.team]++ % pts.length];
       const look = openLook(p, z[enemyOf(u.team)]);
       u.hp = 100; u.alive = true; u.target = null; u.hasBomb = false; u.plantT = 0; u.defuseT = 0; u.flashedUntil = 0; u.burstLeft = 0;
-      u.nextShot = 0; u.alertUntil = 0; u.spotted = 0;
+      u.nextShot = 0; u.alertUntil = 0; u.spotted = 0; u.hint = null; u.chaseUntil = 0; u.strafeFor = 0; u.badGoals = 0;
+      if (first || u.diedLast) { u.armor = 0; u.helmet = false; }
       if (u.char) { reviveCharacter(u.char); u.char.root.visible = true; }
       placeUnit(u, p, look);
       if (!u.isPlayer) {
-        if (!first && !u.hadWeaponDied) { /* conserva arma */ }
-        if (first || u.diedLast) { botLoadout(u); } else if (D.round === 2) botLoadout(u);
+        botLoadout(u, !(first || u.diedLast));          // quien sobrevive conserva su arma; quien murió compra de nuevo
         u.diedLast = false;
         u.kit = u.team === 'ct' && Math.random() < 0.5;
       }
@@ -427,12 +436,44 @@ export function createDefuse(A) {
     el.prepend(row); setTimeout(() => row.remove(), 6000);
     while (el.children.length > 5) el.lastChild.remove();
   }
-  function damageUnit(u, dmg, attacker, head, weapon) {
+  // Penetración del chaleco por arma: fracción del daño que sigue llegando a la vida
+  const PEN = { ak: 0.775, m4: 0.7, awp: 0.95, deagle: 0.93, knife: 0.85, he: 0.5 };
+  const BULLET = { ak: 1, m4: 1, awp: 1, deagle: 1, knife: 1 };
+  function damageUnit(u, dmg, attacker, head, weapon, hitPos) {
     if (!u.alive || D.state === 'freeze' || D.state === 'end' && attacker) return false;
+    const now = performance.now();
+    // chaleco / casco: absorbe parte del daño (la cabeza solo se protege con casco)
+    let helmetHit = false;
+    if (u.armor > 0 && weapon !== 'bomb' && weapon !== 'fire' && (!head || u.helmet)) {
+      const kept = Math.max(1, Math.round(dmg * (PEN[weapon] ?? 0.75)));
+      u.armor = Math.max(0, u.armor - Math.round((dmg - kept) * 0.5) - 1);
+      if (u.armor <= 0) u.helmet = false;
+      helmetHit = !!head; dmg = kept;
+    }
     u.hp -= dmg;
-    if (u.isPlayer) A.damageFlash(Math.min(1, dmg / 60));
-    if (u.isPlayer) SFX.play("hurt", { vol: Math.min(1, 0.5 + dmg / 80) }); else if (weapon !== "bomb") SFX.at(head ? "headshot" : "hurt", { x: u.pos.x, y: u.pos.y + 1.2, z: u.pos.z }, { vol: 0.6 });
-    else { u.alertUntil = performance.now() + 4000; if (attacker && attacker.alive) { u.target = attacker; } }
+    const isBullet = !!BULLET[weapon];
+    const hp = hitPos || { x: u.pos.x, y: u.pos.y + (head ? 0.99 : 0.65), z: u.pos.z };
+    if (u.isPlayer) {
+      A.damageFlash(Math.min(1, dmg / 60));
+      if (isBullet) SFX.play(helmetHit ? 'hit_helmet' : head ? 'hit_head' : 'hit_flesh', { vol: 0.8 });
+      if (u.hp > 0) SFX.play('pain', { vol: Math.min(1, 0.55 + dmg / 90) });
+    } else {
+      if (isBullet) SFX.at(helmetHit ? 'hit_helmet' : head ? 'hit_head' : 'hit_flesh', hp, { vol: 1, ref: 5 });
+      else if (weapon !== 'bomb') SFX.at('hurt', { x: u.pos.x, y: u.pos.y + 1.2, z: u.pos.z }, { vol: 0.6 });
+      // sangre en los tiroteos entre bots (los disparos del jugador la sacan desde hitFeedback, con su punto exacto)
+      if (isBullet && !helmetHit && !(attacker && attacker.isPlayer) && A.bloodFx) {
+        const dir = attacker && attacker !== u ? tmpV.set(u.pos.x - attacker.pos.x, 0.1, u.pos.z - attacker.pos.z).normalize() : null;
+        A.bloodFx(hp, dir, head);
+      }
+      // reacciona: se alerta, mira a quien le disparó y le devuelve el fuego (aunque no lo viera antes)
+      u.alertUntil = now + 4000;
+      if (attacker && attacker.alive && attacker.team !== u.team) {
+        if (!u.target || !u.target.alive) { u.aimT = 0; }
+        u.target = attacker; u.lastSeenT = now; u.lastSeenPos.copy(attacker.pos); u.chaseUntil = now + 5000; u.chaseSet = false;
+        const w = Math.atan2(attacker.pos.x - u.pos.x, attacker.pos.z - u.pos.z); let d = w - u.yaw; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+        u.yaw += d * 0.7;
+      }
+    }
     if (u.hp <= 0) { killUnit(u, attacker, head, weapon); return true; }
     return false;
   }
@@ -442,6 +483,7 @@ export function createDefuse(A) {
     if (u.char) { const kx = killer && killer !== u ? u.pos.x - killer.pos.x : 0, kz = killer && killer !== u ? u.pos.z - killer.pos.z : 0; killCharacter(u.char, kx, kz); }
     if (!u.isPlayer) SFX.at("kill", { x: u.pos.x, y: u.pos.y + 1.4, z: u.pos.z }, { vol: 0.7 });
     if (u.hasBomb) { u.hasBomb = false; dropBomb(u.pos); }
+    if (u.isPlayer) SFX.play('death', { vol: 0.8 });
     if (u.isPlayer) { A.setViewmodelVisible(false); A.setSpectating(true); u.diedLast = true; A.showFloating('Has muerto'); }
     addKillfeed(killer, u, weapon, head);
     refreshHud();
@@ -462,10 +504,30 @@ export function createDefuse(A) {
     return losClear(ea, eb);
   }
   function setGoal(u, p) {
-    if (!p) return;
-    u.goal = new THREE.Vector3(p.x, p.y, p.z);
-    u.path = D.nav.path(u.pos, p); u.pathIdx = 0;
-    if (!u.path) u.path = [{ x: p.x, y: p.y, z: p.z }];
+    if (!p) return false;
+    const path = D.nav.path(u.pos, p);
+    if (!path) { u.badGoals++; return false; }          // destino inalcanzable: quien llama prueba con otro
+    u.goal = new THREE.Vector3(p.x, p.y, p.z); u.path = path; u.pathIdx = 0; u.badGoals = 0; u.watchSet = false;
+    return true;
+  }
+  // los bots oyen: un disparo cercano de un enemigo les hace ir a mirar (con error de unos metros)
+  function noise(pos, radius, src) {
+    const now = performance.now();
+    for (const e of D.units) {
+      if (!e.alive || e.isPlayer || e.team === src.team) continue;
+      if (e.target && e.target.alive && now - e.lastSeenT < 2500) continue;
+      if (now - e.hintT < 2200) continue;
+      if (e.pos.distanceTo(pos) < radius) { e.hint = { x: pos.x, y: pos.y, z: pos.z }; e.hintT = now; e.alertUntil = now + 2500; }
+    }
+  }
+  // aviso entre compañeros: quien ve a un enemigo lo canta y los aliados cercanos van hacia allí
+  function callOut(u, enemy, now) {
+    for (const a of D.units) {
+      if (!a.alive || a.isPlayer || a === u || a.team !== u.team) continue;
+      if (a.target && a.target.alive && now - a.lastSeenT < 2500) continue;
+      if (now - a.hintT < 2200 || a.pos.distanceTo(u.pos) > 40) continue;
+      a.hint = { x: enemy.pos.x, y: enemy.pos.y, z: enemy.pos.z }; a.hintT = now; a.alertUntil = now + 2000;
+    }
   }
   // ---- suelo y paredes reales para los bots (no flotan ni atraviesan muros) ----
   const gRay = new THREE.Raycaster(), gDown = new THREE.Vector3(0, -1, 0), wRay = new THREE.Raycaster();
@@ -533,7 +595,8 @@ export function createDefuse(A) {
     let p = 0.55 * u.skill - dist * 0.0085 - (moving ? 0.12 : 0);
     if (t.isPlayer) p -= A.playerMoving() ? 0.1 : 0;
     p = THREE.MathUtils.clamp(p, 0.07, 0.62);
-    const hit = Math.random() < p;
+    const clear = losClear(eye, tp) && !smokeBlocks(eye, tp);      // sin línea de vista dispara "a ciegas" pero no acierta
+    const hit = clear && Math.random() < p;
     const head = hit && Math.random() < 0.13;
     const aimPt = tp.clone();
     if (!hit) { aimPt.x += rand(-1, 1) * (0.4 + dist * 0.03); aimPt.y += rand(-0.5, 0.7); aimPt.z += rand(-1, 1) * (0.4 + dist * 0.03); }
@@ -541,8 +604,9 @@ export function createDefuse(A) {
     if (hit) {
       // el humo / pared intermedia ya se chequeó en canSee
       const dmg = Math.round(st.dmg * (head ? (HEAD_MULT[u.weaponId] || 4) : 1) * Math.max(0.6, 1 - dist * 0.004));
-      damageUnit(t, dmg, u, head, u.weaponId);
+      damageUnit(t, dmg, u, head, u.weaponId, aimPt);
     }
+    noise(mz, u.weaponId === 'awp' ? 60 : 38, u);
     SFX.at(u.weaponId === "knife" ? "knife" : u.weaponId, mz, { vol: 0.85, lowpass: dist > 45 ? 2600 : 0 });
     if (!hit) SFX.at("bulletwall", aimPt, { vol: 0.6 });
   }
@@ -567,31 +631,51 @@ export function createDefuse(A) {
       if (canSee(u, e, now)) { const d = u.pos.distanceTo(e.pos); if (d < bd) { bd = d; best = e; } }
     }
     if (best) {
-      if (u.target !== best) { u.aimT = 0; }
-      u.target = best; u.lastSeenT = now;
-      if (best.team === 't' || best.team === 'ct') best.spotted = now;
+      if (u.target !== best) { u.aimT = 0; callOut(u, best, now); }
+      u.target = best; u.lastSeenT = now; u.lastSeenPos.copy(best.pos); u.chaseUntil = now + 4500; u.chaseSet = false;
+      best.spotted = now;
     } else if (u.target && now - u.lastSeenT > 1800) u.target = null;
   }
   function planGoals(u) {
-    const z = D.zones;
+    const z = D.zones, nav = D.nav;
+    const pick = (cx, cz, r) => { for (let i = 0; i < 4; i++) { const p = nav.randomNear(cx, cz, r); if (p && setGoal(u, p)) return true; } return false; };
     if (u.team === 't') {
       if (D.bomb.planted) {
-        const p = D.nav.randomNear(D.bomb.pos.x, D.bomb.pos.z, 6.5); setGoal(u, p || D.bomb.pos);
+        // tras plantar, los T se reparten alrededor de la bomba cubriendo ángulos
+        pick(D.bomb.pos.x, D.bomb.pos.z, 6.5);
       } else if (u.hasBomb) {
-        const s = z[D.planSite]; setGoal(u, D.nav.randomNear(s.x, s.z, s.r * 0.6) || s);
+        const s = z[D.planSite]; pick(s.x, s.z, s.r * 0.6);
       } else if (D.bomb.dropped && !D.bomb.carrier && Math.random() < 0.5) {
         setGoal(u, D.bomb.pos);
       } else {
-        const s = z[D.planSite]; setGoal(u, D.nav.randomNear(s.x, s.z, s.r * 0.95) || s);
+        const s = z[D.planSite]; pick(s.x, s.z, s.r * 0.95);
       }
     } else {
       if (D.bomb.planted) {
         const near = D.units.filter(o => o.team === 'ct' && o.alive && !o.isPlayer).sort((a, b) => a.pos.distanceTo(D.bomb.pos) - b.pos.distanceTo(D.bomb.pos));
-        if (near[0] === u) setGoal(u, D.bomb.pos); else setGoal(u, D.nav.randomNear(D.bomb.pos.x, D.bomb.pos.z, 7) || D.bomb.pos);
+        if (near[0] === u) { if (!setGoal(u, D.bomb.pos)) pick(D.bomb.pos.x, D.bomb.pos.z, 3); }
+        else pick(D.bomb.pos.x, D.bomb.pos.z, 7);
       } else {
-        const s = z[u.role || 'A']; setGoal(u, D.nav.randomNear(s.x, s.z, s.r * 0.9) || s);
+        const s = z[u.role || 'A']; pick(s.x, s.z, s.r * 0.9);
       }
     }
+  }
+  // paso lateral en combate (strafe): comprueba pared y suelo antes de moverse
+  const _sa = new THREE.Vector3(), _sb = new THREE.Vector3();
+  function strafeStep(u, dt) {
+    const lx = Math.cos(u.yaw) * u.strafeDir, lz = -Math.sin(u.yaw) * u.strafeDir;
+    _sa.set(u.pos.x, u.pos.y + 0.7, u.pos.z); _sb.set(u.pos.x + lx * 0.7, u.pos.y + 0.7, u.pos.z + lz * 0.7);
+    const nx = u.pos.x + lx * 1.9 * dt, nz = u.pos.z + lz * 1.9 * dt;
+    const gy = groundAt(nx, nz, u.pos.y);
+    if (!losClear(_sa, _sb) || gy === null || Math.abs(gy - u.pos.y) > 0.35) { u.strafeDir *= -1; u.strafeFor = Math.min(u.strafeFor, 0.12); return false; }
+    u.pos.x = nx; u.pos.z = nz; settle(u, dt); return true;
+  }
+  // recoloca a un bot en el punto transitable más cercano (antiatasco / fuera del mapa)
+  function rescue(u) {
+    const n = D.nav.nearest(u.pos.x, u.pos.y, u.pos.z, 12);
+    let p = n >= 0 ? D.nav.nodes[n] : null;
+    if (!p || u.stuckN >= 3) { const z = D.zones[u.team]; p = D.nav.randomNear(z.x, z.z, z.r * 2) || z; }
+    u.pos.set(p.x, p.y, p.z); u.path = null; u.goal = null; u.idleT = 0; u.stuckN = 0; u.badGoals = 0;
   }
   function updateBot(u, dt, now) {
     if (!u.alive) { if (u.char) { animateCharacter(u.char, dt, 0); } return; }
@@ -600,22 +684,30 @@ export function createDefuse(A) {
       if (u.char) { u.char.root.position.copy(u.pos); u.char.root.rotation.y = u.yaw; animateCharacter(u.char, dt, 0); }
       return;
     }
+    // fuera del mapa o con coordenadas rotas: se recoloca
+    if (u.pos.y < D.nav.b.min.y - 4 || !isFinite(u.pos.x + u.pos.y + u.pos.z)) rescue(u);
     u.nextThink -= dt;
-    if (u.nextThink <= 0) { u.nextThink = 0.22 + Math.random() * 0.18; thinkBot(u, now); }
+    if (u.nextThink <= 0) { u.nextThink = 0.18 + Math.random() * 0.14; thinkBot(u, now); }
     const tgt = u.target && u.target.alive ? u.target : null;
-    let speed = 0;
+    let speed = 0, strafing = false;
     if (tgt && now - u.lastSeenT < 1200) {
-      // combate: se detiene y apunta
-      faceToward(u, tgt.pos.x, tgt.pos.z, dt, 11);
+      // combate: apunta, y alterna paso lateral / disparo para no ser un blanco quieto
+      faceToward(u, tgt.pos.x, tgt.pos.z, dt, 12);
       u.aimT += dt;
-      const reaction = 0.35 / u.skill;
-      if (u.aimT > reaction) fireAt(u, tgt, now);
-      // algunos se mueven lateral mientras disparan: no (se mantienen quietos para precisión)
+      u.strafeT -= dt;
+      if (u.strafeFor > 0) { u.strafeFor -= dt; strafing = strafeStep(u, dt); if (u.strafeFor <= 0) u.strafeT = rand(0.45, 1.1); }
+      else if (u.strafeT <= 0 && u.weaponId !== 'awp' && u.weaponId !== 'knife') { u.strafeFor = rand(0.22, 0.45); u.strafeDir = Math.random() < 0.5 ? -1 : 1; }
+      u.speed = strafing ? 1.9 : 0;
+      const reaction = 0.3 / u.skill;
+      if (u.aimT > reaction && !strafing) fireAt(u, tgt, now);
     } else {
-      // objetivos / ruta
+      // perseguir al último sitio donde vio al enemigo / ir a mirar un ruido o aviso de un compañero
+      const busy = u.hasBomb || (D.bomb.planted && u.team === 'ct');
+      if (!busy && u.chaseUntil > now && !u.chaseSet) { u.chaseSet = true; const p = D.nav.randomNear(u.lastSeenPos.x, u.lastSeenPos.z, 2.5); if (!(p && setGoal(u, p))) u.chaseUntil = 0; }
+      else if (!busy && u.hint && u.hintT > (u.hintDone || 0)) { u.hintDone = u.hintT; const p = D.nav.randomNear(u.hint.x, u.hint.z, 3.5); if (p) setGoal(u, p); }
       if (!u.goal || !u.path || u.pathIdx >= (u.path ? u.path.length : 0)) {
         u.idleT = (u.idleT || 0) - dt;
-        if (u.idleT <= 0) { planGoals(u); u.idleT = rand(0.3, 2.2); }
+        if (u.idleT <= 0) { planGoals(u); u.idleT = D.bomb.planted && u.team === 't' ? rand(3, 7) : rand(1.5, 4.5); }
       }
       // plantar / desactivar
       if (u.team === 't' && u.hasBomb && !D.bomb.planted && D.state === 'live') {
@@ -630,18 +722,31 @@ export function createDefuse(A) {
         if (u.defuseT >= (u.kit ? CFG.defuseKitTime : CFG.defuseTime)) defuseDone(u);
       } else if (u.team === 'ct') u.defuseT = 0;
       if (!(u.plantT > 0 && u.plantT < CFG.plantTime) && !(u.defuseT > 0)) {
-        const walk = D.bomb.planted && u.team === 'ct' ? 3.1 : 2.55;
+        const rush = D.bomb.planted && u.team === 'ct' || u.chaseUntil > now;
+        const walk = rush ? 3.1 : 2.55;
         const done = moveAlongPath(u, dt, walk);
         speed = done ? 0 : walk;
         if (u.path && u.pathIdx < u.path.length) faceToward(u, u.path[u.pathIdx].x, u.path[u.pathIdx].z, dt, 8);
+        else if (done) {
+          // llegó: se queda vigilando hacia el enemigo y echa vistazos a los lados
+          if (!u.watchSet) { u.watchSet = true; const ez = D.zones[u.team === 't' ? 'ct' : 't']; const l = openLook(u.pos, ez); u.watchBase = Math.atan2(l.x - u.pos.x, l.z - u.pos.z); u.watchYaw = u.watchBase; u.lookT = 0; }
+          u.lookT -= dt; if (u.lookT <= 0) { u.lookT = rand(1.0, 2.6); u.watchYaw = u.watchBase + rand(-1.1, 1.1); }
+          let d = u.watchYaw - u.yaw; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; u.yaw += d * Math.min(1, dt * 3);
+        }
       }
       // recoger la bomba caída
       if (D.bomb.dropped && u.team === 't' && !D.bomb.carrier && u.pos.distanceTo(D.bomb.pos) < 1.0) {
         u.hasBomb = true; D.bomb.carrier = u; D.bomb.dropped = false; if (D.bomb.mesh) { A.world.remove(D.bomb.mesh); D.bomb.mesh = null; }
       }
-      // atasco
+      // atasco: primero repite la ruta; si persiste, lo recoloca en la malla
       u.stuckT += dt;
-      if (u.stuckT > 2.2) { if (u.pos.distanceTo(u.lastPos) < 0.25 && u.path && speed > 0) { u.goal = null; u.path = null; u.idleT = 0; } u.lastPos.copy(u.pos); u.stuckT = 0; }
+      if (u.stuckT > 1.8) {
+        if (u.pos.distanceTo(u.lastPos) < 0.25 && u.path && speed > 0) { u.stuckN = (u.stuckN || 0) + 1; u.goal = null; u.path = null; u.idleT = 0; if (u.stuckN >= 2) rescue(u); }
+        else u.stuckN = 0;
+        u.lastPos.copy(u.pos); u.stuckT = 0;
+      }
+      // sin ruta válida varias veces seguidas: vuelve a una zona conocida
+      if (u.badGoals >= 4) rescue(u);
     }
     if (u.char) {
       u.char.root.position.copy(u.pos); u.char.root.rotation.y = u.yaw;
@@ -763,7 +868,7 @@ export function createDefuse(A) {
   function refreshHud(force) {
     const p = D.player; if (!p) return;
     const t = D.state === 'freeze' ? D.stateT : D.state === 'planted' ? D.bomb.timer : D.state === 'live' ? D.roundTime : 0;
-    const key = [D.score.ct, D.score.t, Math.ceil(t), alive('ct').length, alive('t').length, Math.ceil(p.hp), D.state, D.bomb.planted, p.money, D.round].join('|');
+    const key = [D.score.ct, D.score.t, Math.ceil(t), alive('ct').length, alive('t').length, Math.ceil(p.hp), p.armor | 0, p.helmet ? 1 : 0, D.state, D.bomb.planted, p.money, D.round].join('|');
     if (!force && key === lastKey) return; lastKey = key;
     const set = (id, v) => { const e = $(id); if (e) e.textContent = v; };
     set('dfScoreCT', D.score.ct); set('dfScoreT', D.score.t);
@@ -774,6 +879,7 @@ export function createDefuse(A) {
     pips('ct', 'dfPipsCT'); pips('t', 'dfPipsT');
     set('dfHealthNum', Math.max(0, Math.ceil(p.hp)));
     const hb = $('dfHealthBar'); if (hb) { hb.style.width = Math.max(0, p.hp) + '%'; hb.className = p.hp < 30 ? 'low' : ''; }
+    set('dfArmorNum', Math.max(0, Math.ceil(p.armor || 0))); const am = $('dfArmor'); if (am) am.className = (p.armor > 0 ? 'on' : '') + (p.helmet ? ' helm' : '');
     set('dfMoney', '$' + p.money);
     const bs = $('dfBombInfo'); if (bs) bs.textContent = p.hasBomb ? '💣 Llevas la bomba' : (D.bomb.dropped ? '💣 Bomba en el suelo' : '');
   }
@@ -813,8 +919,9 @@ export function createDefuse(A) {
     const w = bullet.weapon || 'ak';
     const st = WSTAT[w] || WSTAT.ak;
     const dmg = Math.round(st.dmg * (best.head ? (HEAD_MULT[w] || 4) : 1));
-    A.hitFeedback(hp, best.head);
-    damageUnit(best.u, dmg, p, best.head, w);
+    const helm = best.head && best.u.armor > 0 && best.u.helmet;
+    A.hitFeedback(hp, best.head, helm, tmpV2.copy(pos).sub(prev).normalize());
+    damageUnit(best.u, dmg, p, best.head, w, hp);
     return true;
   }
   function meleeHit(origin, dir, range) {
@@ -825,7 +932,7 @@ export function createDefuse(A) {
       const to = tmpV.set(u.pos.x - origin.x, u.pos.y + 0.55 - origin.y, u.pos.z - origin.z); const d = to.length();
       if (d > range) continue;
       if (to.normalize().dot(dir) < 0.7) continue;
-      A.hitFeedback(tmpV2.set(u.pos.x, u.pos.y + 0.6, u.pos.z), false);
+      A.hitFeedback(tmpV2.set(u.pos.x, u.pos.y + 0.6, u.pos.z), false, false, dir);
       damageUnit(u, WSTAT.knife.dmg, D.player, false, 'knife'); hit = true;
     }
     return hit;
@@ -883,6 +990,7 @@ export function createDefuse(A) {
   return {
     D, startMatch, endMatch, update, bulletHit, meleeHit, areaDamage, flashArea, registerSmoke, drawRadar,
     renderScoreboard, smokeBlocks,
+    noise(pos, radius) { if (D.active && D.player) noise(pos, radius, D.player); },
     get active() { return D.active; },
     get playerDead() { return !!(D.player && !D.player.alive); },
     get frozen() { return D.active && D.state === 'freeze'; },
@@ -906,6 +1014,9 @@ export function createDefuse(A) {
       return 'El tiempo de compra terminó';
     },
     setHasKit(v) { D.hasKit = v; },
+    setArmor(a, h) { if (D.player) { D.player.armor = a; D.player.helmet = h; refreshHud(true); } },
+    get armor() { return D.player ? D.player.armor : 0; },
+    get helmet() { return D.player ? D.player.helmet : false; },
     get hasKit() { return D.hasKit; },
     teamAllows(w) { if (!D.active) return true; if (w === 'ak') return D.team === 't'; if (w === 'm4') return D.team === 'ct'; return true; },
     cfg: CFG,

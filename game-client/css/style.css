@@ -256,10 +256,10 @@ body{background:#0a0a0f;color:#fff;overflow:hidden;height:100vh;}
 /* señalador del bando abajo-izquierda: se oculta en Dust2, la munición sigue visible */
 #game.mode-dust2 #teamTag, #game.mode-dust2 #weapon-info .icon{display:none !important;}
 #minimapWrap{
-  position:absolute;top:76px;left:20px;z-index:6;width:148px;height:148px;
-  border-radius:50%;overflow:hidden;display:none;pointer-events:none;
+  position:absolute;top:76px;left:20px;z-index:6;width:200px;height:200px;
+  border-radius:10px;overflow:hidden;display:none;pointer-events:none;
   border:2px solid rgba(255,255,255,0.35);
-  box-shadow:0 4px 18px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.5);
+  box-shadow:0 4px 18px rgba(0,0,0,0.6);
   background:rgba(5,10,18,0.78);
 }
 #game.mode-dust2 #minimapWrap{display:block;}
