@@ -204,7 +204,8 @@ Cambiar Arma	Scroll Mouse
 
 Cómo jugar en local (Windows)
 
-Servir la carpeta `game-client` con cualquier servidor web estático (por ejemplo `python -m http.server 5173` dentro de `game-client`) y abrir http://localhost:5173. En producción el juego se levanta con Docker (ver `docker-compose.yml`).
+Rama `master` (pruebas y juego en local): doble clic en `iniciar-juego.bat`. Levanta `servidor.ps1` y abre el navegador en http://localhost:5173 (si el puerto está ocupado usa el siguiente). No hace falta Python ni Node, pero sí internet: three.js se carga desde un CDN. Para detener el servidor, cerrar la ventana.
+La rama `main` es solo para levantar el juego en el servidor con Docker (ver `docker-compose.yml`): no incluye el `.bat`.
 Abrir `index.html` con doble clic NO funciona (el navegador bloquea los .glb y los módulos JS).
 En el login hay un botón "JUGAR SIN CONEXIÓN" (el progreso se guarda en localStorage).
 

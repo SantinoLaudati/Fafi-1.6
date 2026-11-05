@@ -18,3 +18,4 @@ logs/
 # sonidos propios (no se suben)
 game-client/assets/audio/csgo/*
 !game-client/assets/audio/csgo/LEEME.txt
+!game-client/assets/audio/csgo/manifest.json

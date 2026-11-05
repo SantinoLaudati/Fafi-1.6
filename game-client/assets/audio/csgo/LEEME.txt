@@ -1,5 +1,5 @@
 Sonidos propios para las armas (opcional).
-Pon aquí tus archivos .wav/.ogg/.mp3 y crea manifest.json asi:
+Pon aquí tus archivos .wav/.ogg/.mp3 y edita el manifest.json de esta carpeta (viene vacio: {}) asi:
 { "ak": "ak47.wav", "m4": "m4a4.wav", "awp": "awp.wav", "deagle": "deagle.wav", "shotgun": "nova.wav",
   "reload_out": "reload_out.wav", "reload_in": "reload_in.wav", "bolt": "awp_bolt.wav", "dry": "dryfire.wav" }
 Los nombres de la izquierda son los de js/sfx_2_0_0v.js; si falta el archivo o el manifest, el juego usa los sonidos que ya trae.
