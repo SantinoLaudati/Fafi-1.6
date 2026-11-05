@@ -324,3 +324,7 @@ Armas bloqueadas (ya cargadas, con skins): Five-SeveN, P90, SMG Silenciada, Esco
 (modelos en `assets/armas por defecto/`, definidos en `BOT_WEAPONS` de `characters.js`). Tienen 5 skins cada una (45 en total, en `skins.js`) que
 no salen en cajas ni inventario hasta que se habilite el arma: se habilita añadiendo su id a `WEAPON_ORDER` (`skins.js`), pasando su entrada de
 `BUY_ITEMS` (`game.js`) de `locked` a `gun` y dándole su lógica de arma (precio, cargador, daño, animaciones).
+
+Combate: hitbox de los bots con cabeza, torso con brazos y piernas (cápsulas; la bala se prueba como segmento completo, no se pierden disparos); pierna x0.75, cabeza x4.
+El retroceso sigue un patrón por disparo (AK y M4 distintos), se acumula mientras disparas y se recupera al soltar; la mira se abre con el retroceso, la dispersión, el movimiento y el salto.
+AWP: clic derecho = zoom 1 (33°), otra vez = zoom 2 (11°), otra vez = salir; al disparar sales de la mira durante el cerrojo (barra de enfriamiento) y vuelves solo; la sensibilidad baja con el zoom.

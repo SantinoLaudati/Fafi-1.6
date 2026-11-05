@@ -273,3 +273,23 @@ body.df-on #weaponMode,body.df-on #weapon-info .icon{display:none}
 #buyCols[data-sel="0"] .vc:not([data-col="0"]),#buyCols[data-sel="1"] .vc:not([data-col="1"]),#buyCols[data-sel="2"] .vc:not([data-col="2"]),#buyCols[data-sel="3"] .vc:not([data-col="3"]){opacity:.35}
 #buyCols[data-sel="0"] .vc[data-col="0"],#buyCols[data-sel="1"] .vc[data-col="1"],#buyCols[data-sel="2"] .vc[data-col="2"],#buyCols[data-sel="3"] .vc[data-col="3"]{border-color:#ffd86a;box-shadow:0 0 12px rgba(255,216,106,.35)}
 @media(max-width:900px){#buyCols{grid-template-columns:1fr}.vpgrid{grid-template-columns:1fr 1fr}}
+
+/* === MIRA DINÁMICA (se abre con el retroceso, la dispersión y el movimiento) === */
+#crosshair{--g:4px;width:0;height:0}
+#crosshair::before,#crosshair::after{display:none}
+#crosshair .xh{position:absolute;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.7);pointer-events:none}
+#crosshair .xh.t{left:-1px;width:2px;height:8px;top:calc(-1 * var(--g) - 8px)}
+#crosshair .xh.b{left:-1px;width:2px;height:8px;top:var(--g)}
+#crosshair .xh.l{top:-1px;height:2px;width:8px;left:calc(-1 * var(--g) - 8px)}
+#crosshair .xh.r{top:-1px;height:2px;width:8px;left:var(--g)}
+#crosshair .dot{left:-1px!important;top:-1px!important;width:2px!important;height:2px!important}
+#crosshair.aiming .xh{opacity:0}
+/* === MIRA DEL AWP estilo CS:GO === */
+#scopeOverlay{background:radial-gradient(circle at 50% 50%,transparent calc(49.4vmin - 14px),rgba(0,0,0,.35) calc(49.4vmin - 6px),rgba(0,0,0,.9) 49.4vmin,#000 calc(49.4vmin + 1px));box-shadow:none;transform:scale(1.06)}
+#scopeOverlay::before,#scopeOverlay::after{display:none}
+#scopeOverlay svg{position:absolute;left:50%;top:50%;width:98.8vmin;height:98.8vmin;transform:translate(-50%,-50%)}
+#scopeOverlay .dot{display:none}
+#awpCd{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);width:180px;height:16px;display:none;z-index:6;pointer-events:none;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25)}
+#awpCd.on{display:block}
+#awpCd i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#ffb020,#ffe27a)}
+#awpCd span{position:absolute;inset:0;text-align:center;font-size:10px;line-height:16px;letter-spacing:3px;color:#fff;text-shadow:0 0 3px #000}

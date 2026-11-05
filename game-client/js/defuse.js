@@ -956,24 +956,49 @@ export function createDefuse(A) {
   // ---------------------------------------------------------------- balas del jugador contra bots
   const _p1 = new THREE.Vector3(), _p2 = new THREE.Vector3();
   function segPointDist(a, b, p) { const ab = _p1.copy(b).sub(a); const L2 = ab.lengthSq(); const t = L2 > 0 ? THREE.MathUtils.clamp(_p2.copy(p).sub(a).dot(ab) / L2, 0, 1) : 0; return { d: _p2.copy(a).addScaledVector(ab, t).distanceTo(p), t }; }
-  // devuelve true si la bala impactó (y debe eliminarse). Daño según arma.
+  // distancia mínima entre dos segmentos 3D (p1-q1 y p2-q2); s = parámetro [0,1] del primero en el punto más cercano
+  const _d1 = new THREE.Vector3(), _d2 = new THREE.Vector3(), _rr = new THREE.Vector3();
+  function segSeg(p1, q1, p2, q2) {
+    _d1.subVectors(q1, p1); _d2.subVectors(q2, p2); _rr.subVectors(p1, p2);
+    const a = _d1.dot(_d1), e = _d2.dot(_d2), f = _d2.dot(_rr);
+    let s, t;
+    if (a <= 1e-9 && e <= 1e-9) { s = t = 0; }
+    else if (a <= 1e-9) { s = 0; t = THREE.MathUtils.clamp(f / e, 0, 1); }
+    else {
+      const c = _d1.dot(_rr);
+      if (e <= 1e-9) { t = 0; s = THREE.MathUtils.clamp(-c / a, 0, 1); }
+      else {
+        const b = _d1.dot(_d2), den = a * e - b * b;
+        s = den > 1e-9 ? THREE.MathUtils.clamp((b * f - c * e) / den, 0, 1) : 0;
+        t = (b * s + f) / e;
+        if (t < 0) { t = 0; s = THREE.MathUtils.clamp(-c / a, 0, 1); } else if (t > 1) { t = 1; s = THREE.MathUtils.clamp((b - c) / a, 0, 1); }
+      }
+    }
+    const cx = p1.x + _d1.x * s - (p2.x + _d2.x * t), cy = p1.y + _d1.y * s - (p2.y + _d2.y * t), cz = p1.z + _d1.z * s - (p2.z + _d2.z * t);
+    return { d: Math.sqrt(cx * cx + cy * cy + cz * cz), s };
+  }
+  // Hitbox del bot: cabeza (esfera) + torso con brazos (cápsula ancha) + piernas (cápsula); todo el cuerpo recibe disparos
+  const _za = new THREE.Vector3(), _zb = new THREE.Vector3();
+  function hitZone(prev, pos, u) {
+    const ch = CROUCH_H * (u.crouchAmt || 0), x = u.pos.x, y = u.pos.y, z = u.pos.z;
+    let best = null;
+    const test = (name, y0, y1, r) => { _za.set(x, y0, z); _zb.set(x, y1, z); const h = segSeg(prev, pos, _za, _zb); if (h.d < r && (!best || h.s < best.s)) best = { zone: name, s: h.s }; };
+    test('head', y + 0.99 - ch, y + 0.99 - ch, 0.18);
+    const head = best; best = null;
+    test('torso', y + 0.42, y + 0.90 - ch, 0.28);
+    test('legs', y + 0.0, y + 0.46 - ch * 0.5, 0.22);
+    if (head && (!best || head.s <= best.s + 0.08)) return head;      // la cabeza tiene prioridad si la bala la atraviesa casi a la vez
+    return best;
+  }
+  // devuelve true si la bala impactó (y debe eliminarse). Daño según arma y zona.
   function bulletHit(prev, pos, bullet) {
     if (!D.active || D.state === 'freeze') return false;
     const p = D.player; if (!p || !p.alive) return false;
     let best = null, bt = 2;
     for (const u of D.units) {
       if (!u.alive || u.team === p.team || u.isPlayer) continue;
-      // cabeza (esfera) y cuerpo (cápsula vertical)
-      const hc = tmpV.set(u.pos.x, u.pos.y + 0.99 - CROUCH_H * (u.crouchAmt || 0), u.pos.z);
-      const rh = segPointDist(prev, pos, hc);
-      if (rh.d < 0.15) { if (rh.t < bt) { bt = rh.t; best = { u, head: true, t: rh.t }; } continue; }
-      // cuerpo: distancia al eje vertical (xz) en el punto más cercano
-      const ab = _p1.copy(pos).sub(prev);
-      for (let k = 0; k <= 4; k++) {
-        const tt = k / 4; const x = prev.x + ab.x * tt, y = prev.y + ab.y * tt, z = prev.z + ab.z * tt;
-        if (y < u.pos.y + 0.05 || y > u.pos.y + 0.9 - CROUCH_H * (u.crouchAmt || 0)) continue;
-        if ((x - u.pos.x) ** 2 + (z - u.pos.z) ** 2 < 0.27 * 0.27) { if (tt < bt) { bt = tt; best = { u, head: false, t: tt }; } break; }
-      }
+      const h = hitZone(prev, pos, u);
+      if (h && h.s < bt) { bt = h.s; best = { u, head: h.zone === 'head', leg: h.zone === 'legs', t: h.s }; }
     }
     if (!best) return false;
     // ¿hay pared antes del impacto?
@@ -981,7 +1006,7 @@ export function createDefuse(A) {
     if (!losClear(prev, hp)) return false;
     const w = bullet.weapon || 'ak';
     const st = WSTAT[w] || WSTAT.ak;
-    const dmg = Math.round(st.dmg * (best.head ? (HEAD_MULT[w] || 4) : 1));
+    const dmg = Math.round(st.dmg * (best.head ? (HEAD_MULT[w] || 4) : best.leg ? 0.75 : 1));
     const helm = best.head && best.u.armor > 0 && best.u.helmet;
     A.hitFeedback(hp, best.head, helm, tmpV2.copy(pos).sub(prev).normalize());
     damageUnit(best.u, dmg, p, best.head, w, hp);

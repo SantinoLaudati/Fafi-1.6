@@ -402,7 +402,13 @@ let weaponBasePos=null, weaponAimPos=null;
 let weaponBaseRot=null, weaponAimRot=null;
 let recoilKick=0;
 const baseFov=75, aimFov=52;
-const awpAimFov=11;
+const awpAimFov=11;               // zoom 2 del AWP (como CS:GO: dos niveles)
+const awpAimFov1=33;              // zoom 1
+let awpZoom=1, awpRescope=false;
+// Patrones de retroceso por disparo (radianes de cámara: [subida, deriva lateral]); tras el último se repiten los 8 finales
+const AK_PATTERN=(()=>{ const v=[.014,.020,.024,.026,.024,.022,.020,.017,.014,.011,.009,.008,.007,.006,.006,.005,.005,.005,.005,.005,.004,.004,.004,.004,.004,.004,.004,.004,.004,.004], y=[0,.001,.002,.003,.004,.001,-.004,-.007,-.009,-.006,-.001,.004,.008,.010,.009,.005,-.003,-.009,-.012,-.010,-.004,.003,.009,.012,.010,.004,-.004,-.010,-.012,-.008]; return v.map((a,i)=>[a,y[i]]); })();
+const M4_PATTERN=AK_PATTERN.map(([a,b])=>[a*0.78,-b*0.7]);
+function patternKick(pat, idx){ const n=pat.length; return pat[idx<n ? idx : n-8+((idx-n)%8)]; }
 // === VIEWMODEL: arma y manos se dibujan en un 2º pase con su propia cámara (capa 1) ===
 // Con el FOV del mundo (75° vertical = ~107° horizontal a 16:9) las armas salían deformadas y enormes.
 // El viewmodel usa un FOV horizontal fijo (84° ≈ 53° vertical a 16:9, como el viewmodel_fov de CS) y se
@@ -2034,6 +2040,7 @@ function animate(){
   if(mixer) mixer.update(dt);
   updateWeaponAnim(dt);
   updateViewRecoil(dt);
+  updateAwpAndCrosshair(dt);
   handleMovement(dt);
   updateFootsteps(dt);
   SFX.listener(camera);
@@ -2426,7 +2433,7 @@ function updateWeaponAnim(dt){
     const targetAim = isAiming ? 1 : 0;
     aimProgress = THREE.MathUtils.lerp(aimProgress, targetAim, 1 - Math.pow(0.001, dt*(isAiming?11:10)));
     const smoothAim = 1 - Math.pow(1 - aimProgress, 3);
-    const fov = THREE.MathUtils.lerp(baseFov, awpAimFov, smoothAim);
+    const fov = THREE.MathUtils.lerp(baseFov, awpZoom===1 ? awpAimFov1 : awpAimFov, smoothAim);
     if(Math.abs(camera.fov - fov) > 0.05){ camera.fov=fov; camera.updateProjectionMatrix(); }
     const scopeEl=document.getElementById('scopeOverlay');
     const vign=document.getElementById('aimVignette');
@@ -2862,10 +2869,49 @@ function updateBullets(dt){
     }
   }
 }
+// AWP: dos niveles de zoom con clic derecho (como CS:GO): 1º zoom, 2º zoom, 3º sale
+function cycleAwpZoom(){
+  if(currentWeapon!=='awp' || isBoltCycling) return;
+  if(!isAiming){ awpZoom=1; setAiming(true); }
+  else if(awpZoom===1){ awpZoom=2; }
+  else setAiming(false);
+}
+let xhGap=4, awpCdEl=null;
+function updateAwpAndCrosshair(dt){
+  if(currentWeapon!=='awp') awpRescope=false;
+  // tras el cerrojo vuelve a la mira solo
+  if(awpRescope && currentWeapon==='awp' && !isBoltCycling && !isReloading){ awpRescope=false; setAiming(true); }
+  // barra de enfriamiento del cerrojo
+  const el=awpCdEl||(awpCdEl=document.getElementById('awpCd'));
+  if(el){
+    const since=performance.now()-lastShotTime, show=currentWeapon==='awp' && gameActive && lastShotTime>0 && since<1150;
+    el.classList.toggle('on', show);
+    if(show) el.firstElementChild.style.width=Math.min(100, since/1150*100)+'%';
+  }
+  // la sensibilidad baja con el zoom (el giro del mouse coincide con lo que se ve)
+  try{
+    const base=(window.fafiSensVal||5)/5, k=Math.max(0.1, Math.tan(camera.fov*Math.PI/360)/Math.tan(baseFov*Math.PI/360));
+    const want=base*Math.min(1,k); if(Math.abs(controls.pointerSpeed-want)>0.002) controls.pointerSpeed=want;
+  }catch(e){}
+  // mira dinámica: se abre con la dispersión, el retroceso, el movimiento y el salto
+  const cross=document.getElementById('crosshair'); if(!cross) return;
+  const moving=!!(keys['KeyW']||keys['KeyA']||keys['KeyS']||keys['KeyD']);
+  let b;
+  if(currentWeapon==='awp'){ b=isAiming?0.00012:0.012; if(moving) b+=isAiming?0.0009:0.010; }
+  else if(currentWeapon==='deagle'){ b=0.0018; if(moving) b+=0.013; if(isCrouching) b*=0.78; }
+  else { b=0.0009; if(moving) b+=0.0032; }
+  if(isCrouching) b*=0.85;
+  const tot=b+spreadAccum+(Math.abs(viewRecoilX)+Math.abs(viewRecoilY))*0.11;
+  const pxPerRad=innerHeight/(2*Math.tan(camera.fov*Math.PI/360));
+  const target=Math.max(2, Math.min(80, 2+tot*0.5*pxPerRad*3.2 + (playerGrounded?0:7)));
+  xhGap += (target-xhGap)*Math.min(1, dt*(target>xhGap?30:12));
+  cross.style.setProperty('--g', xhGap.toFixed(1)+'px');
+}
 function updateViewRecoil(dt){
   // recuperación suave del retroceso de cámara + decaimiento de dispersión en ráfaga
   if(Math.abs(viewRecoilX) > 0.00001 || Math.abs(viewRecoilY) > 0.00001){
-    const recSpeed = isAiming ? 7.5 : 5.2;
+    const sinceShot = performance.now() - lastShotTime;
+    const recSpeed = (isAiming ? 7.5 : 5.2) * (sinceShot < 150 ? 0.03 : sinceShot < 320 ? 0.25 : 1.0);
     const recX = viewRecoilX * recSpeed * dt;
     const recY = viewRecoilY * recSpeed * dt;
     // aplicar recuperación (rotar de vuelta)
@@ -2914,8 +2960,8 @@ function shoot(){
   if(currentWeapon==='awp'){
     // AWP: mucho más preciso y estable con mira
     const walkMultAwp = isMovingNowPre ? (isCrouching?1.05:1.18) : 1.0;
-    const verticalKick = (isAiming ? 0.011 : 0.042) * walkMultAwp;
-    const horizKick = ((Math.random()-0.5)*0.003 + (isMovingNowPre?(Math.random()-0.5)*0.003:0)) * walkMultAwp * (isAiming?0.18:1.0);
+    const verticalKick = (isAiming ? 0.034 : 0.065) * walkMultAwp;
+    const horizKick = ((Math.random()-0.5)*0.006 + (isMovingNowPre?(Math.random()-0.5)*0.006:0)) * walkMultAwp * (isAiming?0.5:1.0);
     viewRecoilX += verticalKick;
     viewRecoilY += horizKick;
     camera.rotateX(-verticalKick);
@@ -2924,6 +2970,7 @@ function shoot(){
     spreadAccum = Math.min(spreadAccum + addSpreadAwp, isAiming?0.0032:0.032);
     recoilKick = isAiming ? 0.68 : 1.92;
     isBoltCycling=true; boltProgress=0;
+    if(isAiming){ awpRescope=true; setAiming(false); }      // al disparar se sale de la mira durante el cerrojo y se vuelve a entrar solo (como CS:GO)
   } else if(currentWeapon==='deagle'){
     // Deagle CSGO: primer tiro láser, spameo muy castigado, mucho más preciso quieto y agachado
     spamHeat = Math.min(spamHeat + (isMovingNowPre?0.48:0.36), 3.9);
@@ -2931,7 +2978,7 @@ function shoot(){
     const walkMultDeagle = isMovingNowPre ? (isCrouching?1.28:1.82) : 1.0;
     const aimMultDeagle = isAiming ? 0.38 : 1.0;
     const firstShotBonus = (consecutiveSpam===1 && spreadAccum<0.006) ? 0.68 : 1.0;
-    const verticalKick = (isAiming ? 0.018 : 0.028) * walkMultDeagle * aimMultDeagle * firstShotBonus;
+    const verticalKick = (isAiming ? 0.020 : 0.036) * walkMultDeagle * aimMultDeagle * firstShotBonus * (1 + Math.min(consecutiveSpam-1,4)*0.12);
     const horizKick = ((Math.random()-0.5)*0.016 + Math.sin(consecutiveSpam*1.7)*0.005) * walkMultDeagle * aimMultDeagle * firstShotBonus;
     viewRecoilX += verticalKick;
     viewRecoilY += horizKick;
@@ -2949,10 +2996,10 @@ function shoot(){
     const walkMult = isMovingNowPre ? (isCrouching?1.18:1.48) : 1.0;
     const aimMult = isAiming ? 0.48 : 1.0;
     const combinedSpamWalk = spamMult * walkMult;
-    recoilPatternStep = (recoilPatternStep + 1) % 12;
-    const baseVert = (0.011 + Math.min(recoilPatternStep,8)*0.0016);
-    const verticalKick = baseVert * aimMult * walkMult * (1 + spamHeat*0.38);
-    const horizKick = ((Math.random()-0.5)*0.014 + Math.sin(recoilPatternStep*1.7)*0.0035 + spamHeat*0.0012*(Math.random()-0.5)) * aimMult * walkMult * (1 + spamHeat*0.18);
+    const pk = patternKick(currentWeapon==='m4' ? M4_PATTERN : AK_PATTERN, consecutiveSpam-1);
+    const crouchMult = (isCrouching && !isMovingNowPre) ? 0.82 : 1.0;
+    const verticalKick = pk[0] * (aimMult<1?0.8:1) * walkMult * crouchMult * (0.92 + Math.random()*0.16);
+    const horizKick = pk[1] * (aimMult<1?0.8:1) * walkMult * crouchMult + (Math.random()-0.5)*0.0022*walkMult;
     viewRecoilX += verticalKick;
     viewRecoilY += horizKick;
     camera.rotateX(-verticalKick);
@@ -3836,7 +3883,7 @@ window.addEventListener('mousedown', (e)=>{
   }
   if(e.button===2 && controls.isLocked){
     if(currentWeapon==='knife') knifeAttack();
-    else if(currentWeapon==='awp') setAiming(!isAiming);
+    else if(currentWeapon==='awp') cycleAwpZoom();
     else if(currentWeapon==='ak' || currentWeapon==='m4') setAiming(true);
     // deagle no apunta
   }
@@ -4018,6 +4065,7 @@ try{
 try{ menu.style.display='none'; }catch(e){}
 try{ fafiApplySensitivity(); }catch(e){}
 try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }catch(e){}
+
 
 
 
