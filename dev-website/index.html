@@ -1,9 +1,21 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en" data-lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team T Studio | Desarrollo de Videojuegos</title>
+    <meta name="theme-color" content="#121214">
+    <title>Team T Studio | FAFI 1.6 &mdash; Tactical FPS</title>
+    <meta name="description" content="Team T Studio is an independent game studio. Play FAFI 1.6, a browser-based tactical FPS with Defuse 5v5, a story campaign, skins and 3D cases.">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Team T Studio | FAFI 1.6">
+    <meta property="og:description" content="Independent studio. FAFI 1.6 &mdash; tactical precision meets arcade fun, straight in your browser.">
+    <meta property="og:image" content="assets/FAFI-1.6Demo2.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="assets/Isotipo_TeamT_SinFondo.png" type="image/png">
+    <link rel="apple-touch-icon" href="assets/Isotipo_TeamT_SinFondo.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
@@ -11,158 +23,403 @@
 </head>
 <body>
 
-    <header class="navbar">
-        <div class="navbar-inner">
-            <div class="navbar-brand">
-                <img src="assets/Isotipo_TeamT_SinFondo.png" alt="Logo T">
-                <span>Team T Studio</span>
-            </div>
-            <nav class="nav-links">
-                <a href="#inicio">Work</a>
-                <a href="#proyectos">Studio</a>
-                <a href="#fafi">FAFI 1.6</a>
-                <a href="#nosotros">About</a>
-                <a href="#contacto">Contact</a>
-            </nav>
-            <button class="nav-toggle" id="navToggle" aria-label="Abrir menú">☰</button>
-        </div>
-        <nav class="mobile-menu" id="mobileMenu">
-            <a href="#inicio">Work</a>
-            <a href="#proyectos">Studio</a>
-            <a href="#fafi">FAFI 1.6</a>
-            <a href="#nosotros">About</a>
-            <a href="#contacto">Contact</a>
+<a class="skip-link" href="#main" data-i18n="a11y.skip">Skip to content</a>
+
+<header class="navbar" id="navbar">
+    <div class="navbar-inner">
+        <a class="navbar-brand" href="#inicio">
+            <img src="assets/Isotipo_TeamT_SinFondo.png" alt="" width="44" height="44">
+            <span>Team T&nbsp;Studio</span>
+        </a>
+
+        <nav class="nav-links" aria-label="Main">
+            <a href="#jugar" data-nav="jugar" data-i18n="nav.play">Play</a>
+            <a href="#proyectos" data-nav="proyectos" data-i18n="nav.work">Work</a>
+            <a href="#fafi" data-nav="fafi" data-i18n="nav.fafi">FAFI 1.6</a>
+            <a href="#nosotros" data-nav="nosotros" data-i18n="nav.studio">Studio</a>
+            <a href="#config" data-nav="config" data-i18n="nav.settings">Settings</a>
         </nav>
-    </header>
 
-    <main>
-        <section id="inicio" class="hero">
-            <h1>TEAM T STUDIO</h1>
-            <p>Creadores de realidades · Developers of FAFI 1.6</p>
-            <a href="#proyectos" class="btn-primary">Explore projects</a>
-        </section>
+        <div class="navbar-actions">
+            <a class="btn btn-primary btn-sm" href="http://192.168.2.1/" data-launch data-i18n="nav.playCta">Play now</a>
+            <button class="nav-toggle" id="navToggle" type="button"
+                    aria-controls="mobileMenu" aria-expanded="false"
+                    aria-label="Open menu" data-i18n-aria-label="a11y.menu.open">
+                <span class="nav-toggle-bars" aria-hidden="true"></span>
+            </button>
+        </div>
+    </div>
 
-        <section id="proyectos" class="projects">
-            <div class="section-header">
-                <h2>Projects</h2>
+    <nav class="mobile-menu" id="mobileMenu" aria-label="Mobile" hidden>
+        <a href="#jugar" data-i18n="nav.play">Play</a>
+        <a href="#proyectos" data-i18n="nav.work">Work</a>
+        <a href="#fafi" data-i18n="nav.fafi">FAFI 1.6</a>
+        <a href="#nosotros" data-i18n="nav.studio">Studio</a>
+        <a href="#config" data-i18n="nav.settings">Settings</a>
+        <a href="#contacto" data-i18n="nav.contact">Contact</a>
+        <a class="btn btn-primary" href="http://192.168.2.1/" data-launch data-i18n="nav.playCta">Play now</a>
+    </nav>
+</header>
+
+<main id="main">
+
+    <!-- ============ HERO ============ -->
+    <section id="inicio" class="hero">
+        <div class="container hero-inner">
+            <p class="eyebrow" data-i18n="hero.eyebrow">Independent game studio</p>
+            <h1 class="hero-title">TEAM&nbsp;T<br>STUDIO</h1>
+            <p class="hero-sub" data-i18n="hero.subtitle">Creators of realities &middot; Developers of FAFI 1.6</p>
+
+            <div class="hero-cta">
+                <a class="btn btn-primary btn-lg" href="http://192.168.2.1/" data-launch data-i18n="hero.ctaPlay">Play FAFI 1.6</a>
+                <a class="btn btn-ghost btn-lg" href="#proyectos" data-i18n="hero.ctaWork">Explore projects</a>
             </div>
+
+            <p class="status-pill" id="heroStatus" data-status="idle" role="status">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span class="status-text" data-i18n="status.checking">Checking server&hellip;</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- ============ LAUNCHER ============ -->
+    <section id="jugar" class="launcher">
+        <div class="container">
+            <div class="launcher-panel">
+                <div class="launcher-media">
+                    <img src="assets/fafi/desembarco.webp" alt="FAFI 1.6 story mode: the Normandy landings" width="1920" height="960" loading="lazy" decoding="async">
+                    <span class="launcher-badge">v2</span>
+                </div>
+
+                <div class="launcher-body">
+                    <p class="eyebrow" data-i18n="launcher.eyebrow">Now shipping</p>
+                    <h2 class="launcher-title">FAFI&nbsp;1.6</h2>
+                    <p class="launcher-desc" data-i18n="launcher.desc">A tactical history shooter built for the browser. No install, no launcher client &mdash; just your keyboard, your mouse and the round timer.</p>
+
+                    <div class="launcher-actions">
+                        <a class="btn btn-primary btn-lg" href="http://192.168.2.1/" data-launch data-i18n="launcher.play">Launch game</a>
+                        <a class="btn btn-ghost btn-lg" href="#controles" data-i18n="launcher.controls">Controls</a>
+                    </div>
+
+                    <dl class="launcher-facts">
+                        <div>
+                            <dt data-i18n="facts.modes">Modes</dt>
+                            <dd data-i18n="facts.modesValue">4 &mdash; Aim Practice, Dust II, Defuse 5v5, Story</dd>
+                        </div>
+                        <div>
+                            <dt data-i18n="facts.platform">Platform</dt>
+                            <dd data-i18n="facts.platformValue">Browser (desktop)</dd>
+                        </div>
+                        <div>
+                            <dt data-i18n="facts.price">Price</dt>
+                            <dd data-i18n="facts.priceValue">Free</dd>
+                        </div>
+                        <div>
+                            <dt data-i18n="facts.server">Server</dt>
+                            <dd class="server-value">
+                                <code data-server-display>192.168.2.1</code>
+                                <button class="copy-btn" type="button" data-copy-server
+                                        data-i18n="launcher.copy"
+                                        data-i18n-aria-label="launcher.copy">Copy</button>
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Game modes -->
+            <div class="modes">
+                <article class="mode-card">
+                    <span class="mode-index">01</span>
+                    <h3 data-i18n="mode1.title">Aim Practice</h3>
+                    <p data-i18n="mode1.desc">Thirty seconds. Moving targets in the gallery range, every weapon unlocked from the first second. Built to warm up your aim and track your accuracy.</p>
+                </article>
+                <article class="mode-card">
+                    <span class="mode-index">02</span>
+                    <h3 data-i18n="mode2.title">Dust II &mdash; Exploration</h3>
+                    <p data-i18n-html="mode2.desc">Start with a knife and $3000, pick Terrorist or Counter-Terrorist spawn, then press <kbd>B</kbd> for the buy menu: Deagle, AK-47, AWP and more.</p>
+                </article>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls" id="controles">
+                <h3 class="controls-title" data-i18n="controls.title">Controls</h3>
+                <ul class="controls-grid">
+                    <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span data-i18n="controls.move">Move</span></li>
+                    <li><kbd>Shift</kbd><span data-i18n="controls.crouch">Crouch / sprint</span></li>
+                    <li><kbd>Space</kbd><span data-i18n="controls.jump">Jump (Dust II)</span></li>
+                    <li><kbd class="kbd-wide">LMB</kbd><span data-i18n="controls.fire">Fire / knife</span></li>
+                    <li><kbd class="kbd-wide">RMB</kbd><span data-i18n="controls.aim">Aim / scope (AWP)</span></li>
+                    <li><kbd>R</kbd><span data-i18n="controls.reload">Reload</span></li>
+                    <li><kbd>F</kbd><span data-i18n="controls.inspect">Inspect weapon</span></li>
+                    <li><kbd>Q</kbd><span data-i18n="controls.swap">Change weapon</span></li>
+                    <li><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><span data-i18n="controls.slots">Weapon slots</span></li>
+                    <li><kbd>B</kbd><span data-i18n="controls.buy">Buy menu (Dust II)</span></li>
+                    <li><kbd>Esc</kbd><span data-i18n="controls.menu">Back to menu</span></li>
+                    <li><kbd>F7</kbd><span data-i18n="controls.debug">Debug overlay</span></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ PROJECTS ============ -->
+    <section id="proyectos" class="projects">
+        <div class="container">
+            <div class="section-header">
+                <h2 data-i18n="projects.title">Projects</h2>
+                <span class="section-count">02</span>
+            </div>
+
             <div class="projects-grid">
-                <div class="project-card">
+                <article class="project-card project-card--live">
                     <div class="project-card-image">
-                        <img src="assets/FAFI-1.6Demo2.png" class="color-img" alt="FAFI 1.6 Gameplay">
+                        <img src="assets/FAFI-1.6Demo.png" alt="FAFI 1.6 first-person gameplay" width="1724" height="1074" loading="lazy" decoding="async">
+                        <span class="project-tag" data-i18n="projects.live">Playable</span>
                     </div>
                     <div class="project-card-content">
                         <span class="project-label">FAFI 1.6</span>
                         <h3>FAFI 1.6</h3>
-                        <p>Tactical history shooter, our first project. <a href="#fafi" style="color:var(--primary-container)">See the game →</a></p>
+                        <p data-i18n="projects.p1">Tactical history shooter, our first project. Aim Practice, Defuse 5v5 and a full story campaign, playable in the browser.</p>
+                        <a class="card-action" href="http://192.168.2.1/" data-launch>
+                            <span data-i18n="projects.p1cta">Play now</span>
+                            <span class="card-action-arrow" aria-hidden="true">&rarr;</span>
+                        </a>
                     </div>
-                </div>
-                <div class="project-card">
+                </article>
+
+                <article class="project-card">
                     <div class="project-card-image">
-                        <img src="assets/CoreTT.png" class="color-img" alt="CoreTT">
+                        <img src="assets/CoreTT.png" alt="CoreTT interface screenshot" width="1722" height="1074" loading="lazy" decoding="async">
+                        <span class="project-tag project-tag--muted" data-i18n="projects.soon">In development</span>
                     </div>
                     <div class="project-card-content">
                         <span class="project-label">CoreTT</span>
                         <h3>CoreTT</h3>
-                        <p>Platform for improving at competitive games. Currently in the pre-production phase.</p>
+                        <p data-i18n="projects.p2">Platform for improving at competitive games. Currently in the pre-production phase.</p>
+                        <span class="card-action card-action--disabled" aria-disabled="true">
+                            <span data-i18n="projects.p2cta">Coming soon</span>
+                        </span>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="fafi" class="fx">
-            <div class="container">
-                <div class="fx-hero">
-                    <div class="fx-hero-text">
-                        <span class="project-label">FAFI 1.6 · Team T Studio</span>
-                        <h2>El futuro de las webs, en el presente</h2>
-                        <p>FAFI 1.6 es un shooter táctico en primera persona que corre directamente en tu navegador: sin instalar nada, con modo Defuse 5v5, una campaña histórica, armas con skins diseñadas a mano y cajas en 3D. Optimizado para que funcione hasta en equipos básicos.</p>
-                        <div class="fx-cta">
-                            <a class="btn-primary" href="https://github.com/SantinoLaudati/Fafi-1.6" target="_blank" rel="noopener">Ver en GitHub</a>
-                            <a class="fx-ghost" href="#fafi-galeria">Ver capturas</a>
-                        </div>
-                        <ul class="fx-badges"><li>Gratis</li><li>Sin instalación</li><li>Funciona con 4&nbsp;GB de RAM</li><li>Modo sin conexión</li></ul>
-                    </div>
-                    <div class="fx-hero-img"><img src="assets/fafi/inv.png" alt="Inventario 3D de armas con skins" loading="lazy"></div>
-                </div>
-
-                <h3 class="fx-title">Qué puedes hacer</h3>
-                <div class="fx-features">
-                    <article class="fx-card"><i>💣</i><h4>Defuse 5v5</h4><p>Terroristas contra antiterroristas con bots, economía, compra de armas, plantado y desactivado de la bomba. Tres mapas: Dust II, Italy y Office.</p></article>
-                    <article class="fx-card"><i>🎯</i><h4>Campo de tiro</h4><p>30 segundos de blancos móviles para afinar la puntería, con todas las armas libres y marcador de precisión.</p></article>
-                    <article class="fx-card"><i>★</i><h4>Modo historia</h4><p>Un mapa de Europa con los hechos de la Segunda Guerra Mundial. Ya puedes vivir el desembarco de Normandía, con locución, música y modelos 3D de la época.</p></article>
-                    <article class="fx-card"><i>🔫</i><h4>Armas y skins con diseños</h4><p>AK-47, M4A4, AWP, Desert Eagle y cuchillo, con 37 skins: camuflajes, llamas, escamas, circuitos luminosos y más, en tres rarezas.</p></article>
-                    <article class="fx-card"><i>📦</i><h4>Cajas en 3D</h4><p>Abre cajas con una animación épica: la tapa salta, el arma sale flotando y descubres tu skin. Las repetidas te devuelven coins.</p></article>
-                    <article class="fx-card"><i>🖥️</i><h4>Hecho para cualquier PC</h4><p>Calidad Mínima, Baja, Media y Alta. El juego detecta tu equipo y se ajusta solo: probado con 4&nbsp;GB de RAM y procesadores domésticos.</p></article>
-                </div>
-
-                <h3 class="fx-title" id="fafi-galeria">Capturas del juego</h3>
-                <div class="fx-gallery">
-                    <figure class="fx-shot wide"><img src="assets/fafi/desembarco.webp" alt="Desembarco de Normandía" loading="lazy"><figcaption>Modo historia: el desembarco de Normandía, el primer hecho de la campaña</figcaption></figure>
-                    <figure class="fx-shot"><img src="assets/fafi/menu.png" alt="Menú principal" loading="lazy"><figcaption>Menú principal con tu equipo equipado</figcaption></figure>
-                    <figure class="fx-shot"><img src="assets/fafi/selector.png" alt="Selección de mapa" loading="lazy"><figcaption>Elige mapa y bando antes de jugar</figcaption></figure>
-                    <figure class="fx-shot"><img src="assets/fafi/inv.png" alt="Inventario 3D" loading="lazy"><figcaption>Inventario con visor 3D: gira y examina cada arma</figcaption></figure>
-                    <figure class="fx-shot"><img src="assets/fafi/story.png" alt="Mapa del modo historia" loading="lazy"><figcaption>Modo historia: mapa de Europa con hechos por desbloquear</figcaption></figure>
-                </div>
-
-                <div class="fx-specs">
-                    <div><h4>Requisitos mínimos</h4><p>Cualquier navegador moderno (Chrome, Edge o Firefox), 4&nbsp;GB de RAM y gráficos integrados. En calidad Mínima el juego usa menos resolución, sin sombras y con 30&nbsp;FPS estables.</p></div>
-                    <div><h4>Cómo empezar</h4><p>Descarga el proyecto desde GitHub, ejecuta <code>iniciar-juego.bat</code> y se abre en tu navegador. También puedes jugar sin conexión: el progreso se guarda en tu equipo.</p></div>
-                    <div><h4>Controles</h4><p>WASD mover · Shift agacharse · Espacio saltar · Clic disparar · R recargar · B comprar · E plantar o desactivar · Tab marcador.</p></div>
-                </div>
-            </div>
-        </section>
-
-        <section id="nosotros" class="team">
-            <div class="container">
-                <h2>Development Team</h2>
-                <div class="team-grid">
-                    <div class="team-member">
-                        <div class="team-member-avatar">
-                            <img src="assets/SantinoLaudati.png" alt="Foto Santino Laudati">
-                        </div>
-                        <h4>Santino Laudati</h4>
-                        <span class="role">Lead Developer/R&D Developer</span>
-                    </div>
-                    <div class="team-member">
-                        <div class="team-member-avatar">
-                            <img src="assets/DanteIglesias.png" alt="Foto Dante Iglesias">
-                        </div>
-                        <h4>Dante Iglesias</h4>
-                        <span class="role">Frontend Designer/Technical Writer</span>
-                    </div>
-                    <div class="team-member">
-                        <div class="team-member-avatar">
-                            <img src="assets/Pachus13.png" alt="Foto Ian Quiroga">
-                        </div>
-                        <h4>Ian Quiroga</h4>
-                        <span class="role">Backend Developer</span>
-                    </div>
-                </div>
-
-                <div class="info-equipo">
-                    <h3 class="accent-color">About Team T Studio</h3>
-                    <p>We are an independent studio passionate about video game development. Our goal is to create memorable experiences by combining polished gameplay with strong visual identities. With the launch of <strong>FAFI 1.6</strong>, we aim to establish ourselves in the industry and build a solid community of players.</p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer id="contacto" class="footer">
-        <div class="container footer-inner">
-            <div class="footer-brand">
-                <strong>Contact</strong>
-            </div>
-            <div class="footer-links">
-                <a href="#" title="Web">🌐</a>
-                <a href="https://discord.gg/gyxVjcdg" title="Discord">💬</a>
-                <a href="https://www.instagram.com/teamtstudio/" title="Instagram">📸</a>
-            </div>
-            <div class="footer-copyright">
-                &copy; Team T 2026. Todos los derechos reservados.
+                </article>
             </div>
         </div>
-    </footer>
-    <script src="js/script.js"></script>
+    </section>
+
+    <!-- ============ FAFI 1.6 DEEP DIVE ============ -->
+    <section id="fafi" class="fx">
+        <div class="container">
+            <div class="fx-hero">
+                <div class="fx-hero-text">
+                    <span class="project-label" data-i18n="fafi.eyebrow">FAFI 1.6 &middot; Team T Studio</span>
+                    <h2 data-i18n="fafi.title">The future of the web, today</h2>
+                    <p data-i18n="fafi.desc">FAFI 1.6 is a first-person tactical shooter that runs directly in your browser: nothing to install, with a 5v5 Defuse mode, a historical campaign, hand-designed weapon skins and 3D cases. Optimized to run even on basic machines.</p>
+                    <div class="fx-cta">
+                        <a class="btn btn-primary" href="http://192.168.2.1/" data-launch data-i18n="fafi.ctaPlay">Play FAFI 1.6</a>
+                        <a class="btn btn-ghost" href="https://github.com/SantinoLaudati/Fafi-1.6" target="_blank" rel="noopener noreferrer" data-i18n="fafi.ctaGithub">View on GitHub</a>
+                        <a class="fx-ghost" href="#fafi-galeria" data-i18n="fafi.ctaShots">View screenshots</a>
+                    </div>
+                    <ul class="fx-badges">
+                        <li data-i18n="fafi.badge1">Free</li>
+                        <li data-i18n="fafi.badge2">No install</li>
+                        <li data-i18n="fafi.badge3">Runs on 4&nbsp;GB of RAM</li>
+                        <li data-i18n="fafi.badge4">Offline mode</li>
+                    </ul>
+                </div>
+                <div class="fx-hero-img">
+                    <img src="assets/fafi/inv.png" alt="3D weapon inventory with skins" data-i18n-alt="fafi.altInv" loading="lazy">
+                </div>
+            </div>
+
+            <h3 class="fx-title" data-i18n="fafi.featuresTitle">What you can do</h3>
+            <div class="fx-features">
+                <article class="fx-card">
+                    <i aria-hidden="true">💣</i>
+                    <h4 data-i18n="fafi.c1t">Defuse 5v5</h4>
+                    <p data-i18n="fafi.c1d">Terrorists versus counter-terrorists with bots, economy, weapon buying, bomb planting and defusing. Three maps: Dust II, Italy and Office.</p>
+                </article>
+                <article class="fx-card">
+                    <i aria-hidden="true">🎯</i>
+                    <h4 data-i18n="fafi.c2t">Firing range</h4>
+                    <p data-i18n="fafi.c2d">Thirty seconds of moving targets to sharpen your aim, with every weapon unlocked and an accuracy scoreboard.</p>
+                </article>
+                <article class="fx-card">
+                    <i aria-hidden="true">★</i>
+                    <h4 data-i18n="fafi.c3t">Story mode</h4>
+                    <p data-i18n="fafi.c3d">A map of Europe covering Second World War events. You can already play the Normandy landings, with voice-over, music and period 3D models.</p>
+                </article>
+                <article class="fx-card">
+                    <i aria-hidden="true">🔫</i>
+                    <h4 data-i18n="fafi.c4t">Weapons and skins</h4>
+                    <p data-i18n="fafi.c4d">AK-47, M4A4, AWP, Desert Eagle and knife, with 37 skins: camouflage, flames, scales, glowing circuits and more, across three rarities.</p>
+                </article>
+                <article class="fx-card">
+                    <i aria-hidden="true">📦</i>
+                    <h4 data-i18n="fafi.c5t">3D cases</h4>
+                    <p data-i18n="fafi.c5d">Open cases with a cinematic animation: the lid flips, the weapon floats out and you discover your skin. Duplicates give coins back.</p>
+                </article>
+                <article class="fx-card">
+                    <i aria-hidden="true">🖥️</i>
+                    <h4 data-i18n="fafi.c6t">Built for any PC</h4>
+                    <p data-i18n="fafi.c6d">Minimal, Low, Medium and High quality. The game detects your hardware and tunes itself: tested on 4&nbsp;GB of RAM and everyday processors.</p>
+                </article>
+            </div>
+
+            <h3 class="fx-title" id="fafi-galeria" data-i18n="fafi.galleryTitle">Screenshots</h3>
+            <div class="fx-gallery">
+                <figure class="fx-shot wide">
+                    <img src="assets/fafi/desembarco.webp" alt="Normandy landings" data-i18n-alt="fafi.altG1" loading="lazy">
+                    <figcaption data-i18n="fafi.g1">Story mode: the Normandy landings, the campaign's first mission</figcaption>
+                </figure>
+                <figure class="fx-shot">
+                    <img src="assets/fafi/menu.png" alt="Main menu" data-i18n-alt="fafi.altG2" loading="lazy">
+                    <figcaption data-i18n="fafi.g2">Main menu with your equipped loadout</figcaption>
+                </figure>
+                <figure class="fx-shot">
+                    <img src="assets/fafi/selector.png" alt="Map selection" data-i18n-alt="fafi.altG3" loading="lazy">
+                    <figcaption data-i18n="fafi.g3">Pick a map and a side before you play</figcaption>
+                </figure>
+                <figure class="fx-shot">
+                    <img src="assets/fafi/inv.png" alt="3D inventory" data-i18n-alt="fafi.altG4" loading="lazy">
+                    <figcaption data-i18n="fafi.g4">3D inventory: rotate and inspect every weapon</figcaption>
+                </figure>
+                <figure class="fx-shot">
+                    <img src="assets/fafi/story.png" alt="Story mode map" data-i18n-alt="fafi.altG5" loading="lazy">
+                    <figcaption data-i18n="fafi.g5">Story mode: a map of Europe with missions to unlock</figcaption>
+                </figure>
+            </div>
+
+            <div class="fx-specs">
+                <div>
+                    <h4 data-i18n="fafi.s1t">Minimum requirements</h4>
+                    <p data-i18n="fafi.s1d">Any modern browser (Chrome, Edge or Firefox), 4&nbsp;GB of RAM and integrated graphics. On Minimal quality the game lowers resolution, disables shadows and holds a steady 30&nbsp;FPS.</p>
+                </div>
+                <div>
+                    <h4 data-i18n="fafi.s2t">How to start</h4>
+                    <p data-i18n-html="fafi.s2d">Download the project from GitHub, run <code>iniciar-juego.bat</code> and it opens in your browser. You can also play offline: progress is saved on your machine.</p>
+                </div>
+                <div>
+                    <h4 data-i18n="fafi.s3t">Controls</h4>
+                    <p data-i18n="fafi.s3d">WASD move &middot; Shift crouch &middot; Space jump &middot; Click fire &middot; R reload &middot; B buy &middot; E plant or defuse &middot; Tab scoreboard.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ STUDIO / TEAM ============ -->
+    <section id="nosotros" class="team">
+        <div class="container">
+            <h2 data-i18n="team.title">Development Team</h2>
+
+            <div class="team-grid">
+                <article class="team-member">
+                    <div class="team-member-avatar">
+                        <img src="assets/SantinoLaudati.png" alt="Portrait of Santino Laudati" width="1792" height="2390" loading="lazy" decoding="async">
+                    </div>
+                    <h3>Santino Laudati</h3>
+                    <p class="role" data-i18n="team.role1">Lead Developer / R&amp;D</p>
+                </article>
+                <article class="team-member">
+                    <div class="team-member-avatar">
+                        <img src="assets/DanteIglesias.png" alt="Portrait of Dante Iglesias" width="460" height="1024" loading="lazy" decoding="async">
+                    </div>
+                    <h3>Dante Iglesias</h3>
+                    <p class="role" data-i18n="team.role2">Frontend Designer / Technical Writer</p>
+                </article>
+                <article class="team-member">
+                    <div class="team-member-avatar">
+                        <img src="assets/Pachus13.png" alt="Portrait of Ian Quiroga" width="268" height="234" loading="lazy" decoding="async">
+                    </div>
+                    <h3>Ian Quiroga</h3>
+                    <p class="role" data-i18n="team.role3">Backend Developer</p>
+                </article>
+            </div>
+
+            <div class="about">
+                <h3 data-i18n="about.title">About Team T Studio</h3>
+                <p data-i18n-html="about.body">We are an independent studio passionate about video game development. Our goal is to create memorable experiences by combining polished gameplay with strong visual identities. With the launch of <strong>FAFI 1.6</strong>, we aim to establish ourselves in the industry and build a solid community of players.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section id="config" class="settings">
+        <div class="container">
+            <div class="section-header">
+                <h2 data-i18n="settings.title">Settings</h2>
+                <span class="section-count" data-i18n="settings.localTag">Saved on this device</span>
+            </div>
+
+            <div class="settings-grid">
+
+                <!-- Language -->
+                <fieldset class="setting">
+                    <legend class="setting-title" data-i18n="settings.langTitle">Language</legend>
+                    <p class="setting-desc" data-i18n="settings.langDesc">Choose the language of this site.</p>
+
+                    <div class="lang-switch" role="radiogroup" aria-label="Language">
+                        <button type="button" class="lang-option" role="radio" data-set-lang="en" aria-checked="true">
+                            <span class="lang-code">EN</span>
+                            <span class="lang-name">English</span>
+                        </button>
+                        <button type="button" class="lang-option" role="radio" data-set-lang="es" aria-checked="false">
+                            <span class="lang-code">ES</span>
+                            <span class="lang-name">Espa&ntilde;ol</span>
+                        </button>
+                    </div>
+                </fieldset>
+
+                <!-- Game server -->
+                <fieldset class="setting">
+                    <legend class="setting-title" data-i18n="settings.serverTitle">Game server address</legend>
+                    <p class="setting-desc" data-i18n="settings.serverDesc">Where the launcher sends you when you press play. The server address can change, so you can edit it here.</p>
+
+                    <form class="server-form" id="serverForm" novalidate>
+                        <label class="visually-hidden" for="serverInput" data-i18n="settings.serverLabel">Server address</label>
+                        <div class="server-row">
+                            <input class="server-input" type="text" id="serverInput"
+                                   name="server" inputmode="url" autocomplete="off"
+                                   spellcheck="false" placeholder="http://192.168.2.1">
+                            <button class="btn btn-primary btn-sm" type="submit" data-i18n="settings.save">Save</button>
+                        </div>
+                        <p class="server-feedback" id="serverFeedback" role="status" data-state="idle"></p>
+                    </form>
+                </fieldset>
+
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer id="contacto" class="footer">
+    <div class="container footer-inner">
+        <div class="footer-brand">
+            <strong data-i18n="footer.contact">Contact</strong>
+            <a class="footer-server" href="http://192.168.2.1/" data-launch data-i18n="footer.playServer">Play on the server</a>
+        </div>
+
+        <ul class="footer-links">
+            <li><a href="http://192.168.2.1/" data-launch data-i18n="footer.game">Game</a></li>
+            <li><a href="https://discord.gg/gyxVjcdg" target="_blank" rel="noopener noreferrer" data-i18n="footer.discord">Discord</a></li>
+            <li><a href="https://www.instagram.com/teamtstudio/" target="_blank" rel="noopener noreferrer" data-i18n="footer.instagram">Instagram</a></li>
+        </ul>
+
+        <p class="footer-copyright">
+            <span>&copy;</span> <span data-year>2026</span>
+            <span data-i18n="footer.rights">Team T Studio. All rights reserved.</span>
+        </p>
+    </div>
+</footer>
+
+<!-- ============ MOBILE QUICK LAUNCH ============ -->
+<div class="quick-launch" role="complementary" aria-label="Quick launch">
+    <div class="quick-launch-info">
+        <span class="quick-launch-label" data-i18n="quick.label">Ready to play</span>
+        <code data-server-display>192.168.2.1</code>
+    </div>
+    <a class="btn btn-primary btn-sm" href="http://192.168.2.1/" data-launch data-i18n="quick.play">Play now</a>
+</div>
+
+<script src="js/script.js"></script>
 </body>
 </html>
