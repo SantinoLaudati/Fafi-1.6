@@ -64,12 +64,27 @@ function fafiLoadGameData(){
   }catch(e){}
 }
 /* === INTEGRACIÓN BASE DE DATOS (backend PHP/MySQL del proyecto) === */
+// Artículos que ya existían en la base de datos con el catálogo anterior -> skin equivalente del catálogo actual.
+// Las skins nuevas (database/php-backend/database/seed_mysql.sql) se guardan con el nombre visible de la skin
+// y ruta_modelo = 'skin:<id>', así que se reconocen solas.
 const FAFI_DB_SKINNAME = {
-  'AK-47 Oro Macizo':'ak_oro', 'AK-47 Glaciar':'ak_hielo', 'AK-47 Táctica':'ak_tactical',
-  'Sniper Vacío':'awp_void', 'Sniper Camuflaje':'awp_camo', 'AWP Magma':'awp_magma',
-  'Deagle Carmesí':'d_crimson', 'Deagle Neón':'d_neon', 'Deagle Desierto':'d_desert',
-  'Cuchillo Zafiro':'k_karambit', 'Cuchillo Sangre':'k_blood', 'Cuchillo Táctico':'k_tactical'
+  'AK-47 Oro Macizo':'ak_barroco', 'AK-47 Glaciar':'ak_vulcano', 'AK-47 Táctica':'ak_urbana',
+  'Sniper Vacío':'awp_vacio', 'Sniper Camuflaje':'awp_camo',
+  'Deagle Carmesí':'d_carmesi',
+  'Cuchillo Zafiro':'k_zafiro', 'Cuchillo Sangre':'k_sangre'
 };
+// Resuelve la skin del juego a partir de una fila de la base de datos (inventario o premio de caja).
+function fafiDbSkinId(row){
+  if(!row) return null;
+  const rm = typeof row.ruta_modelo==='string' ? row.ruta_modelo : '';
+  if(rm.indexOf('skin:')===0 && fafiSkinById(rm.slice(5))) return rm.slice(5);
+  const legacy = FAFI_DB_SKINNAME[row.nombre];
+  if(legacy && fafiSkinById(legacy)) return legacy;
+  const sk = fafiSkinsDB.find(s=>s.name===row.nombre);
+  return sk ? sk.id : null;
+}
+// arma_base de la base de datos -> arma del juego
+const FAFI_DB_WEAPON = { ak47:'ak', ak:'ak', m4:'m4', sniper:'awp', awp:'awp', deagle:'deagle', knife:'knife' };
 window.fafiDbArticles = {};
 function fafiDbOnline(){
   return !!(window.authService && window.authService.isAuthenticated() && !window.authService.isDevMode());
@@ -77,12 +92,11 @@ function fafiDbOnline(){
 function fafiDbApplyEquippedFromServer(eq){
   window.equippedSkins = { ak:null, m4:null, awp:null, deagle:null, knife:null };
   if(!eq || !eq.equipped_skins || typeof eq.equipped_skins!=='object') return;
-  const wmap = { ak47:'ak', ak:'ak', sniper:'awp', awp:'awp', deagle:'deagle', knife:'knife' };
   for(const k in eq.equipped_skins){
     const idv = eq.equipped_skins[k];
     for(const sid in window.fafiDbArticles){
       if(String(window.fafiDbArticles[sid].articulo_id)===String(idv)){
-        window.equippedSkins[wmap[window.fafiDbArticles[sid].arma_base] || window.fafiDbArticles[sid].arma_base] = sid;
+        window.equippedSkins[FAFI_DB_WEAPON[window.fafiDbArticles[sid].arma_base] || window.fafiDbArticles[sid].arma_base] = sid;
       }
     }
   }
@@ -97,8 +111,8 @@ async function fafiApiLoadProfile(){
       window.fafiDbArticles = {};
       const ids=[];
       for(const it of inv.inventory){
-        const sid = FAFI_DB_SKINNAME[it.nombre];
-        if(sid && fafiSkinById(sid)){
+        const sid = fafiDbSkinId(it);
+        if(sid){
           ids.push(sid);
           if(!window.fafiDbArticles[sid]) window.fafiDbArticles[sid]={ articulo_id: it.articulo_id, arma_base: it.arma_base };
         }
@@ -160,6 +174,51 @@ async function fafiDbPushEquipped(skinId){
       fafiDbApplyEquippedFromServer(eq);
     }
   }catch(e){ console.warn('Fafi DB: equipar', e); }
+}
+// Caja del juego -> nombre del artículo en la tienda del servidor (articulos_tienda)
+const FAFI_DB_BOX = { basic:'Caja Básica', advanced:'Caja Avanzada', legendary:'Caja Clasificada' };
+// Compra una caja en el servidor: él descuenta las monedas, sortea la skin, la guarda y reembolsa si estaba repetida.
+async function fafiDbBuyBox(type){
+  try{
+    if(!window.fafiDbStore){
+      const st = await window.apiService.getStore();
+      window.fafiDbStore = (st && Array.isArray(st.items)) ? st.items : [];
+    }
+    const art = window.fafiDbStore.find(i=>i.nombre===FAFI_DB_BOX[type]);
+    if(!art){ alert('El servidor no tiene esta caja en la tienda.'); return null; }
+    const res = await window.apiService.purchaseBox(art.id);
+    if(res && res.coins!=null) window.fafiCoins = Number(res.coins);
+    const rw = res && res.reward;
+    const sid = rw ? fafiDbSkinId({ nombre: rw.nombre, ruta_modelo: rw.ruta_modelo }) : null;
+    const won = sid ? fafiSkinById(sid) : null;
+    if(!won){
+      await fafiApiLoadProfile();            // se vuelve a sincronizar con el servidor
+      fafiUpdateCoinsDisplay(); fafiUpdateProfileUI(); fafiRenderInventory(); fafiRenderEquipTab();
+      alert(rw ? 'La skin ganada no existe en esta versión del juego.' : 'El servidor no tiene skins para sortear.');
+      return null;
+    }
+    const dup = !!rw.duplicate;
+    if(!dup && !window.userInventory.includes(sid)) window.userInventory.push(sid);
+    if(!window.fafiDbArticles[sid]) window.fafiDbArticles[sid] = { articulo_id: rw.articulo_id, arma_base: rw.arma_base };
+    window.purchaseHistory.push({ box:type, cost: Math.round(Number(art.precio)||0) });
+    fafiUnlock('rich_boy');
+    return { won, refund: dup ? (Number(rw.refund)||0) : 0 };
+  }catch(e){
+    alert(e && e.message ? e.message : 'No se pudo comprar la caja.');
+    try{ const c = await window.apiService.getCoins(); if(c && typeof c.coins==='number'){ window.fafiCoins=c.coins; fafiUpdateCoinsDisplay(); } }catch(_){}
+    return null;
+  }
+}
+// Guarda en la base de datos el resultado de una partida Defuse (historial, estadísticas y ranking).
+async function fafiDbSaveMatch(m){
+  if(!fafiDbOnline() || !m) return;
+  try{
+    await window.apiService.saveMatch({
+      mapa: String(m.map||'dust2'), modo_juego: 'defuse', duracion_segundos: Math.max(1, Math.round(m.seconds||1)),
+      equipo_ganador: m.winner, equipo: m.team, bajas: m.kills|0, muertes: m.deaths|0, asistencias: 0,
+      dano_infligido: Math.round(m.dmg||0), precision: m.kills ? Math.round((m.hs||0)/m.kills*10000)/100 : 0
+    });
+  }catch(e){ console.warn('Fafi DB: guardar partida', e); }
 }
 function fafiResetUserState(){
   window.fafiCoins=2000; window.userInventory=[]; window.equippedSkins={ak:null,m4:null,awp:null,deagle:null,knife:null};
@@ -341,17 +400,25 @@ async function fafiBuyBox(type){
   if(window.fafiCoins<cost){ alert('¡No tienes suficientes FafiCoins! Juega AIM para ganar.'); return; }
   fafiOpeningBox=true;
   try{
-    window.fafiCoins-=cost; window.purchaseHistory.push({box:type,cost});
-    fafiUnlock('rich_boy');
-    let roll=Math.random()*100, target='comun';
-    if(type==='basic') target = roll<15?'epica':'comun';
-    else if(type==='advanced') target = roll<20?'legendaria':(roll<70?'epica':'comun');
-    else target = roll<50?'legendaria':'epica';
-    let poss=fafiSkinsDB.filter(s=>s.rarity===target); if(!poss.length) poss=fafiSkinsDB;
-    const won=poss[Math.floor(Math.random()*poss.length)];
-    const dup=window.userInventory.includes(won.id);
-    const refund = dup ? (won.rarity==='legendaria'?400:(won.rarity==='epica'?150:50)) : 0;
-    if(dup) window.fafiCoins+=refund; else window.userInventory.push(won.id);
+    let won, refund;
+    if(fafiDbOnline()){
+      // Con la base de datos: compra y sorteo en el servidor (descuenta monedas, guarda la skin y reembolsa duplicadas).
+      const r = await fafiDbBuyBox(type);
+      if(!r){ return; }
+      won = r.won; refund = r.refund;
+    } else {
+      window.fafiCoins-=cost; window.purchaseHistory.push({box:type,cost});
+      fafiUnlock('rich_boy');
+      let roll=Math.random()*100, target='comun';
+      if(type==='basic') target = roll<15?'epica':'comun';
+      else if(type==='advanced') target = roll<20?'legendaria':(roll<70?'epica':'comun');
+      else target = roll<50?'legendaria':'epica';
+      let poss=fafiSkinsDB.filter(s=>s.rarity===target); if(!poss.length) poss=fafiSkinsDB;
+      won=poss[Math.floor(Math.random()*poss.length)];
+      const dup=window.userInventory.includes(won.id);
+      refund = dup ? (won.rarity==='legendaria'?400:(won.rarity==='epica'?150:50)) : 0;
+      if(dup) window.fafiCoins+=refund; else window.userInventory.push(won.id);
+    }
     fafiSaveGameData(); fafiUpdateCoinsDisplay(); fafiUpdateProfileUI(); fafiRenderInventory(); fafiRenderEquipTab();
     await loadWeaponPack();                    // el arma del premio se construye con el pack de armas
     document.getElementById('menus')&&(document.getElementById('menus').style.visibility='hidden');
@@ -1144,6 +1211,7 @@ const defuse = createDefuse({
   explosionFx:(pos,R)=>explosionEffect(pos,R), acquireLight:(c,i,d,p)=>acquireLight(c,i,d,p), releaseLight:(l)=>releaseLight(l),
   damageFlash:(f)=>{ const e=document.getElementById('dfDamage'); if(e){ e.style.opacity=Math.min(0.85,0.25+f*0.6); setTimeout(()=>{ e.style.opacity=0; }, 140); } },
   botShotFx:()=>{}, colScale:()=>colScale,
+  onMatchEnd:(m)=>{ fafiDbSaveMatch(m); },
   botThrow:(k,o,d,u)=>{ try{ if(grenades.ready()) grenades.throw(k,o,d,u); }catch(e){} },
   hitFeedback:(pos,head,helmet,dir)=>{ SFX.play(helmet?'hit_helmet':head?'headshot':'hit',{vol:helmet?0.9:1}); hitMarker.classList.add('show'); setTimeout(()=>hitMarker.classList.remove('show'),120); if(helmet){ sparkFx(pos,dir); } else bloodFx(pos,dir,head); if(head) showFloating(helmet?'CASCO':'HEADSHOT'); },
   bloodFx:(pos,dir,head)=>bloodFx(pos,dir,head),

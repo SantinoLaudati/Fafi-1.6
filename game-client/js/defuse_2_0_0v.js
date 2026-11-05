@@ -254,7 +254,7 @@ export function createDefuse(A) {
       const p = makeUnit(team, String(A.playerName()).replace(/[<>&"']/g, '').slice(0, 20) || 'Jugador', true, 0); p.char = null; D.player = p; D.units.push(p);
       for (let i = 0; i < 4; i++) D.units.push(makeUnit(team, BOT_NAMES[team][i], false, i));
       for (let i = 0; i < 5; i++) D.units.push(makeUnit(enemy, BOT_NAMES[enemy][i], false, i));
-      D.score = { ct: 0, t: 0 }; D.loseStreak = { ct: 0, t: 0 }; D.round = 0; D.matchOver = false;
+      D.score = { ct: 0, t: 0 }; D.loseStreak = { ct: 0, t: 0 }; D.round = 0; D.matchOver = false; D.t0 = performance.now();
       chickens.clear();
       const zc = D.zones, b0 = A.bounds;
       const cp = [D.nav.randomNear(zc.t.x, zc.t.z, 9), D.nav.randomNear(zc.t.x, zc.t.z, 9), D.nav.randomNear((b0.min.x + b0.max.x) / 2, (b0.min.z + b0.max.z) / 2, 8)].filter(Boolean);
@@ -361,6 +361,11 @@ export function createDefuse(A) {
     refreshHud(true);
     if (D.score[winner] >= CFG.winRounds) {
       D.matchOver = true;
+      try {   // resultado para la base de datos (historial, estadísticas y ranking)
+        const pl = D.player;
+        A.onMatchEnd && A.onMatchEnd({ map: A.mapKey(), team: D.team, winner, score: { ...D.score }, rounds: D.round,
+          kills: pl.kills, deaths: pl.deaths, dmg: pl.dmg || 0, hs: pl.hs || 0, seconds: (performance.now() - (D.t0 || performance.now())) / 1000 });
+      } catch (e) { console.warn('onMatchEnd', e); }
       setTimeout(() => {
         banner(mine ? '¡VICTORIA!' : 'DERROTA', 'Marcador final ' + D.score.ct + ' - ' + D.score.t + ' (CT - T). Pulsá ESC para volver al menú.', winner);
       }, 1800);

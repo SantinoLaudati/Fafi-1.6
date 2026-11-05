@@ -170,6 +170,8 @@ Requisitos: Docker y Docker Compose en el servidor.
    docker compose up -d --build
    (Los scripts database/Fafi_1_6.sql y seed_mysql.sql se importan automáticamente
    en la primera creación de la base de datos.)
+   Si la base de datos ya existía de antes, cargá el catálogo de skins actual (es seguro repetirlo):
+   docker compose exec -T db sh -c 'mysql -u root -p"$MYSQL_ROOT_PASSWORD" fafi_1_6' < database/php-backend/database/seed_skins_2_0_0v.sql
 3. Verificar: http://<IP>/health
 4. El nginx del contenedor ya sirve: API (/api), WebSocket (/game), el juego
    (/) y dev-website (/dev-website/). No requiere más configuración.
