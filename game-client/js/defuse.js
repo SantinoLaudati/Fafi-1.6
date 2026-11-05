@@ -251,7 +251,7 @@ export function createDefuse(A) {
       cleanupUnits();
       const enemy = team === 't' ? 'ct' : 't';
       D.units = [];
-      const p = makeUnit(team, A.playerName(), true, 0); p.char = null; D.player = p; D.units.push(p);
+      const p = makeUnit(team, String(A.playerName()).replace(/[<>&"']/g, '').slice(0, 20) || 'Jugador', true, 0); p.char = null; D.player = p; D.units.push(p);
       for (let i = 0; i < 4; i++) D.units.push(makeUnit(team, BOT_NAMES[team][i], false, i));
       for (let i = 0; i < 5; i++) D.units.push(makeUnit(enemy, BOT_NAMES[enemy][i], false, i));
       D.score = { ct: 0, t: 0 }; D.loseStreak = { ct: 0, t: 0 }; D.round = 0; D.matchOver = false;
