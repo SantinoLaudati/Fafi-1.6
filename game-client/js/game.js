@@ -1272,9 +1272,17 @@ function setLights(a){
   hemiLight.color.setHex(a.hemi[0]); hemiLight.groundColor.setHex(a.hemi[1]); hemiLight.intensity = a.hemi[2];
   sunLight.color.setHex(a.sun[0]); sunLight.intensity = a.sun[1];
 }
+// Italy y Office traen la luz horneada (materiales sin iluminación): para la noche se oscurecen y se tiñen de azul sus colores.
+const NIGHT_TINT = { italy: [0.08, 0.11, 0.30], office: [0.15, 0.19, 0.40] };
+function tintMap(on){
+  const def = MAPS[currentMapKey], t = on && def && def.baked ? NIGHT_TINT[currentMapKey] : null;
+  const model = dust2Group.children[0]; if(!model) return;      // el modelo del mapa es el primer hijo (después van bots, bomba...)
+  model.traverse(o=>{ if(!o.isMesh || !o.material) return; (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{ if(!m.color) return; if(!m.userData.baseCol) m.userData.baseCol=m.color.clone(); m.color.copy(m.userData.baseCol); if(t) m.color.r*=t[0], m.color.g*=t[1], m.color.b*=t[2]; }); });
+}
 function applyAtmosphere(){
   if(!scene || !hemiLight || !sunLight) return;
-  const night = gameMode==='dust2' && currentMapKey==='dust2';
+  const night = gameMode==='dust2';
+  try{ tintMap(night); }catch(e){}
   const a = night ? ATMOS.night : ATMOS.day;
   setLights(a);
   if(night && !skyDome) skyDome = makeSkyDome();
@@ -3680,7 +3688,7 @@ function buildMinimapImage(key){
   const oldBg=scene.background, oldFog=scene.fog, hid=[];
   scene.children.forEach(o=>{ if(o!==dust2Group && !o.isLight && o.visible){ o.visible=false; hid.push(o); } });
   const chars=[]; dust2Group.traverse(o=>{ if((o.userData&&o.userData.isChar)||o.isSprite){ if(o.visible){ o.visible=false; chars.push(o); } } });
-  scene.background=null; scene.fog=null; setLights(ATMOS.day);
+  scene.background=null; scene.fog=null; setLights(ATMOS.day); tintMap(false);
   renderer.clippingPlanes=[new THREE.Plane(new THREE.Vector3(0,-1,0), cut)];
   renderer.setClearColor(0x000000,0);
   let px=null;
@@ -3689,7 +3697,8 @@ function buildMinimapImage(key){
     px=new Uint8Array(W*H*4); renderer.readRenderTargetPixels(rt,0,0,W,H,px);
   }catch(e){ console.warn('minimapa', e); }
   renderer.setRenderTarget(oldRT); renderer.clippingPlanes=oldClip; renderer.setClearColor(oldCol,oldAlpha);
-  setLights(currentMapKey==='dust2' && gameMode==='dust2' ? ATMOS.night : ATMOS.day);
+  setLights(gameMode==='dust2' ? ATMOS.night : ATMOS.day);
+  if(gameMode==='dust2') tintMap(true);
   scene.background=oldBg; scene.fog=oldFog; hid.forEach(o=>{ o.visible=true; }); chars.forEach(o=>{ o.visible=true; }); rt.dispose();
   if(!px) return null;
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d'); const id=g.createImageData(W,H);
@@ -3949,6 +3958,7 @@ try{
 try{ menu.style.display='none'; }catch(e){}
 try{ fafiApplySensitivity(); }catch(e){}
 try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }catch(e){}
+
 
 
 
