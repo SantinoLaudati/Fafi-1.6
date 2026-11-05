@@ -4,7 +4,7 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 import { QUALITY, SUN_DIR, loadQualityLevel, saveQualityLevel, applyQuality, updateSun, makeBlobShadow } from './quality.js';
 import { createDefuse, TEAM_BADGE } from './defuse.js';
 import { createGrenades, GRENADES } from './grenades.js';
-import { loadWeaponPack, makeViewWeapon, makeWorldWeapon, repaintWeapon, setWeaponSkin } from './characters.js';
+import { loadWeaponPack, makeViewWeapon, makeWorldWeapon, repaintWeapon, setWeaponSkin, loadExtraWeapon, extraWeaponReady } from './characters.js';
 import { ZONAS } from './zonas.js';
 import { openCrate, preloadCrate } from './cajas.js';
 import { SKINS_DB, skinById, applyKnifeSkin } from './skins.js';
@@ -1383,22 +1383,18 @@ function spend(price){
 // Para habilitar una: cambiar kind a 'gun', añadir su precio a WEAPON_PRICES y su lógica de arma.
 const BUY_ITEMS = [
   { id:'deagle', kind:'gun', cat:'side', col:0, label:'Desert Eagle', thumb:'deagle' },
-  { id:'glock',  kind:'locked', cat:'side', col:0, label:'Glock-18',   price:200, thumb:'deagle' },
-  { id:'usp',    kind:'locked', cat:'side', col:0, label:'USP-S',      price:200, thumb:'deagle' },
-  { id:'p250',   kind:'locked', cat:'side', col:0, label:'P250',       price:300, thumb:'deagle' },
-  { id:'five',   kind:'locked', cat:'side', col:0, label:'Five-SeveN', price:500, thumb:'deagle' },
-  { id:'mp9',    kind:'locked', cat:'smg', col:1, label:'MP9', price:1250, thumb:'m4' },
-  { id:'mp7',    kind:'locked', cat:'smg', col:1, label:'MP7', price:1500, thumb:'m4' },
-  { id:'nova',   kind:'locked', cat:'shotgun', col:1, label:'Nova',   price:1050, thumb:'ak' },
-  { id:'xm',     kind:'locked', cat:'shotgun', col:1, label:'XM1014', price:2000, thumb:'ak' },
+  { id:'five',   kind:'locked', cat:'side', col:0, label:'Five-SeveN', price:500, thumb:'five' },
+  { id:'p90',    kind:'locked', cat:'smg', col:1, label:'P90', price:2350, thumb:'p90' },
+  { id:'smg',    kind:'locked', cat:'smg', col:1, label:'SMG Silenciada', price:1500, thumb:'smg' },
+  { id:'shotgun', kind:'locked', cat:'shotgun', col:1, label:'Escopeta Pump', price:1050, thumb:'shotgun' },
+  { id:'shorty', kind:'locked', cat:'shotgun', col:1, label:'Shorty', price:1100, thumb:'shorty' },
   { id:'ak',  kind:'gun', cat:'rifle', col:1, label:'AK-47', thumb:'ak' },
   { id:'m4',  kind:'gun', cat:'rifle', col:1, label:'M4A4',  thumb:'m4' },
-  { id:'galil', kind:'locked', cat:'rifle', col:1, label:'Galil AR', price:1800, thumb:'ak' },
-  { id:'famas', kind:'locked', cat:'rifle', col:1, label:'FAMAS',    price:2050, thumb:'m4' },
+  { id:'vandal', kind:'locked', cat:'rifle', col:1, label:'Vandal', price:2900, thumb:'vandal' },
+  { id:'m4b',    kind:'locked', cat:'rifle', col:1, label:'M4 Táctico', price:2900, thumb:'m4b' },
   { id:'awp', kind:'gun', cat:'sniper', col:1, label:'AWP', thumb:'awp' },
-  { id:'ssg', kind:'locked', cat:'sniper', col:1, label:'SSG 08', price:1700, thumb:'awp' },
-  { id:'negev', kind:'locked', cat:'heavy', col:1, label:'Negev', price:1700, thumb:'ak' },
-  { id:'m249',  kind:'locked', cat:'heavy', col:1, label:'M249',  price:5200, thumb:'ak' },
+  { id:'vss', kind:'locked', cat:'sniper', col:1, label:'VSS Vintorez', price:2800, thumb:'vss' },
+  { id:'negev', kind:'locked', cat:'heavy', col:1, label:'Negev', price:1700, thumb:'negev' },
   { id:'vest', kind:'armor', cat:'shield', col:2, label:'Chaleco ligero',   icon:'🛡' },
   { id:'helm', kind:'armor', cat:'shield', col:2, label:'Chaleco + casco',  icon:'⛑' },
   { id:'kit',   kind:'util', cat:'util', col:2, label:'Kit de defusa', icon:'🛠' },
@@ -1438,11 +1434,16 @@ function buyState(it){
 }
 // Miniatura de cada arma: se renderiza una vez desde el modelo del pack (vista lateral) y se guarda como imagen.
 const thumbCache={};
+const thumbLoading={};
 function weaponThumb(id){
   if(thumbCache[id]!==undefined) return thumbCache[id];
   try{
     if(!renderer || !id) return '';
-    const w=makeWorldWeapon(id,{ length:id==='deagle'?0.5:1.0, forward:false });
+    if(!extraWeaponReady(id) && ['five','p90','smg','shotgun','shorty','m4b','vandal','vss','negev'].includes(id)){
+      if(!thumbLoading[id]){ thumbLoading[id]=1; loadExtraWeapon(id).then(()=>{ if(buyMenuOpen) updateBuyMenu(); }); }
+      return '';
+    }
+    const w=makeWorldWeapon(id,{ length:(id==='deagle'||id==='five')?0.5:(id==='shorty'?0.7:1.0), forward:false });
     if(!w.children.length) return '';                       // el pack de armas todavía no cargó: se reintenta más tarde
     const W=360, H=130, sc=new THREE.Scene();
     sc.add(new THREE.HemisphereLight(0xffffff,0x9aa0b0,2.2)); const dl=new THREE.DirectionalLight(0xffffff,1.6); dl.position.set(2,3,2); sc.add(dl);

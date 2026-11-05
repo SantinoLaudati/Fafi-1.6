@@ -267,7 +267,7 @@ body.df-on #weaponMode,body.df-on #weapon-info .icon{display:none}
 .vc.eq .vp{color:#8cffe0;letter-spacing:1px}.vc.own .vp{color:#ffd86a}
 .vc.cant{opacity:.6}.vc.cant .vp{color:#ff8d8d}
 .vc.locked{cursor:not-allowed;background:rgba(255,255,255,.03)}
-.vc.locked .vimg img{opacity:.2;filter:grayscale(1) brightness(.9)}
+.vc.locked .vimg img{opacity:.32;filter:grayscale(1) brightness(1)}
 .vc.locked .vn{color:#7c8a86}.vc.locked .vp{color:#6b7a76;font-size:10px;letter-spacing:1.5px}
 .vlock{position:absolute;top:50%;left:50%;width:26px;height:26px;margin:-18px 0 0 -13px;color:#9fb5af;opacity:.9}
 #buyCols[data-sel="0"] .vc:not([data-col="0"]),#buyCols[data-sel="1"] .vc:not([data-col="1"]),#buyCols[data-sel="2"] .vc:not([data-col="2"]),#buyCols[data-sel="3"] .vc:not([data-col="3"]){opacity:.35}

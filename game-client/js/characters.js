@@ -10,6 +10,7 @@ import { makeLoader } from './loaders.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { makeBlobShadow, alignBlobToSun } from './quality.js';
 import { patchMaterial, setPattern } from './skinshader.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const CHAR_HEIGHT = 1.12;               // altura de un personaje en el mundo (m)
 const ASSET = 'assets/';
@@ -31,8 +32,19 @@ export const BOT_WEAPONS = {
   ak:     { node: 'ak',      length: 0.60 },
   m4:     { node: 'm4',      length: 0.56 },
   awp:    { node: 'sniper',  length: 0.84 },
-  deagle: { node: 'magnum',  length: 0.19 }
+  deagle: { node: 'magnum',  length: 0.19 },
+  // armas de modelos propios (cada una en su .glb; axis = hacia dónde apunta el cañón en el modelo original). Aún bloqueadas en la tienda.
+  five:    { file: 'low_poly_five_seven',           axis: '+x', length: 0.19 },
+  p90:     { file: 'low_poly_p90',                  axis: '+z', length: 0.50 },
+  smg:     { file: 'low_poly_suppressed_smg',       axis: '+z', length: 0.46 },
+  shotgun: { file: 'low_poly_shotgun',              axis: '+z', length: 0.74 },
+  shorty:  { file: 'low_poly_tlou_shorty_shotgun',  axis: '-z', length: 0.40 },
+  m4b:     { file: 'low_poly_ar-m4',                axis: '+z', length: 0.56 },
+  vandal:  { file: 'vandal_valorant',               axis: '+z', length: 0.62 },
+  vss:     { file: 'vss_vintorez_low_poly',         axis: '-z', length: 0.80 },
+  negev:   { file: 'iwi_negev_ng-5_low-poly',       axis: '+z', length: 0.78 }
 };
+const EXTRA_DIR = ASSET + 'armas por defecto/';
 
 const loader = makeLoader();
 const cache = {};           // id -> { scene, height }
@@ -107,6 +119,7 @@ export function setWeaponSkin(root, skin) {
 export function repaintWeapon(root, zones) {
   const pal = Object.assign({}, C, zones || {});
   root.traverse(o => {
+    if (o.isMesh && o.geometry && o.geometry.attributes.orig) { repaintGeom(o.geometry, zones || null); return; }
     if (!o.isMesh || !o.geometry || !o.geometry.attributes.zone) return;
     const z = o.geometry.attributes.zone, col = o.geometry.attributes.color;
     for (let i = 0; i < z.count; i++) { _pc.setHex(pal[ZONE_KEYS[z.getX(i)]]); col.setXYZ(i, _pc.r, _pc.g, _pc.b); }
@@ -139,9 +152,101 @@ function paintWeaponGeometry(src, matrix, id, mag, bb, pal = C) {
   return g;
 }
 
+// ---------------------------------------------------------------- armas de modelos propios (.glb sueltos)
+// Cada modelo se "hornea" a UNA sola malla en el espacio del arma (cañón hacia +X, como las del pack): colores por triángulo
+// tomados de sus materiales / texturas, y una zona por triángulo (según el color) para poder repintarla con las skins.
+const extraSrc = {}, extraLoading = {};
+const _ec = new THREE.Color();
+function colorZone(c) {                                  // c en lineal; devuelve la clave de zona
+  const r = c.r, g = c.g, b = c.b, lum = 0.3 * r + 0.59 * g + 0.11 * b, mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx - mn;
+  if (sat > 0.04 && r > b * 1.5 && r >= g) return lum > 0.12 ? 'wood' : 'woodD';        // marrones, arena, naranjas
+  if (sat > 0.03 && g > r * 1.15 && g > b) return 'olive';                              // verdes
+  return lum < 0.012 ? 'steelD' : lum < 0.04 ? 'poly' : lum < 0.2 ? 'steel' : 'chrome';
+}
+function textureSampler(map) {
+  const img = map && map.image; if (!img || !img.width) return null;
+  const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+  const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
+  const d = g.getImageData(0, 0, cv.width, cv.height).data, W = cv.width, H = cv.height, flip = map.flipY;
+  return (u, v) => { u = u - Math.floor(u); v = v - Math.floor(v); const x = Math.min(W - 1, Math.floor(u * W)), y = Math.min(H - 1, Math.floor((flip ? 1 - v : v) * H)), i = (y * W + x) * 4; return [d[i], d[i + 1], d[i + 2]]; };
+}
+function bakeExtra(scene, axis) {
+  scene.updateMatrixWorld(true);
+  const rot = new THREE.Matrix4();
+  if (axis === '+z') rot.makeRotationY(Math.PI / 2); else if (axis === '-z') rot.makeRotationY(-Math.PI / 2);   // barrel -> +X
+  const geoms = [], samplers = new Map();
+  scene.traverse(o => {
+    if (!o.isMesh || !o.geometry) return;
+    const src = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    // grupos de material (si no hay, todo con el primero)
+    const groups = src.groups && src.groups.length ? src.groups : null;
+    const pos = src.attributes.position, uv = src.attributes.uv, n = pos.count;
+    const col = new Float32Array(n * 3), zone = new Float32Array(n);
+    const matOf = (vi) => { if (!groups) return mats[0]; for (const gr of groups) if (vi >= gr.start && vi < gr.start + gr.count) return mats[gr.materialIndex] || mats[0]; return mats[0]; };
+    for (let i = 0; i + 2 < n; i += 3) {
+      const m = matOf(i); if (m.color) _ec.copy(m.color); else _ec.set(0x808080);
+      if (m.map && uv) {
+        let s = samplers.get(m.map); if (s === undefined) { s = textureSampler(m.map); samplers.set(m.map, s); }
+        if (s) { const u = (uv.getX(i) + uv.getX(i + 1) + uv.getX(i + 2)) / 3, v = (uv.getY(i) + uv.getY(i + 1) + uv.getY(i + 2)) / 3, px = s(u, v); _ec.multiply(new THREE.Color().setRGB(px[0] / 255, px[1] / 255, px[2] / 255, THREE.SRGBColorSpace)); }
+      }
+      const zi = ZONE_KEYS.indexOf(colorZone(_ec));
+      for (let k = 0; k < 3; k++) { col[(i + k) * 3] = _ec.r; col[(i + k) * 3 + 1] = _ec.g; col[(i + k) * 3 + 2] = _ec.b; zone[i + k] = zi; }
+    }
+    const g = new THREE.BufferGeometry();
+    const p2 = new Float32Array(n * 3), tmp = new THREE.Vector3(), m4 = new THREE.Matrix4().multiplyMatrices(rot, o.matrixWorld);
+    for (let i = 0; i < n; i++) { tmp.fromBufferAttribute(pos, i).applyMatrix4(m4); p2[i * 3] = tmp.x; p2[i * 3 + 1] = tmp.y; p2[i * 3 + 2] = tmp.z; }
+    g.setAttribute('position', new THREE.BufferAttribute(p2, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setAttribute('orig', new THREE.BufferAttribute(col.slice(), 3)); g.setAttribute('zone', new THREE.BufferAttribute(zone, 1));
+    g.computeVertexNormals(); geoms.push(g);
+  });
+  const merged = mergeGeometries(geoms, false);
+  merged.computeBoundingBox();
+  return merged;
+}
+// Carga (una vez) el modelo de un arma de archivo. Devuelve una promesa; makeWorldWeapon la usa en cuanto está lista.
+export function loadExtraWeapon(id) {
+  const d = BOT_WEAPONS[id]; if (!d || !d.file) return Promise.resolve(false);
+  if (extraSrc[id]) return Promise.resolve(true);
+  if (!extraLoading[id]) extraLoading[id] = loadGLB(EXTRA_DIR + d.file + '.glb').then(g => { extraSrc[id] = bakeExtra(g.scene, d.axis); return true; }).catch(e => { console.warn('arma ' + id, e); return false; });
+  return extraLoading[id];
+}
+export const extraWeaponReady = (id) => !!extraSrc[id];
+export const EXTRA_WEAPON_IDS = Object.keys(BOT_WEAPONS).filter(k => BOT_WEAPONS[k].file);
+
+// Repinta un arma de archivo: las zonas que la skin define se sustituyen; el resto conserva el color original del modelo.
+function repaintGeom(geom, zones) {
+  const z = geom.attributes.zone, col = geom.attributes.color, orig = geom.attributes.orig;
+  for (let i = 0; i < z.count; i++) {
+    const hex = zones ? zones[ZONE_KEYS[z.getX(i)]] : undefined;
+    if (hex !== undefined) { _pc.setHex(hex); col.setXYZ(i, _pc.r, _pc.g, _pc.b); } else col.setXYZ(i, orig.getX(i), orig.getY(i), orig.getZ(i));
+  }
+  col.needsUpdate = true;
+}
+function makeExtraWeapon(id, def, opts) {
+  const g = new THREE.Group(), src = extraSrc[id]; if (!src) return g;
+  const bb = src.boundingBox, skin = opts.skin || null;
+  const gunMat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.45, roughness: 0.5, side: THREE.DoubleSide });
+  gunMat.userData.bb = { min: bb.min.clone(), len: Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z) };
+  patchMaterial(gunMat); setPattern(gunMat, skin && skin.pattern, gunMat.userData.bb);
+  if (!opts.forward) { gunMat.color.setScalar(1.8); gunMat.emissive.setHex(0x14161a); }
+  const geom = src.clone(); geom.attributes.color = src.attributes.color.clone(); geom.attributes.orig = src.attributes.orig;
+  if (skin && skin.zones) repaintGeom(geom, skin.zones); else repaintGeom(geom, null);
+  const mesh = new THREE.Mesh(geom, gunMat); mesh.castShadow = true;
+  const holder = new THREE.Group(); holder.add(mesh);
+  const size = bb.getSize(new THREE.Vector3()), center = bb.getCenter(new THREE.Vector3());
+  const length = opts.length || def.length, s = length / Math.max(size.x, 0.0001);
+  holder.scale.setScalar(s); holder.position.set(-center.x * s, -center.y * s, -center.z * s);
+  const pivot = new THREE.Group(); pivot.add(holder);
+  pivot.rotation.y = -Math.PI / 2 + (opts.forward ? Math.PI : 0);
+  g.add(pivot); g.userData.length = length;
+  return g;
+}
+
 // Arma del pack lista para colgar de un Group: el cañón apunta a +Z, escalada a `length` metros.
 export function makeWorldWeapon(id, opts = {}) {
   const def = Object.assign({}, BOT_WEAPONS[id] || BOT_WEAPONS.ak); if (opts.length) def.length = opts.length; else def.length *= 1.0;    // medidas ya proporcionadas al personaje (1.12 m de alto)
+  if (def.file) return makeExtraWeapon(id, def, opts);
   const g = new THREE.Group();
   if (!weaponPack) return g;
   const nodes = []; weaponPack.traverse(o => { if (o.name === def.node) nodes.push(o); });

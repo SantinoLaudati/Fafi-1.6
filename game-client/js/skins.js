@@ -1,7 +1,7 @@
 // Catálogo de skins con diseños (patrones en shader), modelos para vistas previas y miniaturas 3D.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { loadWeaponPack, makeWorldWeapon, setWeaponSkin } from './characters.js';
+import { loadWeaponPack, makeWorldWeapon, setWeaponSkin, loadExtraWeapon, EXTRA_WEAPON_IDS } from './characters.js';
 import { setPattern, patchMaterial } from './skinshader.js';
 
 export const RARITY = {
@@ -9,14 +9,18 @@ export const RARITY = {
   epica: { label: 'ÉPICA', color: '#a64df0', hex: 0xa64df0, odds: 'Media' },
   legendaria: { label: 'LEGENDARIA', color: '#ffb81c', hex: 0xffb81c, odds: 'Baja' }
 };
-export const WEAPON_LABEL = { ak: 'AK-47', m4: 'M4A4', awp: 'AWP', deagle: 'Desert Eagle', knife: 'Cuchillo' };
+export const WEAPON_LABEL = { ak: 'AK-47', m4: 'M4A4', awp: 'AWP', deagle: 'Desert Eagle', knife: 'Cuchillo',
+  five: 'Five-SeveN', p90: 'P90', smg: 'SMG Silenciada', shotgun: 'Escopeta Pump', shorty: 'Shorty', m4b: 'M4 Táctico', vandal: 'Vandal', vss: 'VSS Vintorez', negev: 'Negev' };
+// Armas habilitadas: tienen tienda, inventario y cajas. Las demás (con modelo y skins ya hechos) están bloqueadas:
+// para habilitar una basta con añadir su id a WEAPON_ORDER (y darle su lógica de arma en game.js).
 export const WEAPON_ORDER = ['ak', 'm4', 'awp', 'deagle', 'knife'];
+export const LOCKED_WEAPONS = EXTRA_WEAPON_IDS.filter(w => !WEAPON_ORDER.includes(w));
 
 const S = (id, weapon, name, rarity, zones, pattern) => ({ id, weapon, name, rarity, zones, pattern });
 const P = (type, c, o = {}) => Object.assign({ type, c }, o);
 const BODY = ['wood', 'woodD', 'steel'];
 
-export const SKINS_DB = [
+const BASE_SKINS = [
   // ---- AK-47
   S('ak_urbana', 'ak', 'AK-47 | Camuflaje Urbano', 'comun', { steel: 0x2a2d31, steelD: 0x1a1c1f, magAk: 0x2a2d31 }, P('digital', [0x3a3f45, 0x5b6168, 0x1f2226], { zones: BODY, freq: 1.3 })),
   S('ak_selva', 'ak', 'AK-47 | Selva Tropical', 'comun', { steel: 0x2f3a22, steelD: 0x1c2415, magAk: 0x2f3a22 }, P('camo', [0x3d4a2a, 0x7a6234, 0x1f2a17], { zones: BODY, freq: 1.1 })),
@@ -60,9 +64,48 @@ export const SKINS_DB = [
   S('k_oro', 'knife', 'Cuchillo | Escamas Doradas', 'legendaria', null, P('scales', [0xc88f12, 0xffd860, 0x4a3402], { freq: 3.0, tex: 0.5, emit: 0.15, zones: ['all'] })),
   S('k_neon', 'knife', 'Cuchillo | Filo Neón', 'legendaria', null, P('tech', [0x0b0716, 0xff2fd6, 0xffffff], { freq: 3.0, tex: 0.4, emit: 1.3, zones: ['all'] }))
 ];
+
+// ---- Skins de las armas bloqueadas (modelos propios): 5 por arma (2 comunes, 2 épicas, 1 legendaria).
+// No salen en cajas ni inventario hasta que el arma se habilite (ver WEAPON_ORDER).
+const ZONE_ALL = ['wood', 'woodD', 'steel', 'steelD', 'poly', 'chrome', 'olive', 'mag'];
+const RECIPES = {
+  comun: [
+    ['urbano', 'Camuflaje Urbano', 'digital', [0x3a3f45, 0x5b6168, 0x1f2226], 0, 1.3],
+    ['selva', 'Selva Tropical', 'camo', [0x3d4a2a, 0x7a6234, 0x1f2a17], 0, 1.1],
+    ['arena', 'Tormenta de Arena', 'camo', [0xb9a26b, 0x8d7745, 0x6c5b38], 0, 1.1],
+    ['artico', 'Degradado Ártico', 'fade', [0xf4f8fa, 0xb9c6ce, 0x65737d], 0, 1.0]
+  ],
+  epica: [
+    ['cobalto', 'Colmena Cobalto', 'hex', [0x1d6fb8, 0x6cc3ff, 0xeaf7ff], 0.3, 1.0],
+    ['fuego', 'Serpiente de Fuego', 'flame', [0x8a0c05, 0xff5a00, 0xffd23a], 0.7, 1.0],
+    ['carbono', 'Carbono Carmesí', 'carbon', [0x14070a, 0x8e1118, 0xff4a56], 0, 1.0],
+    ['tigre', 'Tigre de Bengala', 'tiger', [0xd9731a, 0x120c05, 0xffb347], 0, 1.0],
+    ['oceano', 'Oleaje del Océano', 'waves', [0x0a5f94, 0x16b6c9, 0xd8fbff], 0.35, 1.0]
+  ],
+  legendaria: [
+    ['oro', 'Oro Barroco', 'scales', [0xc88f12, 0xf5d060, 0x5a3b02], 0.1, 1.0],
+    ['neon', 'Circuito Neón', 'tech', [0x14072b, 0x00f0ff, 0xffffff], 1.0, 1.0],
+    ['galaxia', 'Nebulosa del Vacío', 'galaxy', [0x0c0024, 0x6a1bff, 0xff4fd8], 1.0, 1.0],
+    ['toxico', 'Residuo Tóxico', 'splatter', [0x07140a, 0x1fb81a, 0xb6ff3a], 1.0, 1.0]
+  ]
+};
+const EXTRA_SKINS = [];
+EXTRA_WEAPON_IDS.forEach((w, wi) => {
+  const pick = [['comun', 0], ['comun', 1], ['epica', 0], ['epica', 1], ['legendaria', 0]];
+  for (const [rar, k] of pick) {
+    const list = RECIPES[rar], r = list[(wi + k) % list.length], [key, name, type, c, emit, freq] = r;
+    const zones = { steel: c[0], steelD: c[2], poly: c[2], chrome: c[1], wood: c[0], woodD: c[2], olive: c[0], mag: c[2] };
+    const opts = { zones: ZONE_ALL, freq }; if (emit) opts.emit = emit;
+    EXTRA_SKINS.push(S(w + '_' + key, w, WEAPON_LABEL[w] + ' | ' + name, rar, zones, P(type, c, opts)));
+  }
+});
+export const SKINS_ALL = [...BASE_SKINS, ...EXTRA_SKINS];
+export const SKINS_DB = SKINS_ALL.filter(s => WEAPON_ORDER.includes(s.weapon));          // solo las de armas habilitadas (inventario y cajas)
+export const SKINS_LOCKED = SKINS_ALL.filter(s => !WEAPON_ORDER.includes(s.weapon));
 // "skins" estándar (sin diseño): una por arma, siempre disponibles
 export const DEFAULTS = WEAPON_ORDER.map(w => ({ id: 'default_' + w, weapon: w, name: WEAPON_LABEL[w] + ' | Estándar', rarity: 'comun', zones: null, pattern: null, isDefault: true }));
-export const skinById = (id) => SKINS_DB.find(s => s.id === id) || DEFAULTS.find(s => s.id === id) || null;
+const DEFAULTS_LOCKED = LOCKED_WEAPONS.map(w => ({ id: 'default_' + w, weapon: w, name: WEAPON_LABEL[w] + ' | Estándar', rarity: 'comun', zones: null, pattern: null, isDefault: true }));
+export const skinById = (id) => SKINS_ALL.find(s => s.id === id) || DEFAULTS.find(s => s.id === id) || DEFAULTS_LOCKED.find(s => s.id === id) || null;
 
 // ---------------------------------------------------------------- cuchillo
 const KNIFE_FILE = 'assets/Cuchillos/cuchillo_de_combate.glb';
@@ -105,8 +148,8 @@ export async function buildSkinModel(skin) {
     out.add(w); out.userData.kind = 'knife';
     return out;
   }
-  await loadWeaponPack();
-  const len = skin.weapon === 'deagle' ? 1.0 : skin.weapon === 'awp' ? 1.9 : 1.7;
+  await loadWeaponPack(); await loadExtraWeapon(skin.weapon);
+  const len = { deagle: 1.0, five: 0.9, shorty: 1.3, p90: 1.5, smg: 1.5, shotgun: 1.9, negev: 1.9, vss: 1.9, awp: 1.9 }[skin.weapon] || 1.7;
   const g = makeWorldWeapon(skin.weapon, { length: len, forward: false, skin: skin.isDefault ? null : skin });
   g.rotation.y = -Math.PI / 2;                 // perfil con el cañón hacia la derecha
   g.traverse(o => { if (o.isMesh) { o.frustumCulled = false; o.castShadow = false; } });

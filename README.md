@@ -319,3 +319,8 @@ Optimización para PC básicos (4 GB de RAM)
   La primera vez el juego elige la calidad según la memoria y los núcleos del navegador (`js/quality.js`); en equipos de 4 GB o 2 núcleos arranca en MÍNIMA.
 - Los sonidos se descodifican solo la primera vez que suenan (antes se cargaban los 80 al abrir el juego y ocupaban cientos de MB de RAM): `js/sfx.js`.
 - Los mapas pesados usan siempre las versiones de 1k/2k de `assets/Mapas para tt vs ct/optimizados`, y los modelos grandes de WW2 se usan reducidos (`assets/WW2/optimizados`).
+
+Armas bloqueadas (ya cargadas, con skins): Five-SeveN, P90, SMG Silenciada, Escopeta Pump, Shorty, M4 Táctico, Vandal, VSS Vintorez y Negev
+(modelos en `assets/armas por defecto/`, definidos en `BOT_WEAPONS` de `characters.js`). Tienen 5 skins cada una (45 en total, en `skins.js`) que
+no salen en cajas ni inventario hasta que se habilite el arma: se habilita añadiendo su id a `WEAPON_ORDER` (`skins.js`), pasando su entrada de
+`BUY_ITEMS` (`game.js`) de `locked` a `gun` y dándole su lógica de arma (precio, cargador, daño, animaciones).
