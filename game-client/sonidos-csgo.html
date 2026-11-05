@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Asignar sonidos de armas</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{font:14px system-ui,sans-serif;background:#14161a;color:#e8e8e8;margin:0;padding:16px}
+h1{font-size:18px;margin:0 0 6px}p{color:#9aa;margin:4px 0 12px}
+.row{display:flex;gap:10px;align-items:center;padding:6px 8px;border-bottom:1px solid #2a2e35}
+.row:hover{background:#1c2026}.t{width:130px;color:#8fb}button{background:#2d6cdf;border:0;color:#fff;padding:5px 12px;border-radius:4px;cursor:pointer}
+button.g{background:#2a7a3b}select{background:#222;color:#fff;border:1px solid #444;padding:4px}
+#bar{position:sticky;top:0;background:#14161aee;padding:8px 0;display:flex;gap:10px;align-items:center}
+</style></head><body>
+<h1>Asignar sonidos de armas</h1>
+<p>Escuchá cada fragmento (▶) y elegí a qué arma corresponde. Al final apretá <b>Guardar</b> y recargá el juego. Se guarda solo en tu navegador.</p>
+<div id="bar"><button class="g" id="save">Guardar</button><button id="clear" style="background:#8a2a2a">Borrar asignaciones</button><span id="msg"></span></div>
+<div id="list">Cargando…</div>
+<script>
+const WEAPONS = ['', 'ak', 'm4', 'awp', 'deagle', 'rifle', 'shotgun', 'dry', 'reload_out', 'reload_in', 'bolt'];
+const MAXD = { ak: 0.3, m4: 0.3, rifle: 0.4, deagle: 0.7, awp: 1.6, shotgun: 0.8, dry: 0.3, reload_out: 1.0, reload_in: 1.0, bolt: 1.0 };
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+let buf, segs = [], src;
+const saved = JSON.parse(localStorage.getItem('fafi_sndpack_assign') || '{}');
+(async () => {
+  const ab = await (await fetch('assets/audio/csgo/_src.mp3')).arrayBuffer();
+  buf = await ctx.decodeAudioData(ab);
+  const d = buf.getChannelData(0), sr = buf.sampleRate, win = Math.floor(sr * 0.01), env = [];
+  for (let i = 0; i + win < d.length; i += win) { let s = 0; for (let j = 0; j < win; j++) s += d[i + j] * d[i + j]; env.push(Math.sqrt(s / win)); }
+  let st = -1, last = -1;
+  for (let i = 0; i < env.length; i++) {
+    if (env[i] > 0.02) { if (st < 0) st = i; last = i; }
+    else if (st >= 0 && i - last > 60) { segs.push([st, last + 1]); st = -1; }
+  }
+  if (st >= 0) segs.push([st, last + 1]);
+  segs = segs.filter(s => s[1] - s[0] > 15).map(([a, z]) => {   // disparos sueltos dentro del fragmento
+    const on = [];
+    for (let i = Math.max(a, 1); i < z; i++) if (env[i] > 0.08 && env[i] > env[i - 1] * 2.2 && (!on.length || i - on[on.length - 1] > 4)) on.push(i);
+    if (!on.length) on.push(a);
+    return { a: a / 100, z: z / 100, on: on.map(x => x / 100) };
+  });
+  const L = document.getElementById('list'); L.innerHTML = '';
+  segs.forEach((s, k) => {
+    const r = document.createElement('div'); r.className = 'row';
+    r.innerHTML = `<span class="t">${s.a.toFixed(1)}s – ${s.z.toFixed(1)}s</span><button>▶</button><span>${s.on.length} disparo(s)</span><select>${WEAPONS.map(w => `<option value="${w}">${w || '— ninguna —'}</option>`).join('')}</select>`;
+    const sel = r.querySelector('select'); sel.value = saved[k] || '';
+    sel.onchange = () => { saved[k] = sel.value; localStorage.setItem('fafi_sndpack_assign', JSON.stringify(saved)); };
+    r.querySelector('button').onclick = () => { if (src) try { src.stop(); } catch (e) {} ctx.resume(); src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); src.start(0, Math.max(0, s.a - 0.05), s.z - s.a + 0.2); };
+    L.appendChild(r);
+  });
+})();
+document.getElementById('save').onclick = () => {
+  const pack = {};
+  segs.forEach((s, k) => {
+    const w = saved[k]; if (!w) return;
+    const max = MAXD[w] || 0.5, list = pack[w] || (pack[w] = []);
+    const single = ['awp', 'deagle', 'shotgun', 'dry', 'reload_out', 'reload_in', 'bolt'].includes(w);
+    const shots = single ? [s.on[0]] : s.on;
+    shots.forEach((t, i) => {
+      const next = single ? s.z + 0.3 : (s.on[s.on.indexOf(t) + 1] ?? s.z + 0.3);
+      list.push([+(Math.max(0, t - 0.01)).toFixed(3), +Math.min(max, next - t + 0.01).toFixed(3)]);
+    });
+  });
+  localStorage.setItem('fafi_sndpack', JSON.stringify(pack));
+  document.getElementById('msg').textContent = 'Guardado: ' + Object.keys(pack).join(', ') + ' — recargá el juego.';
+};
+document.getElementById('clear').onclick = () => { localStorage.removeItem('fafi_sndpack'); localStorage.removeItem('fafi_sndpack_assign'); location.reload(); };
+</script></body></html>

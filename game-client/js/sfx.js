@@ -198,6 +198,14 @@ function start(name, o = {}) {
 let packLoaded = false;
 function loadSoundPack() {
   if (packLoaded) return; packLoaded = true;
+  try {   // recortes guardados con sonidos-csgo.html: { arma: [[inicio, duración], ...] } sobre assets/audio/csgo/_src.mp3
+    const lp = JSON.parse(localStorage.getItem('fafi_sndpack') || 'null');
+    if (lp) for (const [name, list] of Object.entries(lp)) {
+      const d = DEF[name]; if (!d || !list || !list.length) continue;
+      d.clips = list.map(c => ['csgo/_src.mp3', c[0], c[1]]); d.f = ['csgo/_src.mp3']; delete d.seg; delete d.slice; d.r = [0.98, 1.02];
+      load(d.f[0]);
+    }
+  } catch (e) {}
   fetch('assets/audio/csgo/manifest.json').then(r => r.ok ? r.json() : null).then(m => {
     if (!m) return;
     for (const [name, file] of Object.entries(m)) {
