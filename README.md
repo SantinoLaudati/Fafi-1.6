@@ -328,3 +328,6 @@ no salen en cajas ni inventario hasta que se habilite el arma: se habilita añad
 Combate: hitbox de los bots con cabeza, torso con brazos y piernas (cápsulas; la bala se prueba como segmento completo, no se pierden disparos); pierna x0.75, cabeza x4.
 El retroceso sigue un patrón por disparo (AK y M4 distintos), se acumula mientras disparas y se recupera al soltar; la mira se abre con el retroceso, la dispersión, el movimiento y el salto.
 AWP: clic derecho = zoom 1 (33°), otra vez = zoom 2 (11°), otra vez = salir; al disparar sales de la mira durante el cerrojo (barra de enfriamiento) y vuelves solo; la sensibilidad baja con el zoom.
+
+Modo exploración: las 9 armas bloqueadas (Five-SeveN, P90, SMG Silenciada, Escopeta Pump, Shorty, M4 Táctico, Vandal, VSS Vintorez, Negev) se pueden comprar y usar; en Defuse siguen con candado.
+En el menú principal, la flecha ↑ abre una ventana de código secreto.

@@ -515,7 +515,7 @@ let dust2Loaded=false, dust2Loading=false;
 // Inventario: cuchillo siempre, 1 secundaria (deagle), 1 primaria (ak O awp, excluyentes)
 let money=3000;
 const WEAPON_PRICES={ deagle:700, ak:2500, awp:4750, m4:3100 };
-const PRIMARIES=['ak','m4','awp']; let lastPrimary='ak';
+const PRIMARIES=['ak','m4','awp']; const SECONDARIES=['deagle']; let lastPrimary='ak';
 let owned={ knife:true, deagle:false, ak:false, awp:false, m4:false };
 let buyMenuOpen=false;
 
@@ -1058,9 +1058,9 @@ function updateAnimWeapon(dt, wallPush){
 
 // --- cuchillo mariposa (fps_butterfly_knife.glb): brazos + navaja; su timeline de 33 s es un truco de balisong ---
 const KNIFE_FILE = 'assets/Cuchillos/cuchillo_de_combate.glb';
-const KNIFE_ANIM_ROT = [-0.05,0.16,Math.PI-0.08];   // punta algo hacia abajo y filo hacia abajo (antes la hoja apuntaba hacia arriba)
+const KNIFE_ANIM_ROT = [0.28,0.52,Math.PI+0.38];   // pose CS:GO: punta hacia delante-arriba y hacia dentro, filo hacia abajo-izquierda, como el revólver
 const KNIFE_LEN = 0.62;
-const KNIFE_ANIM_POS = [0.22,-0.22,-0.58];
+const KNIFE_ANIM_POS = [0.27,-0.30,-0.74];
 function loadKnifeAnim(){
   makeLoader().load(KNIFE_FILE, (gltf)=>{
     const model=gltf.scene;
@@ -1533,7 +1533,7 @@ function tryBuy(w){
   if(!spend(price)) return;
   SFX.play('buy');
   // Primaria excluyente: una sola entre AK, M4 y AWP
-  if(PRIMARIES.includes(w)){
+  if(PRIMARIES.includes(w) && !infiniteMoney()){
     for(const p of PRIMARIES){ if(p!==w && owned[p]){ owned[p]=false; showFloating(WEAPON_LABEL[p]+' reemplazada por '+WEAPON_LABEL[w]); } }
   }
   owned[w]=true;
@@ -1849,6 +1849,7 @@ function startGame(mode='aim', team=null){
   }
   // cambiar visibilidad de mapas
   setMapVisibility(isDust2 ? 'dust2' : 'aim');
+  try{ enableExtraWeapons(isDust2 && !window.fafiDefuse); }catch(e){ console.warn(e); }
   gameActive=true;
   resultOverlay.classList.remove('show');
   pauseOverlay.classList.remove('show');
@@ -2054,7 +2055,7 @@ function animate(){
   if(skyDome && skyDome.visible) skyDome.position.copy(camera.position);
   // cadencia automática si mantienes pulsado (AK) / repetición cuchillo
   if(isHoldingShoot && gameActive && controls.isLocked && !isReloading && !pauseOverlay.classList.contains('show') && !resultOverlay.classList.contains('show')){
-    if(currentWeapon==='ak' || currentWeapon==='m4') shoot();
+    if(currentWeapon==='ak' || currentWeapon==='m4' || (ANIM_WEAPONS[currentWeapon] && ANIM_WEAPONS[currentWeapon].auto)) shoot();
     else if(currentWeapon==='knife' && !isKnifeSwinging && !isInspecting) knifeAttack();
   }
   // reset patrón de recoil tras pausa de disparo larga
@@ -2106,6 +2107,58 @@ function renderWeaponBar(){
   const list=WBAR_SLOTS.filter(([k])=> gameMode!=='dust2' || owned[k]);
   const html=list.map(([k,key,name])=>'<span class="'+(currentWeapon===k?'sel':'')+'"><i>'+key+'</i>'+name+'</span>').join('');
   if(el.dataset.h!==html){ el.dataset.h=html; el.innerHTML=html; }
+}
+// === ARMAS EXTRA (modelos propios): solo se pueden comprar y usar en el modo exploración; en Defuse siguen bloqueadas ===
+const EXTRA_W = {
+  five:    { label:'FIVE-SEVEN',      size:0.42, mag:20,  reserve:100, fireMs:130, price:500,  auto:false, aim:false, pistol:true, snd:'deagle', basePos:[0.24,-0.27,-0.74], aimDelta:[-0.2,0.1,0.3] },
+  p90:     { label:'P90',             size:0.78, mag:50,  reserve:100, fireMs:70,  price:2350, auto:true,  aim:true, snd:'m4',      basePos:[0.36,-0.32,-0.74], aimDelta:[-0.33,0.12,0.24] },
+  smg:     { label:'SMG SILENCIADA',  size:0.74, mag:30,  reserve:120, fireMs:80,  price:1500, auto:true,  aim:true, snd:'m4',      basePos:[0.36,-0.32,-0.74], aimDelta:[-0.33,0.12,0.24] },
+  shotgun: { label:'ESCOPETA PUMP',   size:1.18, mag:8,   reserve:32,  fireMs:850, price:1050, auto:false, aim:true, snd:'shotgun', basePos:[0.38,-0.34,-0.80], aimDelta:[-0.36,0.135,0.28] },
+  shorty:  { label:'SHORTY',          size:0.62, mag:2,   reserve:24,  fireMs:480, price:1100, auto:false, aim:false, snd:'shotgun', basePos:[0.30,-0.30,-0.76], aimDelta:[-0.28,0.12,0.26] },
+  m4b:     { label:'M4 TÁCTICO',      size:1.02, mag:30,  reserve:90,  fireMs:90,  price:2900, auto:true,  aim:true, snd:'m4',      basePos:[0.38,-0.35,-0.74], aimDelta:[-0.36,0.135,0.26] },
+  vandal:  { label:'VANDAL',          size:1.06, mag:25,  reserve:75,  fireMs:100, price:2900, auto:true,  aim:true, snd:'ak',      basePos:[0.38,-0.35,-0.74], aimDelta:[-0.36,0.135,0.26] },
+  vss:     { label:'VSS VINTOREZ',    size:1.16, mag:10,  reserve:40,  fireMs:320, price:2800, auto:false, aim:true, snd:'deagle',  basePos:[0.38,-0.33,-0.78], aimDelta:[-0.36,0.13,0.28] },
+  negev:   { label:'NEGEV',           size:1.18, mag:150, reserve:300, fireMs:60,  price:1700, auto:true,  aim:true, snd:'ak',      basePos:[0.38,-0.34,-0.78], aimDelta:[-0.36,0.13,0.28] }
+};
+let extraOn=false;
+async function enableExtraWeapons(on){
+  if(on===extraOn) return;
+  const ids=Object.keys(EXTRA_W);
+  if(on){
+    extraOn=true;
+    try{ await loadWeaponPack(); await Promise.all(ids.map(loadExtraWeapon)); }catch(e){ console.warn('armas extra',e); }
+    if(!extraOn || !vmRoot) return;                                  // se salió del modo mientras cargaba
+    for(const id of ids){
+      const d=EXTRA_W[id];
+      ANIM_WEAPONS[id]={ label:d.label, node:id, size:d.size, mag:d.mag, reserve:d.reserve, fireMs:d.fireMs, price:d.price, aim:d.aim, auto:d.auto, pistol:d.pistol, snd:d.snd, basePos:d.basePos, aimDelta:d.aimDelta };
+      if(!animAmmo[id]) animAmmo[id]={ ammo:d.mag, reserve:d.reserve };
+      WEAPON_LABEL[id]=d.label; WEAPON_PRICES[id]=d.price;
+      if(!animW[id]){
+        const g=makeViewWeapon(id,d.size); g.traverse(o=>{ if(o.isMesh) o.frustumCulled=false; });
+        const holder=new THREE.Group(); holder.add(g); const basePos=new THREE.Vector3(...d.basePos);
+        holder.position.copy(basePos); holder.visible=false; vmAdd(holder);
+        animW[id]={ holder, model:g, basePos, aimPos:basePos.clone().add(new THREE.Vector3(...d.aimDelta)), state:'idle', until:0, t0:0 };
+      }
+      if(!d.pistol && !PRIMARIES.includes(id)) PRIMARIES.push(id);
+      if(d.pistol && !SECONDARIES.includes(id)) SECONDARIES.push(id);
+      if(!WBAR_SLOTS.some(s=>s[0]===id)) WBAR_SLOTS.push([id, d.pistol?'2':'1', d.label]);
+      const it=BUY_ITEMS.find(i=>i.id===id); if(it){ it.kind='gun'; it.label=d.label.charAt(0)+d.label.slice(1).toLowerCase(); }
+    }
+    scene.add(camera);
+  } else {
+    extraOn=false;
+    for(const id of ids){
+      owned[id]=false;
+      const p=PRIMARIES.indexOf(id); if(p>=0) PRIMARIES.splice(p,1);
+      const s=SECONDARIES.indexOf(id); if(s>=0) SECONDARIES.splice(s,1);
+      const w=WBAR_SLOTS.findIndex(x=>x[0]===id); if(w>=0) WBAR_SLOTS.splice(w,1);
+      if(animW[id]) animW[id].holder.visible=false;
+      const it=BUY_ITEMS.find(i=>i.id===id); if(it) it.kind='locked';
+    }
+    if(EXTRA_W[currentWeapon]) switchWeaponForce('knife');
+  }
+  if(buyMenuOpen) updateBuyMenu();
+  renderWeaponBar();
 }
 function updateAmmoHUD(){
   try{ renderWeaponBar(); }catch(e){}
@@ -2228,7 +2281,7 @@ function finishReload(){
 }
 
 function setAiming(v){
-  if(currentWeapon==='deagle') v=false;
+  if(currentWeapon==='deagle' || (ANIM_WEAPONS[currentWeapon] && !ANIM_WEAPONS[currentWeapon].aim)) v=false;
   if(isReloading || isInspecting) v=false;
   isAiming=v;
   updateAmmoHUD();
@@ -2971,7 +3024,7 @@ function shoot(){
     recoilKick = isAiming ? 0.68 : 1.92;
     isBoltCycling=true; boltProgress=0;
     if(isAiming){ awpRescope=true; setAiming(false); }      // al disparar se sale de la mira durante el cerrojo y se vuelve a entrar solo (como CS:GO)
-  } else if(currentWeapon==='deagle'){
+  } else if(currentWeapon==='deagle' || (ANIM_WEAPONS[currentWeapon] && ANIM_WEAPONS[currentWeapon].pistol)){
     // Deagle CSGO: primer tiro láser, spameo muy castigado, mucho más preciso quieto y agachado
     spamHeat = Math.min(spamHeat + (isMovingNowPre?0.48:0.36), 3.9);
     consecutiveSpam++;
@@ -3038,7 +3091,7 @@ function shoot(){
     if(life<=0) vmRoot.remove(casing); else requestAnimationFrame(tick);
   }; tick();
 
-  SFX.play(['ak','awp','deagle','m4'].includes(currentWeapon)?currentWeapon:'rifle');
+  SFX.play((ANIM_WEAPONS[currentWeapon] && ANIM_WEAPONS[currentWeapon].snd) || (['ak','awp','deagle','m4'].includes(currentWeapon)?currentWeapon:'rifle'));
   if(defuse.active) defuse.noise(camera.position, currentWeapon==='awp'?60:38);
   if(currentWeapon==='awp') setTimeout(()=>SFX.play('bolt',{vol:0.9}), 520);
 
@@ -3315,7 +3368,7 @@ window.addEventListener('keydown', (e)=>{
   // Ranuras como en CS: 1 primaria · 2 secundaria · 3 cuchillo · 4 flash · 5 humo · 6 HE · 7 molotov
   { const m=/^(?:Digit|Numpad)([1-7])$/.exec(e.code); if(m){ e.preventDefault(); const n=+m[1];
     if(n===1){ const prim=PRIMARIES.filter(w=>gameMode!=='dust2'||owned[w]); if(prim.length){ const i=prim.indexOf(currentWeapon); switchWeapon(i>=0 ? prim[(i+1)%prim.length] : (prim.includes(lastPrimary)?lastPrimary:prim[0])); } else showFloating('No tienes primaria • Pulsa B para comprar'); }
-    else if(n===2) switchWeapon('deagle'); else if(n===3) switchWeapon('knife');
+    else if(n===2){ const sec=SECONDARIES.filter(w=>gameMode!=='dust2'||owned[w]); if(sec.length){ const i=sec.indexOf(currentWeapon); switchWeapon(i>=0?sec[(i+1)%sec.length]:sec[0]); } } else if(n===3) switchWeapon('knife');
     else switchWeapon(['flash','smoke','he','molo'][n-4]);
     return; } }
   if(e.code==='KeyQ' && !e.ctrlKey){
@@ -3884,13 +3937,13 @@ window.addEventListener('mousedown', (e)=>{
   if(e.button===2 && controls.isLocked){
     if(currentWeapon==='knife') knifeAttack();
     else if(currentWeapon==='awp') cycleAwpZoom();
-    else if(currentWeapon==='ak' || currentWeapon==='m4') setAiming(true);
+    else if(currentWeapon==='ak' || (ANIM_WEAPONS[currentWeapon] && ANIM_WEAPONS[currentWeapon].aim)) setAiming(true);
     // deagle no apunta
   }
 });
 window.addEventListener('mouseup', (e)=>{
   if(e.button===0) isHoldingShoot = false;
-  if(e.button===2 && (currentWeapon==='ak' || currentWeapon==='m4')) setAiming(false);
+  if(e.button===2 && (currentWeapon==='ak' || (ANIM_WEAPONS[currentWeapon] && ANIM_WEAPONS[currentWeapon].aim))) setAiming(false);
   // AWP es pulsar/soltar (toggle), no se quita al soltar
 });
 window.addEventListener('wheel', (e)=>{
@@ -4079,3 +4132,38 @@ try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }cat
 
 
 
+
+
+// === Código secreto: con la flecha ↑ en el menú principal se abre una mini ventana que pide la contraseña (+100000 FafiCoins) ===
+(function(){
+  let box=null;
+  const close=()=>{ if(box){ box.remove(); box=null; } };
+  function open(){
+    if(box) return;
+    box=document.createElement('div');
+    box.style.cssText='position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55)';
+    box.innerHTML='<div style="background:#101822;border:1px solid rgba(255,196,77,.6);padding:18px 22px;min-width:260px;box-shadow:0 10px 40px #000;font-family:inherit;color:#fff;text-align:center"><div style="letter-spacing:3px;font-size:13px;color:#ffc44d;margin-bottom:10px">CÓDIGO SECRETO</div><input id="cheatPw" type="password" autocomplete="off" placeholder="Contraseña" style="width:100%;box-sizing:border-box;padding:8px 10px;background:#0a0f16;border:1px solid rgba(255,255,255,.25);color:#fff;text-align:center;letter-spacing:2px"><div id="cheatMsg" style="min-height:18px;margin-top:8px;font-size:12px;color:#ff8d8d"></div><div style="margin-top:6px;font-size:11px;color:#8aa0b8">Enter para aceptar · Esc para cerrar</div></div>';
+    document.body.appendChild(box);
+    const inp=box.querySelector('#cheatPw'), msg=box.querySelector('#cheatMsg'); setTimeout(()=>inp.focus(),30);
+    box.addEventListener('mousedown',e=>{ if(e.target===box) close(); });
+    inp.addEventListener('keydown',e=>{
+      e.stopPropagation();
+      if(e.key==='Escape'){ close(); return; }
+      if(e.key!=='Enter') return;
+      if(inp.value.trim().toLowerCase()==='vanesa'){
+        window.fafiCoins=(window.fafiCoins||0)+100000;
+        try{ fafiSaveGameData(); }catch(_){} try{ fafiUpdateCoinsDisplay(); }catch(_){}
+        try{ SFX.init(); SFX.play('buy'); }catch(_){}
+        msg.style.color='#7aff9a'; msg.textContent='+100.000 FafiCoins'; setTimeout(close,900);
+      } else { msg.style.color='#ff8d8d'; msg.textContent='Contraseña incorrecta'; inp.select(); }
+    });
+  }
+  window.addEventListener('keydown',(e)=>{
+    if(e.key!=='ArrowUp' || e.repeat || box) return;
+    if(typeof gameActive!=='undefined' && gameActive) return;                               // solo en el menú
+    const m=document.getElementById('menus'); if(!m || getComputedStyle(m).display==='none') return;
+    const lo=document.getElementById('login-overlay'); if(lo && getComputedStyle(lo).display!=='none') return;
+    if(/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||'')) return;
+    e.preventDefault(); open();
+  });
+})();
