@@ -4034,7 +4034,8 @@ try{
   });
   window.addEventListener('keyup',(e)=>{ if(e.code==='Tab'){ document.getElementById('dfScoreboard')?.classList.remove('show'); } });
   document.getElementById('fafiOpenCampaign')?.addEventListener('click', fafiOpenCampaign);
-  document.getElementById('closeCampBtn')?.addEventListener('click',()=>{ document.getElementById('campaign-map-overlay').style.display='none'; if(window.currentUserId) document.getElementById('menus').style.display='flex'; });
+  // el botón se crea al abrir el mapa de la historia: se escucha por delegación
+  document.addEventListener('click',(e)=>{ if(!e.target.closest('#closeCampBtn')) return; document.getElementById('campaign-map-overlay').style.display='none'; document.getElementById('menus').style.display='flex'; });
   document.querySelectorAll('.btn-buy[data-box]').forEach(b=>b.addEventListener('click',()=>fafiBuyBox(b.getAttribute('data-box'))));
   document.getElementById('closeStoreBtn')?.addEventListener('click',()=>{ document.getElementById('store-ui').style.display='none'; if(!gameActive) document.getElementById('menus').style.display='flex'; });
   document.getElementById('closeInvBtn')?.addEventListener('click',()=>{ document.getElementById('inventory-ui').style.display='none'; if(!gameActive) document.getElementById('menus').style.display='flex'; });
@@ -4065,6 +4066,7 @@ try{
 try{ menu.style.display='none'; }catch(e){}
 try{ fafiApplySensitivity(); }catch(e){}
 try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }catch(e){}
+
 
 
 
