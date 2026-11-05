@@ -509,7 +509,7 @@ let dust2Loaded=false, dust2Loading=false;
 // Inventario: cuchillo siempre, 1 secundaria (deagle), 1 primaria (ak O awp, excluyentes)
 let money=3000;
 const WEAPON_PRICES={ deagle:700, ak:2500, awp:4750, m4:3100 };
-const PRIMARIES=['ak','m4','awp'];
+const PRIMARIES=['ak','m4','awp']; let lastPrimary='ak';
 let owned={ knife:true, deagle:false, ak:false, awp:false, m4:false };
 let buyMenuOpen=false;
 
@@ -1190,7 +1190,7 @@ function setStock(k, n){
 }
 function renderGrenadeBar(){
   const el=document.getElementById('gBar'); if(!el) return;
-  el.innerHTML=Object.keys(GRENADES).filter(k=>grenadeStock[k]>0).map((k,i)=>'<span class="'+(currentWeapon===k?'sel':'')+'">'+GRENADES[k].icon+(grenadeStock[k]>1?'<sup>'+grenadeStock[k]+'</sup>':'')+'</span>').join('');
+  el.innerHTML=Object.keys(GRENADES).filter(k=>grenadeStock[k]>0).map((k,i)=>'<span class="'+(currentWeapon===k?'sel':'')+'"><i style="font-style:normal;font-size:10px;opacity:.7;margin-right:3px">'+(['flash','smoke','he','molo'].indexOf(k)+4)+'</i>'+GRENADES[k].icon+(grenadeStock[k]>1?'<sup>'+grenadeStock[k]+'</sup>':'')+'</span>').join('');
 }
 function buildGrenadeHolders(){
   for(const k in GRENADES){
@@ -2093,7 +2093,7 @@ function applyPlayerScale(){
 // escala del HUD según la ventana (1.0 a ~1500x820); se aplica con zoom CSS a los paneles de partida
 function applyHudScale(){ const s=Math.max(0.7, Math.min(1.15, Math.min(innerWidth/1500, innerHeight/820))); document.documentElement.style.setProperty('--hs', s.toFixed(3)); }
 applyHudScale(); window.addEventListener('resize', applyHudScale);
-const WBAR_SLOTS=[['ak','1','AK-47'],['awp','3','AWP'],['m4','5','M4A4'],['deagle','4','DEAGLE'],['knife','2','CUCHILLO']];
+const WBAR_SLOTS=[['ak','1','AK-47'],['m4','1','M4A4'],['awp','1','AWP'],['deagle','2','DEAGLE'],['knife','3','CUCHILLO']];
 function renderWeaponBar(){
   const el=document.getElementById('wBar'); if(!el) return;
   const list=WBAR_SLOTS.filter(([k])=> gameMode!=='dust2' || owned[k]);
@@ -2154,6 +2154,7 @@ function updateWeaponVisibility(){
 }
 function switchWeapon(to){
   if(!WEAPON_LABEL[to]) return;
+  if(PRIMARIES.includes(to)) lastPrimary=to;
   if(GRENADES[to] && grenadeStock[to]<=0){ showFloating('Sin '+WEAPON_LABEL[to]); return; }
   if(currentWeapon===to) return;
   if(isReloading || isBoltCycling) return;
@@ -3264,12 +3265,12 @@ window.addEventListener('keydown', (e)=>{
   if(buyMenuOpen){ if(buyKey(e)) return; }
   if(e.code==='KeyB' && !e.repeat && gameActive && gameMode==='dust2' && !resultOverlay.classList.contains('show')){ e.preventDefault(); toggleBuyMenu(); return; }
   // 1/2/3/4 y Q/Rueda para cambiar arma (en Dust2 solo si la posees)
-  if(e.code==='Digit1' || e.code==='Numpad1'){ e.preventDefault(); switchWeapon('ak'); return; }
-  if(e.code==='Digit2' || e.code==='Numpad2'){ e.preventDefault(); switchWeapon('knife'); return; }
-  if(e.code==='Digit3' || e.code==='Numpad3'){ e.preventDefault(); switchWeapon('awp'); return; }
-  if(e.code==='Digit4' || e.code==='Numpad4'){ e.preventDefault(); switchWeapon('deagle'); return; }
-  if(e.code==='Digit5' || e.code==='Numpad5'){ e.preventDefault(); switchWeapon('m4'); return; }
-  { const gk={Digit7:'flash',Digit8:'smoke',Digit9:'he',Digit0:'molo'}[e.code]; if(gk){ e.preventDefault(); switchWeapon(gk); return; } }
+  // Ranuras como en CS: 1 primaria · 2 secundaria · 3 cuchillo · 4 flash · 5 humo · 6 HE · 7 molotov
+  { const m=/^(?:Digit|Numpad)([1-7])$/.exec(e.code); if(m){ e.preventDefault(); const n=+m[1];
+    if(n===1){ const prim=PRIMARIES.filter(w=>gameMode!=='dust2'||owned[w]); if(prim.length){ const i=prim.indexOf(currentWeapon); switchWeapon(i>=0 ? prim[(i+1)%prim.length] : (prim.includes(lastPrimary)?lastPrimary:prim[0])); } else showFloating('No tienes primaria • Pulsa B para comprar'); }
+    else if(n===2) switchWeapon('deagle'); else if(n===3) switchWeapon('knife');
+    else switchWeapon(['flash','smoke','he','molo'][n-4]);
+    return; } }
   if(e.code==='KeyQ' && !e.ctrlKey){
     e.preventDefault();
     if(gameMode==='dust2'){
