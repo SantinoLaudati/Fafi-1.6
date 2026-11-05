@@ -23,3 +23,5 @@ jobs:
           git remote add gitlab "https://oauth2:${GITLAB_TOKEN}@gitlab.com/danteiglesias/fafi-1.6.git"
           git push --force gitlab "refs/heads/*:refs/heads/*"
           git push --force gitlab "refs/tags/*:refs/tags/*"
+
+# actualizacion
