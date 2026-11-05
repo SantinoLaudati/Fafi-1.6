@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { makeLoader } from './loaders.js';
 import { NavGrid } from './nav.js';
 import { createChickens } from './chickens.js';
-import { loadCharacterAssets, createCharacter, giveWeapon, animateCharacter, killCharacter, reviveCharacter, muzzleWorld, CHAR_HEIGHT } from './characters.js';
+import { loadCharacterAssets, createCharacter, giveWeapon, animateCharacter, killCharacter, reviveCharacter, muzzleWorld, kickChar, hurtChar, startThrow, startReload, CHAR_HEIGHT } from './characters.js';
 import { SFX } from "./sfx.js";
 
 const BOMB_FILE = 'assets/extras/optimizados/cs_go_bomb_1k.glb';
@@ -52,7 +52,8 @@ export function createDefuse(A) {
   const chickens = createChickens(A);
 
   // ---------------------------------------------------------------- utilidades
-  const eyeOf = (u, out) => out.set(u.pos.x, u.pos.y + (u.isPlayer ? 0 : 0.98), u.pos.z);
+  const CROUCH_H = 0.19;     // cuánto baja el cuerpo de un bot agachado (igual que en characters.js)
+  const eyeOf = (u, out) => out.set(u.pos.x, u.pos.y + (u.isPlayer ? 0 : 0.98 - CROUCH_H * (u.crouchAmt || 0)), u.pos.z);
   function playerFeet() { const c = A.camera.position; return tmpV3.set(c.x, c.y - A.eyeHeight(), c.z); }
   function syncPlayerUnit() {
     const p = D.player; if (!p) return;
@@ -175,7 +176,7 @@ export function createDefuse(A) {
       target: null, nextThink: Math.random() * 0.4, nextShot: 0, burstLeft: 0, aimT: 0, alertUntil: 0, flashedUntil: 0,
       skill: rand(0.75, 1.1), hasBomb: false, plantT: 0, defuseT: 0, role: null, stuckT: 0, lastPos: new THREE.Vector3(),
       lastSeenT: 0, kit: false, spotted: 0, char: null,
-      armor: 0, helmet: false, lastSeenPos: new THREE.Vector3(), hint: null, hintT: 0, chaseUntil: 0, strafeT: 0, strafeDir: 1, strafeFor: 0, watchYaw: 0, lookT: 0, badGoals: 0
+      ammo: 30, mag: 30, reloadUntil: 0, throwUntil: 0, throwPt: null, lvx: 0, lvz: 0, nades: [], nadeCd: 0, animPrev: new THREE.Vector3(), yawPrev: 0, crouchAmt: 0, crouchFight: false, wasTarget: false, armor: 0, helmet: false, lastSeenPos: new THREE.Vector3(), hint: null, hintT: 0, chaseUntil: 0, strafeT: 0, strafeDir: 1, strafeFor: 0, watchYaw: 0, lookT: 0, badGoals: 0
     };
     if (!isPlayer) {
       u.char = createCharacter(team, variant);
@@ -184,6 +185,7 @@ export function createDefuse(A) {
     return u;
   }
   // Compra de los bots según su dinero (como un jugador): primaria si alcanza, chaleco/casco con lo que sobre.
+  const MAGS = { ak: 30, m4: 30, awp: 10, deagle: 7 };
   const PRICE = { deagle: 700, ak: 2500, m4: 3100, awp: 4750 };
   function botLoadout(u, keepGun) {
     const isCT = u.team === 'ct', rifle = isCT ? 'm4' : 'ak';
@@ -198,6 +200,14 @@ export function createDefuse(A) {
       if (u.money >= 1000) { u.armor = 100; u.helmet = true; u.money -= 1000; }
       else if (u.money >= 650) { u.armor = 100; u.helmet = false; u.money -= 650; }
     }
+    // granadas con el dinero que sobre (las que no gaste en la ronda anterior las conserva)
+    if (!keepGun) u.nades = [];
+    const GP = { he: 300, smoke: 300, flash: 200 };
+    for (let i = 0; i < 2 && u.nades.length < 2; i++) {
+      const k = ['he', 'smoke', 'flash'][Math.floor(Math.random() * 3)];
+      if (u.money >= GP[k] + 100 && Math.random() < 0.6) { u.money -= GP[k]; u.nades.push(k); }
+    }
+    u.mag = MAGS[u.weaponId] || 30; u.ammo = u.mag; u.reloadUntil = 0; u.nadeCd = performance.now() + 4000 + Math.random() * 6000;
     if (u.char) giveWeapon(u.char, u.weaponId);
   }
   function placeUnit(u, p, lookAt) {
@@ -205,6 +215,7 @@ export function createDefuse(A) {
     u.yaw = Math.atan2(lookAt.x - p.x, lookAt.z - p.z);
     u.path = null; u.goal = null; u.target = null; u.speed = 0;
     u.lastPos.copy(u.pos);
+    u.animPrev.copy(u.pos); u.yawPrev = u.yaw; u.lvx = 0; u.lvz = 0; u.throwUntil = 0;
     if (u.char) { u.char.root.position.copy(u.pos); u.char.root.rotation.y = u.yaw; }
   }
 
@@ -465,6 +476,7 @@ export function createDefuse(A) {
         const dir = attacker && attacker !== u ? tmpV.set(u.pos.x - attacker.pos.x, 0.1, u.pos.z - attacker.pos.z).normalize() : null;
         A.bloodFx(hp, dir, head);
       }
+      if (u.char && isBullet) hurtChar(u.char);
       // reacciona: se alerta, mira a quien le disparó y le devuelve el fuego (aunque no lo viera antes)
       u.alertUntil = now + 4000;
       if (attacker && attacker.alive && attacker.team !== u.team) {
@@ -581,15 +593,21 @@ export function createDefuse(A) {
   }
   function fireAt(u, t, now) {
     const st = WSTAT[u.weaponId] || WSTAT.deagle;
-    if (now < u.nextShot) return;
+    if (now < u.nextShot || now < u.reloadUntil) return;
     if (u.burstLeft <= 0) {
       if (!u.paused) { u.paused = true; u.nextShot = now + rand(st.pause[0], st.pause[1]) * 1000 / u.skill; return; }
       u.paused = false; u.burstLeft = Math.max(1, Math.round(rand(st.burst[0], st.burst[1])));
     }
     u.burstLeft--; u.nextShot = now + st.rate * 1000;
+    if (u.char) kickChar(u.char);
+    if (--u.ammo <= 0) {                                      // cargador vacío: recarga con animación
+      const dur = u.weaponId === 'awp' ? 2.8 : u.weaponId === 'deagle' ? 1.7 : 2.0;
+      u.reloadUntil = now + dur * 1000 + 150; u.ammo = u.mag; u.burstLeft = 0;
+      if (u.char) { u.char.reloadDur = dur; startReload(u.char); }
+    }
     const eye = eyeOf(u, new THREE.Vector3());
     const mz = (u.char && muzzleWorld(u.char, new THREE.Vector3())) || eye.clone();
-    const tp = t.isPlayer ? new THREE.Vector3(t.pos.x, t.pos.y + A.eyeHeight() - 0.35, t.pos.z) : new THREE.Vector3(t.pos.x, t.pos.y + 0.6, t.pos.z);
+    const tp = t.isPlayer ? new THREE.Vector3(t.pos.x, t.pos.y + A.eyeHeight() - 0.35, t.pos.z) : new THREE.Vector3(t.pos.x, t.pos.y + 0.6 - 0.1 * (t.crouchAmt || 0), t.pos.z);
     const dist = eye.distanceTo(tp);
     const moving = u.speed > 0.3;
     let p = 0.55 * u.skill - dist * 0.0085 - (moving ? 0.12 : 0);
@@ -677,6 +695,21 @@ export function createDefuse(A) {
     if (!p || u.stuckN >= 3) { const z = D.zones[u.team]; p = D.nav.randomNear(z.x, z.z, z.r * 2) || z; }
     u.pos.set(p.x, p.y, p.z); u.path = null; u.goal = null; u.idleT = 0; u.stuckN = 0; u.badGoals = 0;
   }
+  const _cl = (v, a, b) => Math.min(b, Math.max(a, v));
+  // dirección de lanzamiento (unitaria) para que la parábola de la granada caiga en `to` (v = 11 m/s + 2.6 m/s hacia arriba, g = 13)
+  function throwDir(from, to) {
+    const dx = to.x - from.x, dz = to.z - from.z, d = Math.max(0.5, Math.hypot(dx, dz)), dy = to.y - from.y; let bestA = 0.5, bestE = 1e9;
+    for (let a = 0; a < 1.25; a += 0.02) { const vx = 11 * Math.cos(a), vy = 11 * Math.sin(a) + 2.6, t = d / vx, y = vy * t - 6.5 * t * t; const e = Math.abs(y - dy); if (e < bestE) { bestE = e; bestA = a; } }
+    return new THREE.Vector3(dx / d * Math.cos(bestA), Math.sin(bestA), dz / d * Math.cos(bestA)).normalize();
+  }
+  function doThrow(u, kind, point, now) {
+    if (!u.char || !A.botThrow) return false;
+    const tp = { x: point.x, y: point.y, z: point.z };
+    const ok = startThrow(u.char, kind, hand => { A.botThrow(kind, hand, throwDir(hand, tp), u); });
+    if (!ok) return false;
+    u.nades.splice(u.nades.indexOf(kind), 1); u.nadeCd = now + 7000 + Math.random() * 6000; u.throwUntil = now + 950; u.throwPt = tp; u.speed = 0;
+    return true;
+  }
   function updateBot(u, dt, now) {
     if (!u.alive) { if (u.char) { animateCharacter(u.char, dt, 0); } return; }
     if (D.state === 'freeze' || D.state === 'end') {
@@ -689,8 +722,18 @@ export function createDefuse(A) {
     u.nextThink -= dt;
     if (u.nextThink <= 0) { u.nextThink = 0.18 + Math.random() * 0.14; thinkBot(u, now); }
     const tgt = u.target && u.target.alive ? u.target : null;
-    let speed = 0, strafing = false;
-    if (tgt && now - u.lastSeenT < 1200) {
+    let speed = 0, strafing = false, planting = false;
+    const throwing = now < u.throwUntil;
+    if (throwing) {
+      faceToward(u, u.throwPt.x, u.throwPt.z, dt, 10); u.speed = 0;      // se planta y mira hacia donde lanza
+    } else if (tgt && now - u.lastSeenT < 1200) {
+      if (!u.wasTarget) { u.wasTarget = true; u.crouchFight = Math.random() < 0.3 && u.weaponId !== 'knife' && u.pos.distanceTo(tgt.pos) > 10; }
+      // granada en pleno tiroteo: HE o flash hacia el enemigo
+      if (u.nades.length && now > u.nadeCd) {
+        const dd = u.pos.distanceTo(tgt.pos);
+        const k = u.nades.find(n => n === 'he' || n === 'flash');
+        if (k && dd > 9 && dd < 26 && Math.random() < 0.02) doThrow(u, k, tgt.pos, now);
+      }
       // combate: apunta, y alterna paso lateral / disparo para no ser un blanco quieto
       faceToward(u, tgt.pos.x, tgt.pos.z, dt, 12);
       u.aimT += dt;
@@ -701,6 +744,9 @@ export function createDefuse(A) {
       const reaction = 0.3 / u.skill;
       if (u.aimT > reaction && !strafing) fireAt(u, tgt, now);
     } else {
+      u.wasTarget = false; u.crouchFight = false;
+      // humo hacia el ruido que oyó (los CT lo usan para tapar un avance)
+      if (u.nades.includes('smoke') && u.hint && now - u.hintT < 1500 && now > u.nadeCd) { const dd = u.pos.distanceTo(u.hint); if (dd > 12 && dd < 24 && Math.random() < 0.02) doThrow(u, 'smoke', u.hint, now); }
       // perseguir al último sitio donde vio al enemigo / ir a mirar un ruido o aviso de un compañero
       const busy = u.hasBomb || (D.bomb.planted && u.team === 'ct');
       if (!busy && u.chaseUntil > now && !u.chaseSet) { u.chaseSet = true; const p = D.nav.randomNear(u.lastSeenPos.x, u.lastSeenPos.z, 2.5); if (!(p && setGoal(u, p))) u.chaseUntil = 0; }
@@ -713,12 +759,12 @@ export function createDefuse(A) {
       if (u.team === 't' && u.hasBomb && !D.bomb.planted && D.state === 'live') {
         const s = bombSite(u.pos);
         if (s && s === D.planSite) {
-          u.plantT += dt; u.speed = 0; speed = 0;
+          u.plantT += dt; u.speed = 0; speed = 0; planting = true;
           if (u.plantT >= CFG.plantTime) plantBomb(u);
         } else u.plantT = 0;
       }
       if (u.team === 'ct' && D.bomb.planted && u.pos.distanceTo(D.bomb.pos) < 1.5) {
-        u.defuseT += dt; speed = 0;
+        u.defuseT += dt; speed = 0; planting = true;
         if (u.defuseT >= (u.kit ? CFG.defuseKitTime : CFG.defuseTime)) defuseDone(u);
       } else if (u.team === 'ct') u.defuseT = 0;
       if (!(u.plantT > 0 && u.plantT < CFG.plantTime) && !(u.defuseT > 0)) {
@@ -751,7 +797,14 @@ export function createDefuse(A) {
     if (u.char) {
       u.char.root.position.copy(u.pos); u.char.root.rotation.y = u.yaw;
       const pitch = tgt ? Math.atan2((tgt.pos.y - u.pos.y) * 0.5, Math.max(1, u.pos.distanceTo(tgt.pos))) : 0;
-      animateCharacter(u.char, dt, tgt ? 0 : speed, pitch);
+      // velocidad local (adelante / de lado) y giro, para que las piernas pasen en la dirección real y el torso se retrase al girar
+      const dtv = Math.max(dt, 1e-3), wx = (u.pos.x - u.animPrev.x) / dtv, wz = (u.pos.z - u.animPrev.z) / dtv; u.animPrev.copy(u.pos);
+      const cy = Math.cos(u.yaw), sy = Math.sin(u.yaw); let lvz = wx * sy + wz * cy, lvx = wx * cy - wz * sy; if (Math.hypot(lvx, lvz) > 6) { lvx = 0; lvz = 0; }
+      u.lvx = (u.lvx || 0) + (lvx - (u.lvx || 0)) * Math.min(1, dt * 12); u.lvz = (u.lvz || 0) + (lvz - (u.lvz || 0)) * Math.min(1, dt * 12);
+      let dyw = u.yaw - u.yawPrev; while (dyw > Math.PI) dyw -= 2 * Math.PI; while (dyw < -Math.PI) dyw += 2 * Math.PI; u.yawPrev = u.yaw;
+      const crouch = planting ? 1 : (u.crouchFight && tgt && !strafing && Math.hypot(u.lvx, u.lvz) < 0.4) ? 1 : 0;
+      animateCharacter(u.char, dt, u.lvz, pitch, { vx: u.lvx, vz: u.lvz, crouch, engaged: !!(tgt && now - u.lastSeenT < 2500), plant: planting, yawRate: _cl(dyw / dtv, -9, 9) });
+      u.crouchAmt = u.char.crouch;
       if (!tgt && speed > 0.3) { u.stepAcc = (u.stepAcc || 0) + speed * dt; if (u.stepAcc > 1.55) { u.stepAcc = 0; if (u.pos.distanceTo(A.camera.position) < 38) SFX.at(SFX.surface, { x: u.pos.x, y: u.pos.y + 0.1, z: u.pos.z }, { vol: 0.7, ref: 3 }); } }
     }
   }
@@ -901,14 +954,14 @@ export function createDefuse(A) {
     for (const u of D.units) {
       if (!u.alive || u.team === p.team || u.isPlayer) continue;
       // cabeza (esfera) y cuerpo (cápsula vertical)
-      const hc = tmpV.set(u.pos.x, u.pos.y + 0.99, u.pos.z);
+      const hc = tmpV.set(u.pos.x, u.pos.y + 0.99 - CROUCH_H * (u.crouchAmt || 0), u.pos.z);
       const rh = segPointDist(prev, pos, hc);
       if (rh.d < 0.15) { if (rh.t < bt) { bt = rh.t; best = { u, head: true, t: rh.t }; } continue; }
       // cuerpo: distancia al eje vertical (xz) en el punto más cercano
       const ab = _p1.copy(pos).sub(prev);
       for (let k = 0; k <= 4; k++) {
         const tt = k / 4; const x = prev.x + ab.x * tt, y = prev.y + ab.y * tt, z = prev.z + ab.z * tt;
-        if (y < u.pos.y + 0.05 || y > u.pos.y + 0.9) continue;
+        if (y < u.pos.y + 0.05 || y > u.pos.y + 0.9 - CROUCH_H * (u.crouchAmt || 0)) continue;
         if ((x - u.pos.x) ** 2 + (z - u.pos.z) ** 2 < 0.27 * 0.27) { if (tt < bt) { bt = tt; best = { u, head: false, t: tt }; } break; }
       }
     }
@@ -952,7 +1005,7 @@ export function createDefuse(A) {
     const now = performance.now();
     for (const u of D.units) {
       if (!u.alive) continue;
-      const e = u.isPlayer ? new THREE.Vector3(u.pos.x, u.pos.y + A.eyeHeight(), u.pos.z) : new THREE.Vector3(u.pos.x, u.pos.y + 0.98, u.pos.z);
+      const e = u.isPlayer ? new THREE.Vector3(u.pos.x, u.pos.y + A.eyeHeight(), u.pos.z) : new THREE.Vector3(u.pos.x, u.pos.y + 0.98 - CROUCH_H * (u.crouchAmt || 0), u.pos.z);
       const d = e.distanceTo(pos); if (d > 22) continue;
       if (!losClear(pos, e)) continue;
       if (u.isPlayer) {

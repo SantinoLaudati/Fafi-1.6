@@ -248,7 +248,8 @@ export function createCharacter(team, variant = 0) {
     L: { legL1: len('thighL', 'calfL'), legL2: len('calfL', 'footL'), armL1: len('armL', 'foreL'), armL2: len('foreL', 'handL'),
          legR1: len('thighR', 'calfR'), legR2: len('calfR', 'footR'), armR1: len('armR', 'foreR'), armR2: len('foreR', 'handR') },
     restFoot: {}, phase: Math.random(), groundFn: null, speedSm: 0, dead: false, deadT: 0,
-    weaponId: null, weapon: null, aimPitch: 0, time: Math.random() * 10, crouch: 0
+    weaponId: null, weapon: null, aimPitch: 0, time: Math.random() * 10, crouch: 0,
+    dirX: 0, dirZ: 1, ready: 0, kick: 0, hurt: 0, hurtDir: 1, throwT: -1, reloadT: -1, reloadDur: 1.9, throwFired: false
   };
   // posición de reposo de los pies (en espacio del root)
   const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
@@ -275,11 +276,46 @@ export function giveWeapon(inst, id) {
 
 const _hip = new THREE.Vector3(), _foot = new THREE.Vector3(), _pole2 = new THREE.Vector3(), _tg = new THREE.Vector3(), _mw = new THREE.Matrix4();
 const _sm = t => t * t * (3 - 2 * t);
+const _cl = (v, a, b) => Math.min(b, Math.max(a, v));
+const _lerp = (a, b, t) => a + (b - a) * t;
+const _tq = new THREE.Quaternion(), _tq2 = new THREE.Quaternion(), _ax = new THREE.Vector3();
+const AX = new THREE.Vector3(1, 0, 0), AY = new THREE.Vector3(0, 1, 0), AZ = new THREE.Vector3(0, 0, 1);
+// Gira un hueso `ang` radianes alrededor de un eje dado en el espacio del personaje (X = lado, Y = arriba, Z = delante),
+// sin depender de los ejes locales del esqueleto (los dos esqueletos de los glb los tienen distintos).
+function twist(root, bone, axis, ang) {
+  if (!bone || Math.abs(ang) < 1e-5) return;
+  bone.updateMatrixWorld(true);
+  _ax.copy(axis).transformDirection(root.matrixWorld);
+  bone.getWorldQuaternion(_tq); _tq2.setFromAxisAngle(_ax, ang); _tq.premultiply(_tq2);
+  if (bone.parent) { bone.parent.getWorldQuaternion(_tq2); _tq2.invert(); _tq.premultiply(_tq2); }
+  bone.quaternion.copy(_tq); bone.updateMatrixWorld(true);
+}
+// interpolación suave entre puntos clave [t, x, y, z]
+function keyPoint(keys, t, out) {
+  t = _cl(t, 0, 1);
+  for (let i = 1; i < keys.length; i++) {
+    if (t <= keys[i][0]) { const a = keys[i - 1], b = keys[i], k = _sm((t - a[0]) / Math.max(1e-5, b[0] - a[0])); return out.set(_lerp(a[1], b[1], k), _lerp(a[2], b[2], k), _lerp(a[3], b[3], k)); }
+  }
+  const l = keys[keys.length - 1]; return out.set(l[1], l[2], l[3]);
+}
+// Eventos desde la IA
+export function kickChar(inst) { inst.kick = 1; }                                       // retroceso al disparar
+export function hurtChar(inst) { inst.hurt = 1; inst.hurtDir = Math.random() < 0.5 ? -1 : 1; }   // sacudida al recibir un tiro
+export function startThrow(inst, kind, onRelease) {                                    // lanzar granada: onRelease(posMundoMano) en el momento de soltarla
+  if (inst.dead || inst.throwT >= 0) return false;
+  inst.throwT = 0; inst.throwKind = kind; inst.throwFired = false; inst.throwCb = onRelease; return true;
+}
+export function startReload(inst) { inst.reloadT = 0; }
+const NADE_COL = { flash: 0xdadfe6, smoke: 0x8da0b0, he: 0x4a5f3a, molo: 0xc8641e };
+const GRENADE_ARM = [[0, 0.10, -0.15, 0.25], [0.42, 0.22, 0.14, -0.12], [0.62, 0.10, 0.06, 0.55], [1, 0.06, -0.25, 0.35]];
+
 // Ciclo de paso sincronizado con la velocidad real: el pie de apoyo retrocede exactamente a la velocidad del cuerpo
 // (sin patinar), el de balanceo se levanta y avanza; los pies se apoyan en el suelo real (inst.groundFn) y la cadera baja al andar.
-const STANCE = 0.55, STRIDE = 0.30, LIFT = 0.085;
-// speed (m/s), dt (s). aimPitch: inclinación del arma (rad)
-export function animateCharacter(inst, dt, speed, aimPitch = 0) {
+// Funciona en cualquier dirección (adelante, atrás, de lado) y agachado.
+const STANCE = 0.55, STRIDE = 0.30, LIFT = 0.085, CROUCH_DROP = 0.19;
+// speed (m/s adelante), dt (s). aimPitch: inclinación del arma (rad).
+// st: { vx, vz (velocidad local, m/s), crouch 0..1, engaged (apuntando), plant (plantando/desactivando), yawRate (rad/s) }
+export function animateCharacter(inst, dt, speed, aimPitch = 0, st = {}) {
   const { rig, root, L } = inst;
   inst.time += dt;
   if (inst.dead) {
@@ -298,27 +334,56 @@ export function animateCharacter(inst, dt, speed, aimPitch = 0) {
     const sl = Math.exp(-3.2 * dt);
     d.sx *= sl; d.sz *= sl; inst.model.position.x += d.sx * dt; inst.model.position.z += d.sz * dt;
     if (inst.weapon) inst.weapon.visible = false;
+    if (inst.nadeMesh) inst.nadeMesh.visible = false;
     inst.blob.visible = true;
     return;
   }
   if (inst.model.userData.baseY === undefined) inst.model.userData.baseY = inst.model.position.y;
-  inst.speedSm += (speed - inst.speedSm) * Math.min(1, dt * 10);
+  // ---- estado suavizado ----
+  const vz = st.vz !== undefined ? st.vz : speed, vx = st.vx || 0;
+  const spT = Math.hypot(vz, vx);
+  inst.speedSm += (spT - inst.speedSm) * Math.min(1, dt * 10);
+  if (spT > 0.25) {
+    inst.dirX += (vx / spT - inst.dirX) * Math.min(1, dt * 9); inst.dirZ += (vz / spT - inst.dirZ) * Math.min(1, dt * 9);
+    const l = Math.hypot(inst.dirX, inst.dirZ) || 1; inst.dirX /= l; inst.dirZ /= l;
+  }
   const sp = inst.speedSm;
-  const walk = Math.min(1, sp / 2.0);
-  const S = STRIDE * Math.min(1, Math.max(0.35, sp / 2.4));          // semipaso (m)
-  if (sp > 0.15) inst.phase = (inst.phase + dt * STANCE * sp / (2 * S)) % 1;   // ciclos/s para que el apoyo vaya a la velocidad del cuerpo
-  // cadera: baja un poco al caminar y rebota en cada paso
-  const bob = Math.abs(Math.cos(inst.phase * Math.PI * 2)) * 0.014 * walk;
-  inst.model.position.y = inst.model.userData.baseY - 0.045 * walk + bob;
+  const walk = Math.min(1, sp / 2.0), run = _cl((sp - 2.7) / 1.0, 0, 1);
+  const planting = !!st.plant;
+  const crouchT = planting ? 1 : (st.crouch || 0);
+  inst.crouch += (crouchT - inst.crouch) * Math.min(1, dt * 8);
+  const crouch = inst.crouch;
+  const throwing = inst.throwT >= 0, reloading = inst.reloadT >= 0;
+  const readyT = (planting || throwing) ? 0 : (st.engaged ? 1 : (reloading ? 0.5 : 0));
+  inst.ready += (readyT - inst.ready) * Math.min(1, dt * (readyT > inst.ready ? 9 : 4));
+  const ready = _sm(_cl(inst.ready, 0, 1));
+  inst.kick = Math.max(0, inst.kick - dt * 11); inst.hurt = Math.max(0, inst.hurt - dt * 4.5);
+  const S = STRIDE * _cl(sp / 2.4, 0.35, 1.15) * (1 - 0.35 * crouch);                  // semipaso (m)
+  if (sp > 0.15) inst.phase = (inst.phase + dt * STANCE * sp / (2 * S)) % 1;           // ciclos/s para que el apoyo vaya a la velocidad del cuerpo
+  // cadera: baja un poco al caminar, rebota en cada paso, baja mucho al agacharse y se carga de peso en reposo
+  const bob = Math.abs(Math.cos(inst.phase * Math.PI * 2)) * (0.014 + 0.006 * run) * walk;
+  inst.model.position.y = inst.model.userData.baseY - 0.045 * walk - CROUCH_DROP * crouch + bob - 0.02 * run;
+  inst.model.position.x = Math.sin(inst.time * 0.55) * 0.012 * (1 - walk) * (1 - crouch);
   // restablecer huesos controlados (pose base) antes del IK
   for (const k of ['thighL', 'calfL', 'footL', 'thighR', 'calfR', 'footR', 'armL', 'foreL', 'handL', 'armR', 'foreR', 'handR', 'spine2', 'neck', 'head']) {
     if (rig[k]) rig[k].bone.quaternion.copy(rig[k].bind);
   }
   root.updateMatrixWorld(true);
-  // respiración
+  // ---- torso: inclinación, retroceso, sacudida, giro retrasado y contrabalanceo del paso ----
   const br = Math.sin(inst.time * 1.8) * 0.012;
-  if (rig.spine2) { rig.spine2.bone.rotation.x += br + 0.05 * walk; }       // ligera inclinación al correr
-  if (rig.head) rig.head.bone.rotation.z += Math.sin(inst.time * 0.5) * 0.06 * (1 - walk);
+  let lean = 0.04 * walk + 0.10 * run + 0.36 * crouch + br - 0.05 * inst.kick - 0.15 * inst.hurt + (reloading ? 0.07 : 0);
+  let yawT = _cl(-(st.yawRate || 0) * 0.05, -0.3, 0.3) + inst.hurtDir * 0.2 * inst.hurt + Math.sin(inst.phase * Math.PI * 2) * 0.06 * walk;
+  if (throwing) {
+    const t = inst.throwT;
+    lean += t < 0.42 ? -0.2 * _sm(t / 0.42) : (t < 0.7 ? _lerp(-0.2, 0.26, _sm((t - 0.42) / 0.28)) : _lerp(0.26, 0, _sm((t - 0.7) / 0.3)));
+    yawT += t < 0.42 ? -0.45 * _sm(t / 0.42) : (t < 0.7 ? _lerp(-0.45, 0.4, _sm((t - 0.42) / 0.28)) : _lerp(0.4, 0, _sm((t - 0.7) / 0.3)));
+  }
+  twist(root, rig.spine2 && rig.spine2.bone, AX, lean);
+  twist(root, rig.spine2 && rig.spine2.bone, AY, yawT);
+  // cabeza: mira hacia donde apunta el arma, mantiene el horizonte al agacharse y echa vistazos en reposo
+  twist(root, rig.head && rig.head.bone, AX, -aimPitch * 0.7 - lean * 0.45 + 0.18 * inst.hurt);
+  twist(root, rig.head && rig.head.bone, AZ, Math.sin(inst.time * 0.5) * 0.06 * (1 - walk));
+  twist(root, rig.head && rig.head.bone, AY, -yawT * 0.5 + Math.sin(inst.time * 0.33) * 0.28 * (1 - walk) * (1 - ready));
   root.updateMatrixWorld(true);
   // ---- piernas ----
   for (const side of ['L', 'R']) {
@@ -329,7 +394,9 @@ export function animateCharacter(inst, dt, speed, aimPitch = 0) {
     if (sp <= 0.15) { z = 0; }
     else if (u < STANCE) { z = S * (1 - 2 * (u / STANCE)); }
     else { const t = (u - STANCE) / (1 - STANCE); z = -S + 2 * S * _sm(t); lift = Math.sin(Math.PI * t) * LIFT * walk; }
-    _foot.copy(inst.restFoot[side]); _foot.z += z;
+    _foot.copy(inst.restFoot[side]);
+    _foot.x += inst.dirX * z + (side === 'L' ? -1 : 1) * 0.025 * crouch;            // paso en la dirección real de avance (también de lado y hacia atrás)
+    _foot.z += inst.dirZ * z + (side === 'R' ? -0.07 : 0.05) * crouch * (1 - walk);  // en cuclillas un pie va algo adelantado
     _foot.applyMatrix4(root.matrixWorld);                       // posición mundo sobre el plano del personaje
     if (inst.groundFn) {                                        // el pie se apoya en el suelo real (escaleras, rampas, bordillos)
       const gy = inst.groundFn(_foot.x, _foot.z, root.position.y);
@@ -337,34 +404,68 @@ export function animateCharacter(inst, dt, speed, aimPitch = 0) {
     }
     _foot.y += lift;
     th.bone.getWorldPosition(_hip);
-    _pole2.set(0, 0, 1).transformDirection(root.matrixWorld).multiplyScalar(0.6).add(_hip);   // rodilla hacia delante
+    _pole2.set((side === 'L' ? -0.12 : 0.12), 0, 1).transformDirection(root.matrixWorld).multiplyScalar(0.6).add(_hip);   // rodilla hacia delante y un poco hacia fuera
     ik2(th.bone, ca.bone, ft.bone, L['leg' + side + '1'], L['leg' + side + '2'], _foot, _pole2);
   }
-  // ---- brazos sosteniendo el arma ----
+  // ---- brazos y arma ----
   const wp = inst.weaponPivot;
-  const rightHip = rig.thighR ? 0 : 0;
-  // el arma sale del pecho: derecha-adelante; pitch según el objetivo
-  const shoulderY = rig.armR ? rig.armR.bone.getWorldPosition(new THREE.Vector3()).applyMatrix4(new THREE.Matrix4().copy(root.matrixWorld).invert()).y : 0.9;
+  const invRoot = _mw.copy(root.matrixWorld).invert();
+  const shoulderY = rig.armR ? rig.armR.bone.getWorldPosition(new THREE.Vector3()).applyMatrix4(invRoot).y : 0.9;
   const wl0 = (inst.weapon && inst.weapon.userData.length) || 0.8;
-  wp.position.set(0.03, shoulderY - 0.10, 0.04 + wl0 * 0.40);
-  wp.rotation.set(-aimPitch, 0, 0);
-  if (!inst.isPistol) wp.rotation.z = 0;
+  // posición apuntando (arma al hombro) y en "bajo y listo" (cañón hacia abajo, cerca del pecho); se mezclan con `ready`
+  const px = _lerp(0.07, 0.03, ready), py = _lerp(shoulderY - 0.30, shoulderY - 0.10, ready), pz = _lerp(0.10 + wl0 * 0.26, 0.04 + wl0 * 0.40, ready);
+  const rx = _lerp(0.72 - 0.15 * run, -aimPitch, ready), ry = _lerp(-0.22, 0, ready), rz = _lerp(0.10, 0, ready);
+  wp.position.set(px + Math.sin(inst.phase * Math.PI * 2) * 0.010 * walk, py + Math.sin(inst.phase * Math.PI * 4) * 0.011 * walk * (1 - 0.6 * ready), pz - 0.07 * inst.kick);
+  wp.rotation.set(rx - 0.09 * inst.kick, ry, rz);
+  let reloadBump = 0;
+  if (reloading) {
+    inst.reloadT += dt / (inst.reloadDur || 1.9);
+    const t = inst.reloadT; reloadBump = _sm(_cl(t / 0.15, 0, 1)) * (1 - _sm(_cl((t - 0.85) / 0.15, 0, 1)));
+    wp.rotation.x += 0.45 * reloadBump; wp.rotation.z += 0.55 * reloadBump; wp.position.y += 0.05 * reloadBump;
+    if (t >= 1) inst.reloadT = -1;
+  }
+  const planted = planting;
+  if (inst.weapon) inst.weapon.visible = !planted;
   wp.updateMatrixWorld(true);
-  const wlen = (inst.weapon && inst.weapon.userData.length) || 0.8;
+  const wlen = wl0;
   const grip = (x, y, z) => new THREE.Vector3(x, y, z).applyMatrix4(wp.matrixWorld);
-  if (inst.weapon) {
-    const gR = inst.isPistol ? grip(0.0, -0.03, -0.02) : grip(0.01, -0.06, -wlen * 0.12);
-    const gL = inst.isPistol ? grip(0.0, -0.03, -0.02) : grip(0.0, -0.035, wlen * 0.22);
-    if (rig.armR && rig.foreR && rig.handR) {
-      rig.armR.bone.getWorldPosition(_hip);
-      _pole2.copy(_hip).add(new THREE.Vector3(0.25, -0.5, -0.2).transformDirection(root.matrixWorld).multiplyScalar(0.5));
-      ik2(rig.armR.bone, rig.foreR.bone, rig.handR.bone, L.armR1, L.armR2, gR, _pole2);
-    }
-    if (rig.armL && rig.foreL && rig.handL) {
-      rig.armL.bone.getWorldPosition(_hip);
-      _pole2.copy(_hip).add(new THREE.Vector3(-0.25, -0.5, -0.2).transformDirection(root.matrixWorld).multiplyScalar(0.5));
-      ik2(rig.armL.bone, rig.foreL.bone, rig.handL.bone, L.armL1, L.armL2, inst.isPistol ? gR : gL, _pole2);
-    }
+  const gR = inst.isPistol ? grip(0.0, -0.03, -0.02) : grip(0.01, -0.06, -wlen * 0.12);
+  let gL = inst.isPistol ? gR : grip(0.0, -0.035, wlen * 0.22);
+  let targetR = gR;
+  if (planted) {
+    // plantar / desactivar: las dos manos trabajan bajo el pecho, cerca del suelo
+    const k = Math.sin(inst.time * 7) * 0.012;
+    targetR = new THREE.Vector3(0.07 + k, shoulderY - 0.62, 0.32).applyMatrix4(root.matrixWorld);
+    gL = new THREE.Vector3(-0.07 - k, shoulderY - 0.62, 0.34).applyMatrix4(root.matrixWorld);
+  } else if (reloading && !inst.isPistol) {
+    // mano izquierda: suelta el cargador, lo saca, mete otro y vuelve al guardamanos
+    const t = inst.reloadT, mag = [0, -0.12, -wlen * 0.02], out = [0.05, -0.36, -wlen * 0.02], fore = [0, -0.035, wlen * 0.22];
+    let a, b, k;
+    if (t < 0.2) { a = fore; b = mag; k = t / 0.2; } else if (t < 0.45) { a = mag; b = out; k = (t - 0.2) / 0.25; }
+    else if (t < 0.7) { a = out; b = [0.04, -0.34, -wlen * 0.01]; k = (t - 0.45) / 0.25; } else if (t < 0.85) { a = [0.04, -0.34, -wlen * 0.01]; b = mag; k = (t - 0.7) / 0.15; } else { a = mag; b = fore; k = (t - 0.85) / 0.15; }
+    k = _sm(_cl(k, 0, 1)); gL = grip(_lerp(a[0], b[0], k), _lerp(a[1], b[1], k), _lerp(a[2], b[2], k));
+  }
+  // lanzamiento de granada con el brazo derecho
+  if (throwing) {
+    inst.throwT += dt / 0.9; const t = inst.throwT, rp = keyPoint(GRENADE_ARM, t, new THREE.Vector3());
+    rp.y += shoulderY;                                          // las alturas de los puntos clave son relativas al hombro
+    const hw = rp.clone().applyMatrix4(root.matrixWorld);
+    targetR = hw;
+    if (!inst.nadeMesh) { inst.nadeMesh = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), new THREE.MeshStandardMaterial({ color: 0x4a5f3a, roughness: 0.6 })); root.add(inst.nadeMesh); }
+    inst.nadeMesh.material.color.setHex(NADE_COL[inst.throwKind] || 0x4a5f3a);
+    inst.nadeMesh.visible = !inst.throwFired; inst.nadeMesh.position.copy(rp);
+    if (!inst.throwFired && t >= 0.62) { inst.throwFired = true; inst.nadeMesh.visible = false; if (inst.throwCb) inst.throwCb(hw.clone()); }
+    if (t >= 1) { inst.throwT = -1; inst.nadeMesh.visible = false; }
+  }
+  if (rig.armR && rig.foreR && rig.handR && (inst.weapon || throwing || planted)) {
+    rig.armR.bone.getWorldPosition(_hip);
+    _pole2.copy(_hip).add(new THREE.Vector3(0.25, -0.5, -0.2).transformDirection(root.matrixWorld).multiplyScalar(0.5));
+    ik2(rig.armR.bone, rig.foreR.bone, rig.handR.bone, L.armR1, L.armR2, targetR, _pole2);
+  }
+  if (rig.armL && rig.foreL && rig.handL && (inst.weapon || planted)) {
+    rig.armL.bone.getWorldPosition(_hip);
+    _pole2.copy(_hip).add(new THREE.Vector3(-0.25, -0.5, -0.2).transformDirection(root.matrixWorld).multiplyScalar(0.5));
+    ik2(rig.armL.bone, rig.foreL.bone, rig.handL.bone, L.armL1, L.armL2, gL, _pole2);
   }
   // sombra blob pegada al suelo (y local 0.03)
   inst.blob.position.y = 0.03;
@@ -385,6 +486,7 @@ export function killCharacter(inst, dx = 0, dz = 0) {
 }
 export function reviveCharacter(inst) {
   inst.dead = false; inst.deadT = 0;
+  inst.throwT = -1; inst.reloadT = -1; inst.crouch = 0; inst.ready = 0; inst.kick = 0; inst.hurt = 0; if (inst.nadeMesh) inst.nadeMesh.visible = false;
   inst.model.rotation.x = 0;
   inst.model.quaternion.identity(); inst.model.position.x = 0; inst.model.position.z = 0; inst.fall = null;
   if (inst.model.userData.baseY !== undefined) inst.model.position.y = inst.model.userData.baseY;

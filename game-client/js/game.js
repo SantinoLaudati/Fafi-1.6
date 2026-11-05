@@ -762,6 +762,7 @@ function activateMap(key){
   dust2Colliders=e.colliders; colScale=Math.max(0.4, Math.min(1, (e.scale||1)*0.8)); stepMax = 0.68;
   currentMapKey=key;
   SFX.surface = key==='office' ? 'step_metal' : key==='italy' ? 'step_stone' : 'step';
+  try{ applyAtmosphere(); }catch(e){}
   wallLimit.xmin=e.bounds.min.x+1.0; wallLimit.xmax=e.bounds.max.x-1.0;
   wallLimit.zmin=e.bounds.min.z+1.0; wallLimit.zmax=e.bounds.max.z-1.0;
   DEFAULT_T_SPAWN=e.spawns.t; DEFAULT_CT_SPAWN=e.spawns.ct;
@@ -1051,7 +1052,7 @@ function updateAnimWeapon(dt, wallPush){
 
 // --- cuchillo mariposa (fps_butterfly_knife.glb): brazos + navaja; su timeline de 33 s es un truco de balisong ---
 const KNIFE_FILE = 'assets/Cuchillos/cuchillo_de_combate.glb';
-const KNIFE_ANIM_ROT = [0.30,0.32,-0.12];
+const KNIFE_ANIM_ROT = [-0.05,0.16,Math.PI-0.08];   // punta algo hacia abajo y filo hacia abajo (antes la hoja apuntaba hacia arriba)
 const KNIFE_LEN = 0.62;
 const KNIFE_ANIM_POS = [0.22,-0.22,-0.58];
 function loadKnifeAnim(){
@@ -1137,6 +1138,7 @@ const defuse = createDefuse({
   explosionFx:(pos,R)=>explosionEffect(pos,R), acquireLight:(c,i,d,p)=>acquireLight(c,i,d,p), releaseLight:(l)=>releaseLight(l),
   damageFlash:(f)=>{ const e=document.getElementById('dfDamage'); if(e){ e.style.opacity=Math.min(0.85,0.25+f*0.6); setTimeout(()=>{ e.style.opacity=0; }, 140); } },
   botShotFx:()=>{}, colScale:()=>colScale,
+  botThrow:(k,o,d,u)=>{ try{ if(grenades.ready()) grenades.throw(k,o,d,u); }catch(e){} },
   hitFeedback:(pos,head,helmet,dir)=>{ SFX.play(helmet?'hit_helmet':head?'headshot':'hit',{vol:helmet?0.9:1}); hitMarker.classList.add('show'); setTimeout(()=>hitMarker.classList.remove('show'),120); if(helmet){ sparkFx(pos,dir); } else bloodFx(pos,dir,head); if(head) showFloating(helmet?'CASCO':'HEADSHOT'); },
   bloodFx:(pos,dir,head)=>bloodFx(pos,dir,head),
   flashScreen:(sec)=>flashScreenFx(sec)
@@ -1235,6 +1237,54 @@ function updateGrenadeView(dt){
 // === MANOS EN PRIMERA PERSONA (las del cuchillo) para el resto de armas y granadas ===
 // (las manos de las armas se quitaron: solo el cuchillo muestra brazos, que vienen en su propio modelo)
 
+// === ATMÓSFERA: Dust II de noche estrellada (luz de luna azulada con niebla para que se vea lo justo) ===
+const ATMOS = {
+  day:   { bg: 0x87ceeb, fogCol: 0x87ceeb, fog: [30, 80], hemi: [0xcde6ff, 0x1a1a22, 1.2], sun: [0xfff2dd, 1.9] },
+  night: { bg: 0x060a1a, fogCol: 0x0b1433, fog: [24, 90], hemi: [0x7a98e0, 0x232c4a, 1.55], sun: [0xa9c0ff, 1.35] }
+};
+let skyDome = null;
+function makeSkyDome(){
+  const W = 2048, H = 1024, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#02040d'); gr.addColorStop(0.55, '#07102a'); gr.addColorStop(0.8, '#101e45'); gr.addColorStop(1, '#1a2b58');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  // vía láctea: banda difusa en diagonal
+  g.save(); g.translate(W * 0.5, H * 0.32); g.rotate(-0.35); const mw = g.createLinearGradient(0, -110, 0, 110); mw.addColorStop(0, 'rgba(120,150,230,0)'); mw.addColorStop(0.5, 'rgba(150,175,240,0.20)'); mw.addColorStop(1, 'rgba(120,150,230,0)'); g.fillStyle = mw; g.fillRect(-W, -110, W * 2, 220); g.restore();
+  // estrellas (más densas cerca de la banda y hacia arriba)
+  let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for (let i = 0; i < 1900; i++) {
+    const x = rnd() * W, y = Math.pow(rnd(), 1.25) * H * 0.86, b = 0.35 + rnd() * 0.65, r = rnd() < 0.04 ? 1.9 : (rnd() < 0.25 ? 1.2 : 0.7);
+    const tint = rnd(); g.fillStyle = tint < 0.2 ? `rgba(190,210,255,${b})` : tint < 0.3 ? `rgba(255,235,200,${b})` : `rgba(255,255,255,${b})`;
+    g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill();
+  }
+  for (let i = 0; i < 40; i++) { const x = rnd() * W, y = rnd() * H * 0.6; const gl = g.createRadialGradient(x, y, 0, x, y, 7); gl.addColorStop(0, 'rgba(255,255,255,.9)'); gl.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gl; g.fillRect(x - 7, y - 7, 14, 14); }
+  // luna con halo
+  const mx = W * 0.64, my = H * 0.27;
+  const halo = g.createRadialGradient(mx, my, 10, mx, my, 190); halo.addColorStop(0, 'rgba(210,225,255,.55)'); halo.addColorStop(0.35, 'rgba(150,175,235,.16)'); halo.addColorStop(1, 'rgba(120,150,220,0)'); g.fillStyle = halo; g.fillRect(mx - 200, my - 200, 400, 400);
+  g.fillStyle = '#eef3ff'; g.beginPath(); g.arc(mx, my, 34, 0, 6.283); g.fill();
+  g.fillStyle = 'rgba(160,175,205,.55)'; for (const [dx, dy, r] of [[-10, -8, 8], [9, 6, 6], [-4, 13, 5], [12, -12, 4]]) { g.beginPath(); g.arc(mx + dx, my + dy, r, 0, 6.283); g.fill(); }
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.SphereGeometry(80, 40, 20), new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, fog: false, depthWrite: false }));
+  m.renderOrder = -10; m.frustumCulled = false; m.visible = false; scene.add(m);
+  return m;
+}
+function setLights(a){
+  if(!hemiLight || !sunLight) return;
+  hemiLight.color.setHex(a.hemi[0]); hemiLight.groundColor.setHex(a.hemi[1]); hemiLight.intensity = a.hemi[2];
+  sunLight.color.setHex(a.sun[0]); sunLight.intensity = a.sun[1];
+}
+function applyAtmosphere(){
+  if(!scene || !hemiLight || !sunLight) return;
+  const night = gameMode==='dust2' && currentMapKey==='dust2';
+  const a = night ? ATMOS.night : ATMOS.day;
+  setLights(a);
+  if(night && !skyDome) skyDome = makeSkyDome();
+  if(skyDome) skyDome.visible = night;
+  if(gameMode==='dust2'){
+    scene.background = new THREE.Color(a.bg);
+    scene.fog = new THREE.Fog(a.fogCol, a.fog[0], a.fog[1]); scene.userData.fogBase = [a.fog[0], a.fog[1]]; applyFog();
+  }
+}
+
 function setMapVisibility(mode){
   // Dust2 limpio estilo CS: HUD AIM oculto + minimapa visible (CSS .mode-dust2)
   try{ document.getElementById('game')?.classList.toggle('mode-dust2', mode==='dust2'); }catch(e){}
@@ -1242,14 +1292,14 @@ function setMapVisibility(mode){
   if(mode==='dust2'){
     aimMapGroup.visible = false;
     dust2Group.visible = true;
-    scene.background = new THREE.Color(0x87ceeb);
-    scene.fog = new THREE.Fog(0x87ceeb, 30, 80); scene.userData.fogBase=[30,80]; applyFog();
+    applyAtmosphere();
   } else {
     aimMapGroup.visible = true;
     dust2Group.visible = false;
     scene.background = new THREE.Color(0x0d1424);
     scene.fog = new THREE.Fog(0x0d1424, 18, 55); scene.userData.fogBase=[18,55]; applyFog();
   }
+  if(mode!=='dust2') applyAtmosphere();
 }
 
 
@@ -1927,6 +1977,7 @@ function animate(){
   updateFlashOverlay(dt);
   grenades.update(dt);
   if(sunLight) updateSun(sunLight, camera.position, qualityLevel, SUN_DIR);
+  if(skyDome && skyDome.visible) skyDome.position.copy(camera.position);
   // cadencia automática si mantienes pulsado (AK) / repetición cuchillo
   if(isHoldingShoot && gameActive && controls.isLocked && !isReloading && !pauseOverlay.classList.contains('show') && !resultOverlay.classList.contains('show')){
     if(currentWeapon==='ak' || currentWeapon==='m4') shoot();
@@ -3629,7 +3680,7 @@ function buildMinimapImage(key){
   const oldBg=scene.background, oldFog=scene.fog, hid=[];
   scene.children.forEach(o=>{ if(o!==dust2Group && !o.isLight && o.visible){ o.visible=false; hid.push(o); } });
   const chars=[]; dust2Group.traverse(o=>{ if((o.userData&&o.userData.isChar)||o.isSprite){ if(o.visible){ o.visible=false; chars.push(o); } } });
-  scene.background=null; scene.fog=null;
+  scene.background=null; scene.fog=null; setLights(ATMOS.day);
   renderer.clippingPlanes=[new THREE.Plane(new THREE.Vector3(0,-1,0), cut)];
   renderer.setClearColor(0x000000,0);
   let px=null;
@@ -3638,6 +3689,7 @@ function buildMinimapImage(key){
     px=new Uint8Array(W*H*4); renderer.readRenderTargetPixels(rt,0,0,W,H,px);
   }catch(e){ console.warn('minimapa', e); }
   renderer.setRenderTarget(oldRT); renderer.clippingPlanes=oldClip; renderer.setClearColor(oldCol,oldAlpha);
+  setLights(currentMapKey==='dust2' && gameMode==='dust2' ? ATMOS.night : ATMOS.day);
   scene.background=oldBg; scene.fog=oldFog; hid.forEach(o=>{ o.visible=true; }); chars.forEach(o=>{ o.visible=true; }); rt.dispose();
   if(!px) return null;
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d'); const id=g.createImageData(W,H);
@@ -3663,7 +3715,7 @@ function drawMinimap(){
   }catch(e){}
   if(!(isFinite(minX)&&isFinite(maxX)&&isFinite(minZ)&&isFinite(maxZ))||maxX<=minX||maxZ<=minZ) return;
   // el recuadro toma la proporción del mapa (Italy es alto, Office ancho) y siempre cabe entero
-  const mw=maxX-minX, mh=maxZ-minZ, k=Math.min(260/mw, 340/mh);
+  const mw=maxX-minX, mh=maxZ-minZ, k=Math.min(165/mw, 215/mh);
   const cssW=Math.round(mw*k), cssH=Math.round(mh*k), D=2;
   if(cv.width!==cssW*D || cv.height!==cssH*D){ cv.width=cssW*D; cv.height=cssH*D; wrap.style.width=cssW+'px'; wrap.style.height=cssH+'px'; }
   const ctx=cv.getContext('2d'), W=cv.width, H=cv.height, s=W/mw;
@@ -3886,6 +3938,8 @@ try{
 try{ menu.style.display='none'; }catch(e){}
 try{ fafiApplySensitivity(); }catch(e){}
 try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }catch(e){}
+
+
 
 
 
