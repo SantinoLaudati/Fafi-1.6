@@ -1532,9 +1532,11 @@ function tryBuy(w){
   const price=WEAPON_PRICES[w];
   if(!spend(price)) return;
   SFX.play('buy');
-  // Primaria excluyente: una sola entre AK, M4 y AWP
-  if(PRIMARIES.includes(w) && !infiniteMoney()){
-    for(const p of PRIMARIES){ if(p!==w && owned[p]){ owned[p]=false; showFloating(WEAPON_LABEL[p]+' reemplazada por '+WEAPON_LABEL[w]); } }
+  // En partida: una sola pistola y una sola primaria (rifle, francotirador, subfusil, escopeta o pesada); comprar otra reemplaza la anterior
+  if(!infiniteMoney()){
+    const grp=(id)=>{ const it=BUY_ITEMS.find(i=>i.id===id); return it ? (it.cat==='side' ? 'side' : ['smg','shotgun','rifle','sniper','heavy'].includes(it.cat) ? 'prim' : null) : null; };
+    const g=grp(w);
+    if(g) for(const it of BUY_ITEMS){ if(it.id!==w && owned[it.id] && grp(it.id)===g){ owned[it.id]=false; showFloating(WEAPON_LABEL[it.id]+' reemplazada por '+WEAPON_LABEL[w]); } }
   }
   owned[w]=true;
   // munición completa al comprar
@@ -4167,3 +4169,4 @@ try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }cat
     e.preventDefault(); open();
   });
 })();
+
