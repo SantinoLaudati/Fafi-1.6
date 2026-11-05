@@ -193,11 +193,27 @@ function start(name, o = {}) {
   return src;
 }
 
+// Paquete de sonidos propio (opcional): si existe assets/audio/csgo/manifest.json ({ "ak": "ak47.wav", ... }) esos archivos
+// sustituyen a los sonidos del mismo nombre (ak, m4, awp, deagle, rifle, shotgun, knife, dry, reload_out, reload_in, bolt, he, flash, smoke, molotov, c4_*, step...).
+let packLoaded = false;
+function loadSoundPack() {
+  if (packLoaded) return; packLoaded = true;
+  fetch('assets/audio/csgo/manifest.json').then(r => r.ok ? r.json() : null).then(m => {
+    if (!m) return;
+    for (const [name, file] of Object.entries(m)) {
+      const d = DEF[name]; if (!d || typeof file !== 'string') continue;
+      d.f = ['csgo/' + file]; delete d.clips; delete d.seg; delete d.slice; d.r = [0.98, 1.02]; d.v = Math.max(0.6, Math.min(1.6, d.v));
+      load(d.f[0]);
+    }
+  }).catch(() => {});
+}
+
 export const SFX = {
   // Llamar desde un gesto del usuario (clic): crea el contexto y precarga.
   init() {
     if (wanted) { if (ctx && ctx.state === 'suspended') ctx.resume(); return; }
     wanted = true; ensure();
+    loadSoundPack();
     if (ctx && ctx.state === 'suspended') ctx.resume();
     // solo se precargan los sonidos esenciales; el resto se descodifica la primera vez que suena (ahorra cientos de MB de RAM)
     for (const n of ['ui', 'hit', 'step', 'dry', 'draw', 'reload_out', 'reload_in', 'ak', 'm4', 'awp', 'deagle', 'knife', 'hit_flesh', 'hit_head', 'hit_helmet', 'pain']) { const d = DEF[n]; if (d) d.f.forEach(f => load(f)); }
