@@ -1,419 +1,322 @@
 # Manual de Usuario — FAFI 1.6
 
-**Para jugadores sin conocimientos técnicos**  
-**Versión del manual:** 2.0 (lenguaje simple)  
-**Juego:** FAFI 1.6 (versión para un jugador)  
-**Plataforma:** Navegador web en computadora (Chrome o Edge recomendados)
+**Team T Studio** · versión 2.0.0 · noviembre de 2026
+Instagram: **@teamtstudio**
+
+> Este manual explica, paso a paso y sin términos técnicos, cómo jugar a FAFI 1.6. Todas las capturas son del juego real.
 
 ---
 
 ## Índice
 
-1. [Bienvenida](#1-bienvenida)
-2. [Qué necesitas para jugar](#2-qué-necesitas-para-jugar)
+1. [Qué es FAFI 1.6](#1-qué-es-fafi-16)
+2. [Qué necesitás para jugar](#2-qué-necesitás-para-jugar)
 3. [Cómo abrir el juego](#3-cómo-abrir-el-juego)
-4. [Crear una cuenta](#4-crear-una-cuenta)
-5. [Iniciar sesión](#5-iniciar-sesión)
-6. [La pantalla principal (menú)](#6-la-pantalla-principal-menú)
-7. [Modos de juego](#7-modos-de-juego)
-   - [7.1. Campo de tiro (AIM)](#71-campo-de-tiro-aim)
-   - [7.2. Dust II (exploración)](#72-dust-ii-exploración)
-   - [7.3. Campaña (5 niveles)](#73-campaña-5-niveles)
-8. [Controles del juego](#8-controles-del-juego)
-9. [Armas](#9-armas)
-10. [Ajustes](#10-ajustes)
-11. [Tu perfil y logros](#11-tu-perfil-y-logros)
-12. [Tienda y equipamiento (próximamente)](#12-tienda-y-equipamiento-próximamente)
+4. [Cuenta: registrarse, entrar o jugar sin conexión](#4-cuenta-registrarse-entrar-o-jugar-sin-conexión)
+5. [El menú principal](#5-el-menú-principal)
+6. [Modos de juego](#6-modos-de-juego)
+7. [Controles](#7-controles)
+8. [Armas y granadas](#8-armas-y-granadas)
+9. [Tienda y cajas](#9-tienda-y-cajas)
+10. [Equipamiento (tu inventario)](#10-equipamiento-tu-inventario)
+11. [Perfil, amigos y logros](#11-perfil-amigos-y-logros)
+12. [Ajustes](#12-ajustes)
 13. [Consejos para jugar mejor](#13-consejos-para-jugar-mejor)
-14. [Problemas comunes y cómo solucionarlos](#14-problemas-comunes-y-cómo-solucionarlos)
+14. [Problemas frecuentes](#14-problemas-frecuentes)
 15. [Preguntas frecuentes](#15-preguntas-frecuentes)
-16. [Créditos](#16-créditos)
+16. [Créditos y contacto](#16-créditos-y-contacto)
 
 ---
 
-## 1. Bienvenida
+## 1. Qué es FAFI 1.6
 
-**FAFI 1.6** es un videojuego de disparos en primera persona (como si vieras a través de los ojos del personaje). Se juega directamente en el navegador de internet, sin instalar nada en tu computadora.
+FAFI 1.6 es un juego de disparos en primera persona por equipos, inspirado en Counter-Strike, que **se juega directamente en el navegador**: no hay que descargar ni instalar nada. Incluye:
 
-En esta versión puedes jugar **tú solo** en tres modos:
-- **Campo de tiro (AIM):** practicar puntería contra blancos móviles.
-- **Dust II:** recorrer un mapa libremente.
-- **Campaña:** 5 niveles de dificultad creciente.
-
-> **Importante:** en esta versión **no hay multijugador**, **no hay enemigos** y la **tienda está desactivada**. El juego es para un solo jugador.
-
-📸 **Captura sugerida:** Pantalla de bienvenida / logo FAFI 1.6.
+- **Defuse 5 contra 5** contra bots, con economía, tienda y una bomba que plantar o desactivar.
+- **Campo de tiro** para entrenar la puntería.
+- **Mapa libre** para recorrer Dust II, Italy y Office sin reglas.
+- **Modo historia** con una cinemática narrada del desembarco de Normandía.
+- **Skins y cajas**: 37 diseños para el AK-47, el M4A4, el AWP, la Desert Eagle y el cuchillo.
 
 ---
 
-## 2. Qué necesitas para jugar
+## 2. Qué necesitás para jugar
 
-- Una **computadora** con Windows, Mac o Linux.
-- Un **navegador** actualizado: Chrome o Edge (recomendado).
-- **Teclado y ratón** (el juego no funciona bien con pantalla táctil).
-- **Conexión a internet** (para cargar el juego la primera vez).
-- Una **dirección web (link)** que te dará quien organizó el juego (por ejemplo, `http://localhost/` o una IP).
+| Requisito | Detalle |
+|---|---|
+| Navegador | Chrome, Edge o Firefox actualizados (con WebGL activado). |
+| Computadora | Funciona en equipos de pocos recursos: alcanzan **4 GB de memoria** y un procesador doméstico. |
+| Periféricos | Teclado y mouse. |
+| Internet | Solo para abrir la página. Después se puede jugar **sin conexión**. |
 
-📸 **Captura sugerida:** Icono de Chrome/Edge y teclado con ratón.
+El juego elige solo la calidad gráfica según tu equipo. Más adelante podés cambiarla en *Ajustes*.
 
 ---
 
 ## 3. Cómo abrir el juego
 
-1. Abre tu navegador (Chrome o Edge).
-2. En la barra de arriba (donde escribes direcciones), escribe la dirección que te dieron y pulsa **Enter**.
-3. Espera a que cargue la página. Verás el logo **FAFI 1.6** y una pantalla de acceso.
+- **Desde el servidor del equipo:** entrá a la dirección web que te indiquen (por ejemplo `http://<IP del servidor>/`).
+- **En tu propia computadora:** serví la carpeta `game-client` con cualquier servidor web estático y abrí `http://localhost:5173`. Abrir `index.html` con doble clic **no** funciona, porque el navegador bloquea los modelos 3D.
 
-📸 **Captura sugerida:** Barra del navegador con la dirección escrita.
-
-📸 **Captura sugerida:** Pantalla de carga / logo FAFI 1.6.
-
-> **Consejo:** si la página no carga, revisa tu conexión a internet o pide ayuda a la persona que organizó el juego.
+La primera vez puede tardar unos segundos mientras se cargan los modelos y los sonidos.
 
 ---
 
-## 4. Crear una cuenta
+## 4. Cuenta: registrarse, entrar o jugar sin conexión
 
-Si es la primera vez que juegas, debes crear una cuenta.
+### Iniciar sesión
 
-1. En la pantalla de acceso, haz clic en el texto **"¿No tienes cuenta? Regístrate aquí"**.
-2. Completa los campos:
-   - **Usuario:** un nombre de 3 a 20 letras o números (debe ser único).
-   - **Email:** tu correo electrónico.
-   - **Contraseña:** al menos 6 caracteres.
-3. Haz clic en el botón **CREAR CUENTA**.
+![Pantalla de inicio de sesión](imagenes/01_login.png)
 
-Si todo está bien, entrarás automáticamente al menú del juego.
+Escribí tu **nombre de usuario** y tu **contraseña** y apretá **ENTRAR AL JUEGO**.
 
-![Pantalla de registro](images/02_registro_anotado.jpg)
+### Crear una cuenta
 
-📸 **Captura sugerida:** Pantalla de registro con los campos completos.
+Tocá **Regístrate aquí**. Elegí un usuario, escribí tu email y una contraseña, y apretá **CREAR CUENTA**.
 
-**Errores comunes:**
-- "El usuario debe tener entre 3 y 20 caracteres" → pon un nombre más corto o más largo.
-- "La contraseña debe tener al menos 6 caracteres" → usa una contraseña más larga.
-- "El usuario o email ya está registrado" → usa otro nombre o inicia sesión.
+![Pantalla de registro](imagenes/02_registro.png)
+
+Con cuenta, el servidor guarda tus monedas, skins, amigos, logros y sensibilidad, y los recuperás desde cualquier computadora.
+
+### Jugar sin conexión
+
+Si no tenés cuenta o no hay servidor, escribí un nombre de usuario (mínimo 3 letras) y apretá **JUGAR SIN CONEXIÓN**. Tu progreso se guarda **solo en esa computadora y ese navegador**.
 
 ---
 
-## 5. Iniciar sesión
+## 5. El menú principal
 
-Si ya tienes cuenta:
+![Menú principal](imagenes/03_menu.png)
 
-1. Escribe tu **usuario** (o tu email) en el primer campo.
-2. Escribe tu **contraseña** en el segundo campo.
-3. Haz clic en **ENTRAR AL JUEGO** (o pulsa la tecla **Enter**).
+Arriba hay cinco pestañas:
 
-![Pantalla de inicio de sesion](images/01_login_anotado.jpg)
-
-📸 **Captura sugerida:** Pantalla de inicio de sesión con usuario y contraseña.
-
-Si tus datos son correctos, entrarás al menú principal.
-
-> **Nota:** tu sesión se guarda en el navegador. Si cierras la pestaña y vuelves a abrir, puede que te pida la contraseña de nuevo.
-
----
-
-## 6. La pantalla principal (menú)
-
-Después de entrar, verás el menú con una barra arriba y cinco pestañas.
-
-📸 **Captura sugerida:** Menú principal completo (barra superior + pestañas).
-
-### Barra superior
-- **FAFI 1.6:** logo del juego.
-- **Jugar:** modos de juego.
-- **Equipamiento:** desactivado en esta versión.
-- **Tienda:** desactivada en esta versión.
-- **Perfil:** tu historial, amigos y logros.
-- **Ajustes:** sensibilidad, calidad y cerrar sesión.
-- **FAFI COINS:** tus monedas (empiezas con 2000).
-- **JUGADOR:** tu nombre de usuario.
-
-### Pestaña "Jugar"
-Tiene tres botones para elegir modo:
-- **CAMPO DE TIRO (AIM 30s)**
-- **DUST II — EXPLORACIÓN POR BANDOS**
-- **MAPA DE CAMPAÑA (5 niveles)**
-
-📸 **Captura sugerida:** Pestaña "Jugar" con los tres botones.
-
----
-
-## 7. Modos de juego
-
-### 7.1. Campo de tiro (AIM)
-
-**Objetivo:** conseguir la mayor puntuación en 30 segundos.
-
-- Al empezar aparecen blancos móviles.
-- Tienes todas las armas disponibles desde el inicio.
-- Al terminar se muestra tu puntuación, aciertos y precisión.
-
-![Juego AIM con HUD](images/09_aim_anotado.jpg)
-
-📸 **Captura sugerida:** Pantalla de juego AIM con blancos y HUD.
-
-**Rangos según puntos:**
-| Puntos | Rango |
+| Pestaña | Para qué sirve |
 |---|---|
-| 0 – 299 | PRINCIPIANTE |
-| 300 – 599 | EN PROGRESO |
-| 600 – 999 | BUEN AIM |
-| 1000 – 1499 | PRO |
-| 1500 – 1999 | ELITE |
-| 2000+ | ¡LEYENDA FAFI! |
+| **Jugar** | Elegir el modo de juego. |
+| **Equipamiento** | Ver y equipar tus armas y skins. |
+| **Tienda** | Comprar y abrir cajas. |
+| **Perfil** | Historial de compras, amigos y logros. |
+| **Ajustes** | Sensibilidad, calidad gráfica y cerrar sesión. |
 
-![Resultados de AIM](images/14_resultado_anotado.jpg)
-
-📸 **Captura sugerida:** Pantalla de resultados al terminar AIM.
+A la derecha ves tus **Fafi Coins** (la moneda del juego) y tu nombre. En la pestaña *Jugar* aparecen tus monedas, cuántas skins tenés (por ejemplo 0/37), los hechos de historia completados y el equipo que llevás.
 
 ---
 
-### 7.2. Dust II (exploración)
+## 6. Modos de juego
 
-**Objetivo:** recorrer el mapa libremente.
+### 6.1. Campo de tiro (entrenamiento)
 
-1. Pulsa **DUST II — EXPLORACIÓN POR BANDOS**.
-2. Espera a que cargue el mapa.
-3. Elige bando: **TERRORISTAS** o **ANTITERRORISTAS**.
-4. Aparecerás con un cuchillo y $3000.
-5. Pulsa **B** para abrir el menú de compra.
-6. Pulsa **ESC** para pausar.
+![Campo de tiro](imagenes/09_campo_de_tiro.png)
 
-📸 **Captura sugerida:** Pantalla de selección de bando (Terroristas / Antiterroristas).
+Tenés **30 segundos** para disparar a blancos móviles. Arriba ves tus **puntos**, los **blancos** acertados y tu **precisión**. En este modo podés usar todas las armas. Superar los 1000 puntos desbloquea el logro *Aim Pro*, y al terminar ganás 1 Fafi Coin cada 10 puntos.
 
-![Mapa Dust II](images/11_dust2_anotado.jpg)
+### 6.2. Defuse 5 contra 5
 
-📸 **Captura sugerida:** Vista del mapa Dust II con HUD y minimapa.
+Elegí el **mapa** (Dust II, Italy u Office) y tu **bando**:
 
-**Características:**
-- No hay temporizador ni enemigos.
-- Puedes saltar, agacharte y comprar armas.
-- Hay un minimapa en la esquina superior izquierda.
+![Selección de mapa y bando](imagenes/10_defuse_seleccion.png)
 
-📸 **Captura sugerida:** Menú de compra (tecla B) en Dust II.
+- **Terroristas (T):** plantan la bomba en el sitio **A** o **B** y la defienden hasta que explote.
+- **Antiterroristas (CT):** impiden que la planten o la desactivan antes de que explote.
 
-📸 **Captura sugerida:** Menú de pausa (ESC) en Dust II.
+**Reglas de la partida:**
+
+- Cada ronda dura **1:45** y empieza con **10 segundos de compra**.
+- La bomba tarda **40 segundos** en explotar. Se planta o se desactiva **manteniendo apretada la tecla `E`**.
+- Empezás con **$800** y ganás dinero por ganar rondas y por cada baja.
+- Gana el primer equipo que llega a **4 rondas**.
+- Tu equipo tiene 5 jugadores: vos y 4 bots. Los bots compran armas, hablan entre sí, te persiguen y también juegan la bomba.
+
+![Partida de Defuse en Dust II](imagenes/11_defuse_partida.png)
+
+**La tienda de la partida (tecla `B`)** solo se abre en tu zona de aparición durante el tiempo de compra. Tiene pistolas, subfusiles, escopetas, rifles, francotiradores, chaleco, casco y utilidades.
+
+![Tienda de compra durante la partida](imagenes/12_defuse_compra.png)
+
+- En Defuse llevás **una pistola y un arma principal**: comprar otra del mismo tipo reemplaza la anterior.
+- El **chaleco** ($650) absorbe parte del daño; con **casco** ($1000) también protege la cabeza.
+
+**El marcador (tecla `Tab`)** muestra bajas, muertes, disparos a la cabeza, daño por ronda y dinero de todos los jugadores:
+
+![Marcador de la partida](imagenes/13_marcador.png)
+
+Con cuenta, al terminar la partida se guardan tus resultados en el ranking.
+
+### 6.3. Mapa libre
+
+Elegí Dust II, Italy u Office y recorrelos **sin reglas**, con dinero infinito en la tienda (`B`), para practicar armas y recorridos. Dust II, Italy y Office tienen ambientación nocturna.
+
+### 6.4. Modo historia
+
+Es una campaña educativa sobre la Segunda Guerra Mundial. Se ve un mapa de Europa con **7 hechos**; por ahora está disponible el primero y los demás se desbloquean a medida que se completan.
+
+![Mapa del modo historia](imagenes/14_modo_historia_mapa.png)
+
+Tocá **VER HECHO** para ver **«El desembarco de Normandía»** (6 de junio de 1944): una cinemática en 3D narrada con voz, con lanchas, aviones y búnkeres.
+
+![Cinemática del desembarco de Normandía](imagenes/15_normandia.jpg)
+
+Podés saltar la cinemática con la tecla `Esc` o el botón de saltar. Al terminarla, el hecho queda marcado como completado.
 
 ---
 
-### 7.3. Campaña (5 niveles)
+## 7. Controles
 
-**Objetivo:** superar 5 niveles de AIM con dificultad creciente.
-
-1. Pulsa **MAPA DE CAMPAÑA**.
-2. Verás 5 nodos (solo el nivel 1 está desbloqueado al inicio).
-3. Pulsa un nodo desbloqueado para jugar.
-4. Cada nivel dura 30 segundos.
-5. Necesitas **600 puntos o más** para pasar al siguiente nivel.
-
-📸 **Captura sugerida:** Mapa de campaña con los 5 nodos.
-
-📸 **Captura sugerida:** Nivel de campaña en juego.
-
-> **Nota:** el progreso se guarda en tu navegador.
-
----
-
-## 8. Controles del juego
-
-### Tabla de controles
-
-| Acción | Tecla / botón |
+| Acción | Tecla |
 |---|---|
-| Moverse | **W A S D** |
-| Saltar (solo Dust II) | **Espacio** |
-| Agacharse | **Shift** (mantener) |
-| Disparar | **Clic izquierdo** |
-| Apuntar / mirar | **Clic derecho** |
-| Recargar | **R** |
-| Inspeccionar arma | **F** |
-| Equipar AK-47 | **1** |
-| Equipar cuchillo | **2** |
-| Equipar AWP | **3** |
-| Equipar Desert Eagle | **4** |
-| Cambiar de arma | **Q** o rueda del ratón |
-| Comprar (Dust II) | **B** |
-| Pausa / menú | **ESC** |
+| Moverse | `W` `A` `S` `D` |
+| Saltar | `Espacio` |
+| Agacharse | `Shift` |
+| Disparar | Clic izquierdo |
+| Apuntar / mirilla | Clic derecho |
+| Recargar | `R` |
+| Inspeccionar el arma | `F` |
+| Cambiar de arma (siguiente) | `Q` |
+| Arma primaria | `1` |
+| Arma secundaria | `2` |
+| Cuchillo | `3` |
+| Granadas: aturdidora / humo / explosiva / incendiaria | `4` / `5` / `6` / `7` |
+| Abrir la tienda de la partida | `B` |
+| Plantar o desactivar la bomba | `E` (mantener) |
+| Ver el marcador | `Tab` |
+| Pausa / volver al menú | `Esc` |
 
-📸 **Captura sugerida:** Pantalla de juego mostrando los controles en la parte inferior.
-
-### Ratón y cámara
-- Al entrar a una partida, el juego captura el ratón.
-- Pulsa **ESC** para liberarlo.
-- Haz clic en la pantalla para volver a capturarlo.
+**Mouse:** al empezar una partida el navegador captura el mouse; tocá la pantalla para activarlo. Para soltarlo, apretá `Esc`.
 
 ---
 
-## 9. Armas
+## 8. Armas y granadas
 
-| Arma | Tecla | Munición | Precio en Dust II |
-|---|---|---|---|
-| AK-47 | 1 | 30 / 90 | $2500 |
-| Cuchillo | 2 | — | Incluido |
-| AWP | 3 | 10 / 30 | $4750 |
-| Desert Eagle | 4 | 7 / 35 | $700 |
+| Arma | Tipo | Detalles |
+|---|---|---|
+| **AK-47** | Rifle (T) | Gran daño, retroceso marcado. |
+| **M4A4** | Rifle (CT) | Más estable, ideal a media distancia. |
+| **AWP** | Francotirador | Un disparo muy fuerte. Tiene **zoom doble** (clic derecho), cerrojo entre disparos y mira de francotirador. |
+| **Desert Eagle** | Pistola | Potente y precisa. |
+| **Cuchillo** | Cuerpo a cuerpo | Siempre disponible. |
+| **Granadas** | Utilidad | Aturdidora (ciega), de humo, explosiva e incendiaria. |
 
-**Notas:**
-- En AIM y campaña todas las armas están disponibles sin comprar.
-- En Dust II empiezas con cuchillo y debes comprar las demás.
+**Cómo funciona el disparo:**
 
-📸 **Captura sugerida:** Arma AK-47 en pantalla (primera persona).
-
-📸 **Captura sugerida:** Menú de compra con las armas y precios.
-
----
-
-## 10. Ajustes
-
-Entra en la pestaña **Ajustes** del menú principal.
-
-![Ajustes](images/04_ajustes_anotado.jpg)
-
-📸 **Captura sugerida:** Pestaña "Ajustes" con el deslizador de sensibilidad y botón de calidad.
-
-### Sensibilidad de la cámara
-- Rango: **1 a 20**.
-- Valor por defecto: **5**.
-- Si te cuesta apuntar, baja el valor.
-- Si el ratón va lento, súbelo.
-
-### Calidad gráfica
-- **ALTA:** mejor imagen, puede ir más lento.
-- **BAJA:** menos detalle, más fluido.
-
-### Cerrar sesión
-- Botón **CERRAR SESIÓN** al final de la pestaña.
-- Borra la sesión del navegador (tu cuenta y progreso se conservan).
+- El cuerpo del enemigo tiene varias zonas: un **disparo a la cabeza** hace mucho más daño.
+- Cada arma tiene su propio **patrón de retroceso**, y la mira se abre cuando te movés o disparás.
+- Los chalecos y cascos reducen el daño que recibís.
 
 ---
 
-## 11. Tu perfil y logros
+## 9. Tienda y cajas
 
-La pestaña **Perfil** muestra:
-- Historial de compras.
-- Lista de amigos.
-- Logros desbloqueados.
+![Tienda de cajas](imagenes/05_tienda.png)
 
-![Perfil](images/05_perfil_anotado.jpg)
+En la pestaña **Tienda** abrís cajas con tus Fafi Coins. Cada caja tiene una probabilidad distinta de dar skins comunes, épicas o legendarias:
 
-📸 **Captura sugerida:** Pestaña "Perfil" con historial, amigos y logros.
+| Caja | Precio | Común | Épica | Legendaria |
+|---|---|---|---|---|
+| **Caja Básica** | 200 | 85 % | 15 % | — |
+| **Caja Avanzada** | 500 | 30 % | 50 % | 20 % |
+| **Caja Clasificada** | 1000 | — | 50 % | 50 % |
 
-### Logros
-| Logro | Cómo se desbloquea |
+Elegí una caja a la izquierda, mirá su contenido abajo y apretá **ABRIR CAJA**. Se reproduce una animación: la caja cae, vibra, salta la tapa y sale flotando el arma que ganaste, con el color de su rareza. Podés saltarla con el botón *SALTAR*.
+
+Si te toca una **skin repetida**, recibís monedas de vuelta: **50** (común), **150** (épica) o **400** (legendaria). Con cuenta, la compra y el sorteo los hace el servidor y tu inventario queda guardado.
+
+**Cómo conseguir monedas:** en el campo de tiro ganás **1 moneda cada 10 puntos** al terminar los 30 segundos. Las skins repetidas también te devuelven monedas.
+
+---
+
+## 10. Equipamiento (tu inventario)
+
+![Inventario](imagenes/04_equipamiento.png)
+
+- A la izquierda filtrás por **arma** y por **rareza**.
+- Al elegir una skin, a la derecha se muestra el arma en 3D: **arrastrá para girarla**, usá la **rueda para acercar** y **doble clic para reiniciar**.
+- Apretá **EQUIPAR** para usarla en las partidas, o **INSPECCIONAR** para verla de cerca.
+- Marcá *Mostrar toda la colección* para ver también las skins que todavía no tenés.
+
+Cada arma empieza con su versión **Estándar**.
+
+---
+
+## 11. Perfil, amigos y logros
+
+![Perfil](imagenes/07_perfil.png)
+
+- **Historial de compras:** las cajas que abriste y lo que gastaste.
+- **Amigos:** escribí el usuario de un amigo y apretá **AÑADIR** (requiere cuenta).
+- **Logros:**
+
+| Logro | Cómo se consigue |
 |---|---|
-| Recluta | Entra a tu primera partida. |
-| Héroe de Guerra | Supera un nivel de campaña (600+ pts). |
-| Explorador Dust2 | Entra a Dust II por primera vez. |
-| Aim Pro | Consigue 1000+ pts en AIM. |
-
-![Logros](images/05_perfil_anotado.jpg)
-
-📸 **Captura sugerida:** Lista de logros con algunos desbloqueados (✓) y otros bloqueados (🔒).
+| **Recluta** | Entrar a tu primera partida. |
+| **Inversor de Fafi** | Abrir tu primera caja. |
+| **Héroe de Guerra** | Superar un nivel de campaña. |
+| **Explorador Dust2** | Entrar a Dust II por primera vez. |
+| **Aim Pro** | Conseguir más de 1000 puntos en el campo de tiro. |
 
 ---
 
-## 12. Tienda y equipamiento (próximamente)
+## 12. Ajustes
 
-La **Tienda** y el **Equipamiento** están desactivados en esta versión. Si haces clic, verás un mensaje de "PRÓXIMAMENTE".
+![Ajustes](imagenes/08_ajustes.png)
 
-![Tienda (proximamente)](images/06_tienda_anotado.jpg)
-
-📸 **Captura sugerida:** Mensaje "PRÓXIMAMENTE" en Tienda.
-
-![Equipamiento (proximamente)](images/07_equipamiento_anotado.jpg)
-
-📸 **Captura sugerida:** Mensaje "PRÓXIMAMENTE" en Equipamiento.
-
-Tus monedas (FAFI COINS) se conservan para cuando se active.
+- **Sensibilidad de la cámara (1 a 20):** cuánto gira la vista con el mouse. Se guarda por usuario.
+- **Calidad gráfica:** *Mínima* (PC muy básica), *Baja* (rendimiento), *Media* (equilibrado) o *Alta* (máxima calidad). Cambia la resolución, las sombras, la niebla y las texturas. Si el juego va lento, bajala.
+- **Cerrar sesión.**
 
 ---
 
 ## 13. Consejos para jugar mejor
 
-- **Empieza con la AK:** es la más equilibrada.
-- **Usa rafagas cortas:** el retroceso dispersa los disparos.
-- **Agáchate (Shift):** mejora la precisión.
-- **No dispares sin apuntar:** la cadera tiene más dispersión.
-- **El AWP puntúa más:** 250 puntos por impacto, pero es lento.
-- **Si el juego va lento:** pon CALIDAD en BAJA.
+1. Empezá en el **campo de tiro** para acostumbrarte al retroceso de cada arma.
+2. **Apuntá a la cabeza**: mata mucho más rápido.
+3. En Defuse, **comprá chaleco** antes que una arma cara cuando tengas poco dinero.
+4. **Escuchá**: los pasos y los disparos suenan con dirección y se oyen más bajo cuando están lejos.
+5. Usá las **granadas de humo** para cruzar zonas abiertas y las **aturdidoras** antes de entrar a un sitio.
+6. Recorré los mapas en **Mapa libre** para aprender los caminos hacia los sitios A y B.
+7. Si el juego va lento, bajá la **calidad gráfica**.
 
 ---
 
-## 14. Problemas comunes y cómo solucionarlos
+## 14. Problemas frecuentes
 
-### No puedo iniciar sesión
-- Verifica tu usuario y contraseña.
-- Si el servidor no responde, usa el **modo local de emergencia** (pide ayuda a la persona que organizó el juego).
+**No puedo iniciar sesión.** Revisá usuario y contraseña. Si el servidor no responde, usá **Jugar sin conexión**.
 
-### La página se queda en negro o no carga
-- Comprueba tu conexión a internet.
-- Usa Chrome o Edge.
-- Abre la consola con **F12** y revisa si hay errores (pide ayuda si no entiendes).
+**La página queda en negro o no carga.** Esperá unos segundos (los modelos pesan). Actualizá la página con `F5`. Comprobá que tu navegador tenga WebGL activado y esté actualizado.
 
-📸 **Captura sugerida:** Consola del navegador (F12) con un error.
+**El mouse no mueve la cámara.** Hacé clic dentro del juego para que el navegador capture el mouse. Si lo soltaste con `Esc`, volvé a hacer clic.
 
-### El ratón no controla la cámara
-- Haz clic sobre la pantalla del juego.
-- Si estás en pausa, pulsa **CONTINUAR**.
+**Va lento o se traba.** Bajá la calidad en *Ajustes*, cerrá otras pestañas y programas, y usá Chrome o Edge.
 
-### Dust II tarda mucho en cargar
-- El mapa es grande; espera a que llegue al 100%.
-- No cierres la pestaña mientras carga.
+**No se escuchan los sonidos.** El navegador activa el audio con el primer clic o tecla. Revisá el volumen de la computadora.
 
-### No se escuchan sonidos
-- En esta versión los sonidos están desactivados a propósito. No es un fallo.
+**Perdí mi progreso.** Sin cuenta, el progreso vive en ese navegador: si borrás los datos del sitio, se pierde. Con cuenta se conserva en el servidor.
 
-### La tienda o inventario no se abren
-- Es el comportamiento normal en esta versión.
+**Un archivo de sonido o modelo no aparece.** Probá actualizar con `Ctrl + F5`.
 
 ---
 
 ## 15. Preguntas frecuentes
 
-**¿FAFI 1.6 es multijugador?**  
-No en esta versión. Los modos son para un solo jugador.
+**¿Cuesta algo jugar?** No. Es gratis y no hay que instalar nada.
 
-**¿Hay bots o enemigos?**  
-No. Dust II es de exploración y AIM usa blancos móviles.
+**¿Puedo jugar sin internet?** Sí, una vez cargada la página, con *Jugar sin conexión*.
 
-**¿Puedo jugar sin cuenta?**  
-La interfaz pide iniciar sesión. Se puede usar el modo local de emergencia (pide ayuda).
+**¿Hay multijugador online?** Hoy se juega contra bots. El servidor ya incluye el canal para partidas en línea, que se sumará en próximas versiones.
 
-**¿Cómo gano monedas (FAFI COINS)?**  
-Jugando AIM o campaña: 1 moneda por cada 10 puntos. Empiezas con 2000.
+**¿Funciona en celular?** No está pensado para celulares: necesita teclado y mouse.
 
-**¿Puedo comprar skins?**  
-No en esta versión. La tienda está desactivada.
+**¿Cuántas skins hay?** 37 disponibles, y otras 45 preparadas para armas que se van a habilitar más adelante.
 
-**¿Cómo cambio de arma?**  
-Con **1** (AK), **2** (cuchillo), **3** (AWP), **4** (Deagle), o con **Q** / rueda del ratón.
-
-**¿Por qué no puedo apuntar con la Deagle?**  
-Por diseño: la Deagle no tiene mira en esta versión.
-
-**¿Cómo salgo de Dust II?**  
-Pulsa **ESC** y luego **VOLVER AL MENÚ**.
-
-**¿Se guarda mi progreso de campaña?**  
-Sí, en tu navegador.
+**¿Para qué sirven los hechos del modo historia?** Son capítulos educativos sobre la Segunda Guerra Mundial. El primero cuenta el desembarco de Normandía; los demás se irán sumando.
 
 ---
 
-## 16. Créditos
+## 16. Créditos y contacto
 
-**TeamT Studio** — proyecto FAFI 1.6.
+**Team T Studio**: Santino Laudati, Dante Iglesias e Ian Quiroga.
+EEST N°1 «Eduardo Ader» · Vicente López · Laboratorio de Programación 5°3.
 
-Integrantes:
-- Dante Iglesias
-- Santino Laudati
-- Ian Quiroga
+Los modelos, sonidos y fotografías de terceros están listados con sus autores y licencias en `CREDITS_2_0_0v.md`.
 
-**Licencia:** uso personal y no comercial.  
-**Contacto:** teamtitssstudio@gmail.com  
-**Instagram:** @teamtstudio
-
----
-
-**Fin del manual.**
+Seguinos en Instagram: **@teamtstudio**
+Código del proyecto: <https://github.com/SantinoLaudati/Fafi-1.6>

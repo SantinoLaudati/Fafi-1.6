@@ -269,6 +269,14 @@ Las contribuciones son bienvenidas.
 
 ---
 
+Documentación
+
+- Manual de usuario (con capturas): `docs/Manual_de_Usuario_FAFI_1.6_2_0_0v.md`
+- Manual del programador (arquitectura, cajas, modo historia, base de datos y despliegue): `docs/Manual_del_Programador_FAFI_1.6_2_0_0v.md`
+- Informe, Gantt, presentación, tríptico y tráiler: carpeta `docs/`
+
+---
+
 
 Autor
 
