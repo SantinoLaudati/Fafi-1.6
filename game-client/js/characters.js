@@ -28,10 +28,10 @@ export const CHAR_DEFS = {
 // Armas de bots: del pack "low poly weapon free pack" (cada arma = cuerpo + cargador, el eje largo es X)
 const WEAPON_PACK = ASSET + 'armas por defecto/low_poly_weapon_free_pack.glb';
 export const BOT_WEAPONS = {
-  ak:     { node: 'ak',      length: 0.86 },
-  m4:     { node: 'm4',      length: 0.80 },
-  awp:    { node: 'sniper',  length: 1.15 },
-  deagle: { node: 'magnum',  length: 0.26 }
+  ak:     { node: 'ak',      length: 0.60 },
+  m4:     { node: 'm4',      length: 0.56 },
+  awp:    { node: 'sniper',  length: 0.84 },
+  deagle: { node: 'magnum',  length: 0.19 }
 };
 
 const loader = makeLoader();
@@ -141,7 +141,7 @@ function paintWeaponGeometry(src, matrix, id, mag, bb, pal = C) {
 
 // Arma del pack lista para colgar de un Group: el cañón apunta a +Z, escalada a `length` metros.
 export function makeWorldWeapon(id, opts = {}) {
-  const def = Object.assign({}, BOT_WEAPONS[id] || BOT_WEAPONS.ak); if (opts.length) def.length = opts.length; else def.length *= 1.25;   // las armas de los bots se agrandan un poco para que se vean bien
+  const def = Object.assign({}, BOT_WEAPONS[id] || BOT_WEAPONS.ak); if (opts.length) def.length = opts.length; else def.length *= 1.0;    // medidas ya proporcionadas al personaje (1.12 m de alto)
   const g = new THREE.Group();
   if (!weaponPack) return g;
   const nodes = []; weaponPack.traverse(o => { if (o.name === def.node) nodes.push(o); });
@@ -429,8 +429,8 @@ export function animateCharacter(inst, dt, speed, aimPitch = 0, st = {}) {
   wp.updateMatrixWorld(true);
   const wlen = wl0;
   const grip = (x, y, z) => new THREE.Vector3(x, y, z).applyMatrix4(wp.matrixWorld);
-  const gR = inst.isPistol ? grip(0.0, -0.03, -0.02) : grip(0.01, -0.06, -wlen * 0.12);
-  let gL = inst.isPistol ? gR : grip(0.0, -0.035, wlen * 0.22);
+  const gR = inst.isPistol ? grip(0.0, -0.02, -0.015) : grip(0.008, -0.04, -wlen * 0.12);
+  let gL = inst.isPistol ? gR : grip(0.0, -0.025, wlen * 0.22);
   let targetR = gR;
   if (planted) {
     // plantar / desactivar: las dos manos trabajan bajo el pecho, cerca del suelo

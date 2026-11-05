@@ -462,6 +462,7 @@ export function createDefuse(A) {
       helmetHit = !!head; dmg = kept;
     }
     u.hp -= dmg;
+    if (attacker && attacker !== u && attacker.team !== u.team) attacker.dmg = (attacker.dmg || 0) + Math.min(dmg, u.hp + dmg);   // daño causado (para el marcador)
     const isBullet = !!BULLET[weapon];
     const hp = hitPos || { x: u.pos.x, y: u.pos.y + (head ? 0.99 : 0.65), z: u.pos.z };
     if (u.isPlayer) {
@@ -491,7 +492,7 @@ export function createDefuse(A) {
   }
   function killUnit(u, killer, head, weapon) {
     u.alive = false; u.hp = 0; u.deaths++; u.speed = 0; u.path = null;
-    if (killer && killer !== u) { killer.kills++; if (killer.team !== u.team) { killer.money = Math.min(CFG.maxMoney, killer.money + CFG.killReward); if (killer.isPlayer) A.setMoney(killer.money); } }
+    if (killer && killer !== u) { killer.kills++; if (head) killer.hs = (killer.hs || 0) + 1; if (killer.team !== u.team) { killer.money = Math.min(CFG.maxMoney, killer.money + CFG.killReward); if (killer.isPlayer) A.setMoney(killer.money); } }
     if (u.char) { const kx = killer && killer !== u ? u.pos.x - killer.pos.x : 0, kz = killer && killer !== u ? u.pos.z - killer.pos.z : 0; killCharacter(u.char, kx, kz); }
     if (!u.isPlayer) SFX.at("kill", { x: u.pos.x, y: u.pos.y + 1.4, z: u.pos.z }, { vol: 0.7 });
     if (u.hasBomb) { u.hasBomb = false; dropBomb(u.pos); }
@@ -898,6 +899,7 @@ export function createDefuse(A) {
     chickens.update(dt, D.nav, D.player ? D.player.pos : null);
     updatePlayerHold(dt);
     spectate();
+    if ($('dfScoreboard') && $('dfScoreboard').classList.contains('show')) { D.sbT = (D.sbT || 0) - dt; if (D.sbT <= 0) { D.sbT = 0.4; renderScoreboard(); } }
     // trazadoras
     for (let i = D.tracers.length - 1; i >= 0; i--) {
       const t = D.tracers[i]; t.t -= dt;
@@ -938,9 +940,17 @@ export function createDefuse(A) {
   }
   function renderScoreboard() {
     const el = $('dfScoreboard'); if (!el) return;
-    const row = u => '<tr class="' + (u.alive ? '' : 'dead') + (u.isPlayer ? ' me' : '') + '"><td>' + u.name + '</td><td>' + u.kills + '</td><td>' + u.deaths + '</td><td>' + (u.team === D.team ? '$' + u.money : '') + '</td></tr>';
-    const tbl = team => '<div class="team ' + team + '"><h3>' + TEAM_BADGE[team] + (team === 'ct' ? 'ANTITERRORISTAS' : 'TERRORISTAS') + '<em>' + D.score[team] + '</em></h3><table><tr><th>Jugador</th><th>K</th><th>M</th><th>$</th></tr>' + D.units.filter(u => u.team === team).sort((a, b) => b.kills - a.kills).map(row).join('') + '</table></div>';
-    el.innerHTML = tbl('ct') + tbl('t');
+    const mapName = (A.mapDef() && A.mapDef().name) || '';
+    const rounds = Math.max(1, D.round);
+    const row = u => {
+      const hsPct = u.kills ? Math.round((u.hs || 0) / u.kills * 100) + '%' : '–';
+      const adr = Math.round((u.dmg || 0) / rounds);
+      return '<tr class="' + (u.alive ? '' : 'dead') + (u.isPlayer ? ' me' : '') + '"><td>' + u.name + (u.hasBomb ? ' 💣' : '') + '</td><td>' + u.kills + '</td><td>' + u.deaths + '</td><td>' + hsPct + '</td><td>' + adr + '</td><td>' + (u.team === D.team ? '$' + u.money : '') + '</td></tr>';
+    };
+    const tbl = team => '<div class="team ' + team + '"><h3>' + TEAM_BADGE[team] + (team === 'ct' ? 'ANTITERRORISTAS' : 'TERRORISTAS') + '<em>' + D.score[team] + '</em></h3><table><tr><th>Jugador</th><th>K</th><th>M</th><th>HS</th><th>ADR</th><th>$</th></tr>' + D.units.filter(u => u.team === team).sort((a, b) => b.kills - a.kills).map(row).join('') + '</table></div>';
+    const me = D.player || {};
+    const head = '<div class="sbHead"><b>' + mapName + '</b><span>RONDA ' + D.round + ' · primero en ganar ' + CFG.winRounds + '</span><span>Tus bajas: <b>' + (me.kills || 0) + '</b> · Muertes: <b>' + (me.deaths || 0) + '</b> · Daño: <b>' + Math.round(me.dmg || 0) + '</b></span></div>';
+    el.innerHTML = head + tbl('ct') + tbl('t');
   }
 
   // ---------------------------------------------------------------- balas del jugador contra bots

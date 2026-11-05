@@ -233,3 +233,8 @@ body.df-on #weaponMode,body.df-on #weapon-info .icon{display:none}
 #dfArmor b{font-size:22px;font-weight:600}
 #dfArmor em{display:none;font-style:normal;font-size:10px;letter-spacing:2px;color:#ffc44d;border:1px solid #ffc44d;padding:1px 5px}
 #dfArmor.helm em{display:inline}
+#dfScoreboard{flex-wrap:wrap}
+#dfScoreboard .sbHead{flex:0 0 100%;display:flex;gap:18px;align-items:baseline;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.12);font-size:15px;color:#9fb0c6;letter-spacing:1px}
+#dfScoreboard .sbHead b:first-child{font-size:24px;letter-spacing:4px;color:var(--gold2,#ffc44d)}
+#dfScoreboard .sbHead span b{color:#fff}
+#dfScoreboard td:nth-child(n+2){width:46px}

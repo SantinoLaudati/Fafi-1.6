@@ -3904,7 +3904,18 @@ try{
   document.getElementById('fafiPlayDefuse')?.addEventListener('click',()=>{ window.campaignActiveLevel=0; window.fafiAimSpeedMult=1; window.fafiDefuse=true; startDust2Mode(); });
   document.getElementById('dfBadgeCT').innerHTML=TEAM_BADGE.ct; document.getElementById('dfBadgeT').innerHTML=TEAM_BADGE.t;
   document.getElementById('teamT').insertAdjacentHTML('afterbegin', TEAM_BADGE.t); document.getElementById('teamCT').insertAdjacentHTML('afterbegin', TEAM_BADGE.ct);
-  window.addEventListener('keydown',(e)=>{ if(e.code==='Tab' && defuse.active){ e.preventDefault(); if(!e.repeat){ defuse.renderScoreboard(); document.getElementById('dfScoreboard').classList.add('show'); } } });
+  window.addEventListener('keydown',(e)=>{
+    if(e.code!=='Tab') return;
+    if(defuse.active){ e.preventDefault(); if(!e.repeat){ defuse.renderScoreboard(); document.getElementById('dfScoreboard').classList.add('show'); } return; }
+    if(gameActive && gameMode==='dust2'){            // exploración: resumen de la partida
+      e.preventDefault(); const el=document.getElementById('dfScoreboard'); if(!el) return;
+      const g=Object.keys(grenadeStock).filter(k=>grenadeStock[k]>0).map(k=>GRENADES[k].label+(grenadeStock[k]>1?' ×'+grenadeStock[k]:'')).join(', ')||'—';
+      const ar=getArmor();
+      el.innerHTML='<div class="sbHead"><b>'+(MAPS[currentMapKey]?MAPS[currentMapKey].name:'')+'</b><span>EXPLORACIÓN LIBRE</span><span>Bando: <b>'+(playerTeam==='t'?'Terrorista':'Antiterrorista')+'</b></span></div>'
+        +'<div class="team"><h3 style="color:#fff">TU EQUIPO</h3><table><tr><th>Arma</th><td>'+(WEAPON_LABEL[currentWeapon]||currentWeapon)+'</td></tr><tr><th>Armadura</th><td>'+(ar.a>0?(ar.h?'Chaleco + casco':'Chaleco'):'—')+'</td></tr><tr><th>Granadas</th><td>'+g+'</td></tr><tr><th>Dinero</th><td>$ ∞</td></tr><tr><th>Disparos</th><td>'+shots+'</td></tr></table></div>';
+      if(!e.repeat) el.classList.add('show');
+    }
+  });
   window.addEventListener('keyup',(e)=>{ if(e.code==='Tab'){ document.getElementById('dfScoreboard')?.classList.remove('show'); } });
   document.getElementById('fafiOpenCampaign')?.addEventListener('click', fafiOpenCampaign);
   document.getElementById('closeCampBtn')?.addEventListener('click',()=>{ document.getElementById('campaign-map-overlay').style.display='none'; if(window.currentUserId) document.getElementById('menus').style.display='flex'; });
@@ -3938,6 +3949,7 @@ try{
 try{ menu.style.display='none'; }catch(e){}
 try{ fafiApplySensitivity(); }catch(e){}
 try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }catch(e){}
+
 
 
 
