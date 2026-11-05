@@ -37,6 +37,29 @@ $resource = $segments[0] ?? '';
 $id = $segments[1] ?? null;
 $action = $segments[2] ?? null;
 
+// --- Normalización de rutas ---
+// El frontend usa rutas como /api/auth/login, /api/inventory/coins o
+// /api/social/friends/12/accept. Según cómo se parsean los segmentos, la
+// acción puede quedar en $segments[1] o en $segments[3]. Normalizamos aquí
+// para que cada handler reciba ($id, $action) como espera.
+if ($resource === 'social' && $id === 'friends' && count($segments) === 4) {
+    // PUT /social/friends/{id}/accept | /block
+    $id = $segments[2];
+    $action = $segments[3];
+} elseif ($resource === 'social' && $id === 'friends' && count($segments) === 3 && $method === 'DELETE') {
+    // DELETE /social/friends/{id}
+    $id = $segments[2];
+    $action = 'friends';
+} elseif ($resource === 'inventory' && $id === 'history' && $action === 'purchases') {
+    // GET /inventory/history/purchases
+    $id = 'purchases';
+    $action = 'history';
+} elseif ($action === null && $id !== null) {
+    // Rutas de dos segmentos: /auth/login, /inventory/coins, /game/config...
+    $action = $id;
+    $id = null;
+}
+
 // Get input data
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
 $input = array_merge($input, $_POST);

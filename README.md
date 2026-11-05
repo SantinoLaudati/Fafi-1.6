@@ -147,7 +147,7 @@ Instalación (desarrollo)
 7. Abrir el juego en la misma URL raíz (lo sirve el nginx del contenedor):
    http://localhost/   (y dev-website en /dev-website/)
    El frontend usa la misma URL de donde se sirve (apiBaseUrl y wsUrl se
-   derivan de la página), así que no hay que editar game-client/js/config.js.
+   derivan de la página), así que no hay que editar game-client/js/config_2_0_0v.js.
 
 Para desarrollo local rápido (sin Docker):
    php -S localhost:3000 -t database/php-backend/api
@@ -202,8 +202,8 @@ Cambiar Arma	Scroll Mouse
 
 Cómo jugar en local (Windows)
 
-Doble clic en `iniciar-juego.bat` (levanta `servidor.ps1` y abre el navegador en http://localhost:5173).
-No hace falta Python ni Node. Abrir `index.html` con doble clic NO funciona (el navegador bloquea los .glb y los módulos JS).
+Servir la carpeta `game-client` con cualquier servidor web estático (por ejemplo `python -m http.server 5173` dentro de `game-client`) y abrir http://localhost:5173. En producción el juego se levanta con Docker (ver `docker-compose.yml`).
+Abrir `index.html` con doble clic NO funciona (el navegador bloquea los .glb y los módulos JS).
 En el login hay un botón "JUGAR SIN CONEXIÓN" (el progreso se guarda en localStorage).
 
 ---
@@ -213,7 +213,7 @@ Modos
 - Campo de tiro (AIM 30 s) y mapa de campaña.
 - DEFUSE 5v5: T vs CT con bots. Rondas de 1:45 (compra 10 s), plantar/desactivar con E (mantener), bomba de 40 s,
   economía (empiezas con $800), primero en ganar 4 rondas. TAB = marcador, B = tienda (solo en tu zona de spawn).
-  Tienda estilo Valorant (pistola · primaria con subfusiles, escopetas, rifles, francotiradores y pesadas · escudos y utilidad), con miniaturas de las armas: haz clic o pulsa 1-4 y luego el número. Las armas de modelos futuros salen con candado (`BUY_ITEMS` en `game.js`).
+  Tienda estilo Valorant (pistola · primaria con subfusiles, escopetas, rifles, francotiradores y pesadas · escudos y utilidad), con miniaturas de las armas: haz clic o pulsa 1-4 y luego el número. Las armas de modelos futuros salen con candado (`BUY_ITEMS` en `game_2_0_0v.js`).
   Equipo: chaleco ($650), chaleco + casco ($1000) y kit de defusa; el chaleco absorbe parte del daño y el casco protege la cabeza.
   Bots: compran según su dinero (arma, chaleco y casco), oyen disparos, avisan a sus compañeros, devuelven el fuego, hacen strafe,
   persiguen al último sitio donde vieron a un enemigo y se recolocan solos si se atascan (la malla de navegación solo usa la zona conectada principal).
@@ -222,16 +222,16 @@ Modos
 
 Mapas (game-client/assets/Mapas para tt vs ct) y logos (assets/Logos mapas): Dust II (`de_dust2_-_cs_map.glb`), Italy, Office.
 Italy y Office vienen con texturas de 8192/4096 px: se usan versiones reducidas en `optimizados/`
-(`herramientas/optimizar-mapas.bat` las regenera si cambias los originales).
-Las zonas de cada mapa (spawn T/CT y sitios A/B) están en `game-client/js/zonas.js`.
+(`herramientas/optimizar-mapas_2_0_0v.bat` las regenera si cambias los originales).
+Las zonas de cada mapa (spawn T/CT y sitios A/B) están en `game-client/js/zonas_2_0_0v.js`.
 Si un mapa está en `null` se calculan solas.
 Los mapas reducidos (Office) generan la malla de navegación de los bots con celda fina (`nav:{cell, headroom}` en `MAPS`).
 
 Vista en primera persona (viewmodel): arma y cuchillo se dibujan en un segundo pase (capa 1) con su propia cámara de FOV
 fijo (84° horizontal ≈ viewmodel_fov de CS), así no se deforman con el FOV del mundo ni atraviesan paredes. Las poses
-de cada arma y del cuchillo se ajustan en `buildPackWeapons` / `loadKnifeAnim` (`js/game.js`).
-El pack de armas no trae colores ni texturas (un único material negro): `js/characters.js` pinta cada triángulo por
-zona (madera / metal / polímero). `js/loaders.js` convierte `KHR_materials_pbrSpecularGlossiness` (r160 ya no lo soporta).
+de cada arma y del cuchillo se ajustan en `buildPackWeapons` / `loadKnifeAnim` (`js/game_2_0_0v.js`).
+El pack de armas no trae colores ni texturas (un único material negro): `js/characters_2_0_0v.js` pinta cada triángulo por
+zona (madera / metal / polímero). `js/loaders_2_0_0v.js` convierte `KHR_materials_pbrSpecularGlossiness` (r160 ya no lo soporta).
 
 Personajes: T = Phoenix y Leet, CT = FBI y ST6 (por el nombre interno del modelo: ctm_* = CT, tm_* = T).
 Armas: AK-47 (T), M4A4 (CT), AWP, Desert Eagle, cuchillo; granadas: flash (7), humo (8), HE (9), molotov (0); kit de defusa (CT).
@@ -285,45 +285,45 @@ Fafi-1.6 toma inspiración en la jugabilidad táctica y precisión competitiva d
 
 > "Precisión táctica + diversión arcade = experiencia FPS única"
 
-Modo historia · mapa de hechos de la Segunda Guerra Mundial (`game-client/js/historia.js`, `storymap.js`, `mapa.js`)
+Modo historia · mapa de hechos de la Segunda Guerra Mundial (`game-client/js/historia_2_0_0v.js`, `storymap_2_0_0v.js`, `mapa_2_0_0v.js`)
 El modo historia es un mapa de Europa con 7 hechos; por ahora solo está desbloqueado el primero, «El desembarco de Normandía» (6 de junio de 1944), una cinemática de 8 planos con modelos GLB (`assets/WW2`), música, sonido real y locución. Los otros 6 aparecen con candado (próximamente).
 
 - Contenido: `assets/WW2` (lancha Higgins LCVP, acorazado Bismarck, bombardero, soldado alemán, MP-40 en primera persona y las tres fotos). El bombardero,
-  el soldado y las texturas pesadas se usan en versión de 1024 px (`assets/WW2/optimizados`, generada con `herramientas/optimizar-glb.ps1`).
+  el soldado y las texturas pesadas se usan en versión de 1024 px (`assets/WW2/optimizados`, generada con `herramientas/optimizar-glb_2_0_0v.ps1`).
 - Guion y locución: `assets/historia/guion.json` (texto de cada plano) y `assets/historia/audio/cN_M.wav`. La duración de cada plano la marca el audio.
-  Para regenerar la voz con Piper: `herramientas/generar-voz-piper.ps1`; para grabar una voz humana: `herramientas/grabar-locucion.html` (usa los mismos nombres).
-- Para añadir un capítulo: añade su entrada al guion, genera sus `.wav` y escribe su constructor `CH[n]` en `historia.js` (planos de mapa, foto o 3D).
+  Para regenerar la voz con Piper: `herramientas/generar-voz-piper_2_0_0v.ps1`; para grabar una voz humana: `herramientas/grabar-locucion_2_0_0v.html` (usa los mismos nombres).
+- Para añadir un capítulo: añade su entrada al guion, genera sus `.wav` y escribe su constructor `CH[n]` en `historia_2_0_0v.js` (planos de mapa, foto o 3D).
 
-Sonido del juego (`game-client/js/sfx.js`, muestras en `assets/audio/sfx`)
+Sonido del juego (`game-client/js/sfx_2_0_0v.js`, muestras en `assets/audio/sfx`)
 Disparos por arma, recarga, cerrojo, cuchillo, impactos, granadas (rebote, flash, humo, HE, molotov), bomba (plantar, pitidos que se aceleran,
 desactivar, explosión), pasos del jugador y de los bots según el mapa, muertes y clics de interfaz. Los sonidos de bots y granadas son
 posicionales (se atenúan con la distancia y suenan por el lado correcto). El audio se activa con el primer clic o tecla.
 
 Realismo (sombras, agua, físicas)
 - Sombras: sesgo adaptativo al tamaño del texel (sin acné), mapa de 2048 px en MEDIA, y sombras de contacto bajo cada personaje estiradas en la dirección
-  opuesta al sol (también en mapas con luz horneada). Ver `js/quality.js` (`alignBlobToSun`).
+  opuesta al sol (también en mapas con luz horneada). Ver `js/quality_2_0_0v.js` (`alignBlobToSun`).
 - Agua de la cinemática: shader en GPU con olas, normales de detalle, reflejo del cielo con Fresnel, brillo del sol, color por profundidad y espuma
-  en crestas y orilla (`js/historia.js`).
+  en crestas y orilla (`js/historia_2_0_0v.js`).
 - Físicas: el jugador tiene inercia (acelera, frena con fricción, casi no controla el aire y pierde la velocidad contra las paredes); los bots caen
   por gravedad con vuelco, rebote y deslizamiento según la dirección del disparo; las granadas tienen resistencia del aire, rebote según la
   velocidad de impacto y giro al rodar; los impactos en paredes sueltan polvo y chispas con gravedad y dejan agujeros de bala.
 
 Cajas y skins
 - Tienda y Equipamiento activos (pestañas del menú). Tres cajas (200 / 500 / 1000 coins). Al abrir una se reproduce la animación de tapa del modelo
-  `assets/Cajas/…glb` (`js/cajas.js`) y el arma ganada sale flotando de la caja, con luz, haz y chispas del color de su rareza.
+  `assets/Cajas/…glb` (`js/cajas_2_0_0v.js`) y el arma ganada sale flotando de la caja, con luz, haz y chispas del color de su rareza.
 - 32 skins (AK-47, M4A4, AWP, Desert Eagle, cuchillo) que recolorean las zonas del modelo de cada arma (madera, metal, polímero, corredera…): ver `fafiSkinsDB`
-  en `js/game.js` y `repaintWeapon` en `js/characters.js`. Las duplicadas se reembolsan (50 / 150 / 400). Se equipan en Equipamiento y se ven en primera persona.
+  en `js/game_2_0_0v.js` y `repaintWeapon` en `js/characters_2_0_0v.js`. Las duplicadas se reembolsan (50 / 150 / 400). Se equipan en Equipamiento y se ven en primera persona.
 
 Optimización para PC básicos (4 GB de RAM)
 - Calidad nueva **MÍNIMA** (Ajustes): 70 % de resolución, sin antialiasing ni sombras, niebla corta, 4 bots, texturas de mapa reducidas, menos partículas y 30 FPS fijos.
-  La primera vez el juego elige la calidad según la memoria y los núcleos del navegador (`js/quality.js`); en equipos de 4 GB o 2 núcleos arranca en MÍNIMA.
-- Los sonidos se descodifican solo la primera vez que suenan (antes se cargaban los 80 al abrir el juego y ocupaban cientos de MB de RAM): `js/sfx.js`.
+  La primera vez el juego elige la calidad según la memoria y los núcleos del navegador (`js/quality_2_0_0v.js`); en equipos de 4 GB o 2 núcleos arranca en MÍNIMA.
+- Los sonidos se descodifican solo la primera vez que suenan (antes se cargaban los 80 al abrir el juego y ocupaban cientos de MB de RAM): `js/sfx_2_0_0v.js`.
 - Los mapas pesados usan siempre las versiones de 1k/2k de `assets/Mapas para tt vs ct/optimizados`, y los modelos grandes de WW2 se usan reducidos (`assets/WW2/optimizados`).
 
 Armas bloqueadas (ya cargadas, con skins): Five-SeveN, P90, SMG Silenciada, Escopeta Pump, Shorty, M4 Táctico, Vandal, VSS Vintorez y Negev
-(modelos en `assets/armas por defecto/`, definidos en `BOT_WEAPONS` de `characters.js`). Tienen 5 skins cada una (45 en total, en `skins.js`) que
-no salen en cajas ni inventario hasta que se habilite el arma: se habilita añadiendo su id a `WEAPON_ORDER` (`skins.js`), pasando su entrada de
-`BUY_ITEMS` (`game.js`) de `locked` a `gun` y dándole su lógica de arma (precio, cargador, daño, animaciones).
+(modelos en `assets/armas por defecto/`, definidos en `BOT_WEAPONS` de `characters_2_0_0v.js`). Tienen 5 skins cada una (45 en total, en `skins_2_0_0v.js`) que
+no salen en cajas ni inventario hasta que se habilite el arma: se habilita añadiendo su id a `WEAPON_ORDER` (`skins_2_0_0v.js`), pasando su entrada de
+`BUY_ITEMS` (`game_2_0_0v.js`) de `locked` a `gun` y dándole su lógica de arma (precio, cargador, daño, animaciones).
 
 Combate: hitbox de los bots con cabeza, torso con brazos y piernas (cápsulas; la bala se prueba como segmento completo, no se pierden disparos); pierna x0.75, cabeza x4.
 El retroceso sigue un patrón por disparo (AK y M4 distintos), se acumula mientras disparas y se recupera al soltar; la mira se abre con el retroceso, la dispersión, el movimiento y el salto.
