@@ -213,7 +213,7 @@ Modos
 - Campo de tiro (AIM 30 s) y mapa de campaña.
 - DEFUSE 5v5: T vs CT con bots. Rondas de 1:45 (compra 10 s), plantar/desactivar con E (mantener), bomba de 40 s,
   economía (empiezas con $800), primero en ganar 4 rondas. TAB = marcador, B = tienda (solo en tu zona de spawn).
-  Tienda estilo CS:GO en columnas (Pistolas · Rifles · Equipo · Granadas): pulsa 1-4 para elegir columna y luego el número del objeto, o haz clic.
+  Tienda estilo Valorant (pistola · primaria con subfusiles, escopetas, rifles, francotiradores y pesadas · escudos y utilidad), con miniaturas de las armas: haz clic o pulsa 1-4 y luego el número. Las armas de modelos futuros salen con candado (`BUY_ITEMS` en `game.js`).
   Equipo: chaleco ($650), chaleco + casco ($1000) y kit de defusa; el chaleco absorbe parte del daño y el casco protege la cabeza.
   Bots: compran según su dinero (arma, chaleco y casco), oyen disparos, avisan a sus compañeros, devuelven el fuego, hacen strafe,
   persiguen al último sitio donde vieron a un enemigo y se recolocan solos si se atascan (la malla de navegación solo usa la zona conectada principal).

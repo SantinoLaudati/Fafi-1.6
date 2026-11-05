@@ -238,3 +238,38 @@ body.df-on #weaponMode,body.df-on #weapon-info .icon{display:none}
 #dfScoreboard .sbHead b:first-child{font-size:24px;letter-spacing:4px;color:var(--gold2,#ffc44d)}
 #dfScoreboard .sbHead span b{color:#fff}
 #dfScoreboard td:nth-child(n+2){width:46px}
+
+/* === TIENDA estilo Valorant === */
+#buyMenu .buy-panel{width:min(1180px,97vw);max-height:96vh;background:rgba(10,18,22,.9);border:1px solid rgba(80,230,190,.28);clip-path:none;border-radius:0}
+#buyMenu .buy-header{background:linear-gradient(90deg,rgba(60,230,180,.16),transparent 65%);padding:10px 18px}
+#buyMenu .buy-header h2{color:#6af0cd;letter-spacing:5px;font-size:20px}
+#buyMenu .buy-money{border-color:rgba(106,240,205,.55);color:#9cffe4;border-radius:0}
+#buyMenu .buy-inv{margin:8px 18px;padding:8px}
+#buyCols{display:grid;grid-template-columns:minmax(140px,.9fr) minmax(0,4.2fr) minmax(150px,1fr);gap:14px;padding:6px 18px 12px;--ch:clamp(54px,9.4vh,88px)}
+.vsec{min-width:0}
+.vhead{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;font-size:14px;letter-spacing:4px;color:#7df3d2}
+.vhead i{width:12px;height:12px;border-radius:50%;background:#42e6bd;box-shadow:0 0 10px #42e6bd}
+.vsub{margin:6px 0 4px;padding:3px 0;text-align:center;font-size:11px;letter-spacing:3px;color:#cfeee6;background:linear-gradient(90deg,rgba(66,230,189,.32),rgba(66,230,189,.16));border-top:1px solid rgba(66,230,189,.4)}
+.vsec>.vsub:first-of-type,.vcol>.vsub:first-child{margin-top:0}
+.vpgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.vcol,.vstack{min-width:0}
+.vstack{display:flex;flex-direction:column;gap:5px}
+.vutil{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.vc{position:relative;display:flex;flex-direction:column;justify-content:flex-end;height:var(--ch);padding:6px 8px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.055);color:#e6f3ef;text-align:left;cursor:pointer;font:inherit;overflow:hidden;transition:.12s}
+.vc:hover:not(.locked){background:rgba(66,230,189,.16);border-color:rgba(66,230,189,.55)}
+.vimg{position:absolute;inset:4px 6px 22px;display:grid;place-items:center;pointer-events:none}
+.vimg img{max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) brightness(1.5) contrast(.95) drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+.vimg b{font-size:30px}
+.vn{position:relative;font-size:11.5px;letter-spacing:.6px;color:#cfd8d4;line-height:1.1}
+.vp{position:relative;font-size:12px;color:#d9e6e2;font-weight:600}
+.vk{position:absolute;top:3px;right:5px;font-size:9px;color:#6af0cd;opacity:.75;letter-spacing:1px}
+.vc.eq,.vc.own{background:rgba(66,230,189,.2);border-color:#42e6bd;box-shadow:inset 0 0 0 1px rgba(66,230,189,.35)}
+.vc.eq .vp{color:#8cffe0;letter-spacing:1px}.vc.own .vp{color:#ffd86a}
+.vc.cant{opacity:.6}.vc.cant .vp{color:#ff8d8d}
+.vc.locked{cursor:not-allowed;background:rgba(255,255,255,.03)}
+.vc.locked .vimg img{opacity:.2;filter:grayscale(1) brightness(.9)}
+.vc.locked .vn{color:#7c8a86}.vc.locked .vp{color:#6b7a76;font-size:10px;letter-spacing:1.5px}
+.vlock{position:absolute;top:50%;left:50%;width:26px;height:26px;margin:-18px 0 0 -13px;color:#9fb5af;opacity:.9}
+#buyCols[data-sel="0"] .vc:not([data-col="0"]),#buyCols[data-sel="1"] .vc:not([data-col="1"]),#buyCols[data-sel="2"] .vc:not([data-col="2"]),#buyCols[data-sel="3"] .vc:not([data-col="3"]){opacity:.35}
+#buyCols[data-sel="0"] .vc[data-col="0"],#buyCols[data-sel="1"] .vc[data-col="1"],#buyCols[data-sel="2"] .vc[data-col="2"],#buyCols[data-sel="3"] .vc[data-col="3"]{border-color:#ffd86a;box-shadow:0 0 12px rgba(255,216,106,.35)}
+@media(max-width:900px){#buyCols{grid-template-columns:1fr}.vpgrid{grid-template-columns:1fr 1fr}}

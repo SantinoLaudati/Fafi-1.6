@@ -1378,34 +1378,50 @@ function spend(price){
   money-=price; if(defuse.active && defuse.player) defuse.player.money=money;
   return true;
 }
-const BUY_COLS = [
-  { name:'PISTOLAS', items:[ { id:'deagle', kind:'gun', label:'Desert Eagle', sub:'7 balas · gran daño' } ] },
-  { name:'RIFLES', items:[
-    { id:'ak', kind:'gun', label:'AK-47', sub:'Automático · 30/90' },
-    { id:'m4', kind:'gun', label:'M4A4', sub:'Automático · 30/90' },
-    { id:'awp', kind:'gun', label:'AWP', sub:'Francotirador · 10/30' } ] },
-  { name:'EQUIPO', items:[
-    { id:'vest', kind:'armor', label:'Chaleco', sub:'Reduce el daño al cuerpo' },
-    { id:'helm', kind:'armor', label:'Chaleco + casco', sub:'Protege también la cabeza' },
-    { id:'kit', kind:'util', label:'Kit de defusa', sub:'Desactivas en 5 s (solo CT)' } ] },
-  { name:'GRANADAS', items:[
-    { id:'flash', kind:'util', label:'Flashbang', sub:'Ciega · máx. 2' },
-    { id:'smoke', kind:'util', label:'Humo', sub:'Bloquea la visión' },
-    { id:'he', kind:'util', label:'Granada HE', sub:'Explosiva' },
-    { id:'molo', kind:'util', label:'Molotov', sub:'Fuego 7 s' } ] }
+// Catálogo de la tienda (estilo Valorant). cat = zona donde se dibuja; col = columna para el teclado (1-4);
+// kind 'locked' = armas de modelos futuros: aparecen con candado y todavía no se pueden comprar.
+// Para habilitar una: cambiar kind a 'gun', añadir su precio a WEAPON_PRICES y su lógica de arma.
+const BUY_ITEMS = [
+  { id:'deagle', kind:'gun', cat:'side', col:0, label:'Desert Eagle', thumb:'deagle' },
+  { id:'glock',  kind:'locked', cat:'side', col:0, label:'Glock-18',   price:200, thumb:'deagle' },
+  { id:'usp',    kind:'locked', cat:'side', col:0, label:'USP-S',      price:200, thumb:'deagle' },
+  { id:'p250',   kind:'locked', cat:'side', col:0, label:'P250',       price:300, thumb:'deagle' },
+  { id:'five',   kind:'locked', cat:'side', col:0, label:'Five-SeveN', price:500, thumb:'deagle' },
+  { id:'mp9',    kind:'locked', cat:'smg', col:1, label:'MP9', price:1250, thumb:'m4' },
+  { id:'mp7',    kind:'locked', cat:'smg', col:1, label:'MP7', price:1500, thumb:'m4' },
+  { id:'nova',   kind:'locked', cat:'shotgun', col:1, label:'Nova',   price:1050, thumb:'ak' },
+  { id:'xm',     kind:'locked', cat:'shotgun', col:1, label:'XM1014', price:2000, thumb:'ak' },
+  { id:'ak',  kind:'gun', cat:'rifle', col:1, label:'AK-47', thumb:'ak' },
+  { id:'m4',  kind:'gun', cat:'rifle', col:1, label:'M4A4',  thumb:'m4' },
+  { id:'galil', kind:'locked', cat:'rifle', col:1, label:'Galil AR', price:1800, thumb:'ak' },
+  { id:'famas', kind:'locked', cat:'rifle', col:1, label:'FAMAS',    price:2050, thumb:'m4' },
+  { id:'awp', kind:'gun', cat:'sniper', col:1, label:'AWP', thumb:'awp' },
+  { id:'ssg', kind:'locked', cat:'sniper', col:1, label:'SSG 08', price:1700, thumb:'awp' },
+  { id:'negev', kind:'locked', cat:'heavy', col:1, label:'Negev', price:1700, thumb:'ak' },
+  { id:'m249',  kind:'locked', cat:'heavy', col:1, label:'M249',  price:5200, thumb:'ak' },
+  { id:'vest', kind:'armor', cat:'shield', col:2, label:'Chaleco ligero',   icon:'🛡' },
+  { id:'helm', kind:'armor', cat:'shield', col:2, label:'Chaleco + casco',  icon:'⛑' },
+  { id:'kit',   kind:'util', cat:'util', col:2, label:'Kit de defusa', icon:'🛠' },
+  { id:'flash', kind:'util', cat:'util', col:3, label:'Flashbang',  icon:'⚡' },
+  { id:'smoke', kind:'util', cat:'util', col:3, label:'Humo',       icon:'☁' },
+  { id:'he',    kind:'util', cat:'util', col:3, label:'Granada HE', icon:'💥' },
+  { id:'molo',  kind:'util', cat:'util', col:3, label:'Molotov',    icon:'🔥' }
 ];
+const WEAPON_TEAM = { ak:'t', m4:'ct' };
 function buyVisible(it){
-  if(it.kind==='gun') return defuse.teamAllows(it.id);
   if(it.id==='kit') return defuse.active && defuse.team==='ct';
   return true;
 }
+function buyTeamBlocked(it){ return it.kind==='gun' && !defuse.teamAllows(it.id); }
 function buyPrice(it){
   if(it.id==='helm'){ const {a,h}=getArmor(); return (a>0 && !h) ? 350 : 1000; }
   if(it.id==='vest') return 650;
-  return WEAPON_PRICES[it.id];
+  return it.kind==='locked' ? it.price : WEAPON_PRICES[it.id];
 }
 function buyState(it){
   const price=buyPrice(it), free=infiniteMoney();
+  if(it.kind==='locked') return { txt:'PRÓXIMAMENTE', cls:'lock' };
+  if(buyTeamBlocked(it)) return { txt:'SOLO '+(WEAPON_TEAM[it.id]||'').toUpperCase(), cls:'cant' };
   if(it.kind==='gun'){
     if(owned[it.id]) return { txt: currentWeapon===it.id ? 'EQUIPADA' : 'EQUIPAR', cls: currentWeapon===it.id ? 'eq' : 'own' };
   } else if(it.kind==='armor'){
@@ -1420,31 +1436,73 @@ function buyState(it){
   if(!free && money<price) return { txt:'$'+price, cls:'cant' };
   return { txt:'$'+price, cls:'' };
 }
+// Miniatura de cada arma: se renderiza una vez desde el modelo del pack (vista lateral) y se guarda como imagen.
+const thumbCache={};
+function weaponThumb(id){
+  if(thumbCache[id]!==undefined) return thumbCache[id];
+  try{
+    if(!renderer || !id) return '';
+    const w=makeWorldWeapon(id,{ length:id==='deagle'?0.5:1.0, forward:false });
+    if(!w.children.length) return '';                       // el pack de armas todavía no cargó: se reintenta más tarde
+    const W=360, H=130, sc=new THREE.Scene();
+    sc.add(new THREE.HemisphereLight(0xffffff,0x9aa0b0,2.2)); const dl=new THREE.DirectionalLight(0xffffff,1.6); dl.position.set(2,3,2); sc.add(dl);
+    sc.add(w); w.rotation.y=0;
+    const cam=new THREE.OrthographicCamera(-0.58,0.58,0.21,-0.21,0.1,10); cam.position.set(3,0,0); cam.lookAt(0,0,0);
+    const rt=new THREE.WebGLRenderTarget(W,H); rt.texture.colorSpace=THREE.SRGBColorSpace;
+    const oldRT=renderer.getRenderTarget(), oldA=renderer.getClearAlpha(), oldC=renderer.getClearColor(new THREE.Color()), oldClip=renderer.clippingPlanes;
+    renderer.clippingPlanes=[]; renderer.setClearColor(0x000000,0); renderer.setRenderTarget(rt); renderer.clear(); renderer.render(sc,cam);
+    const px=new Uint8Array(W*H*4); renderer.readRenderTargetPixels(rt,0,0,W,H,px);
+    renderer.setRenderTarget(oldRT); renderer.setClearColor(oldC,oldA); renderer.clippingPlanes=oldClip; rt.dispose();
+    const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d'), id2=g.createImageData(W,H);
+    for(let y=0;y<H;y++){ id2.data.set(px.subarray((H-1-y)*W*4,(H-y)*W*4), y*W*4); }
+    g.putImageData(id2,0,0);
+    return (thumbCache[id]=cv.toDataURL('image/png'));
+  }catch(e){ thumbCache[id]=''; return ''; }
+}
+function buyHotkeys(){
+  const map={}; for(let c=0;c<4;c++){ let n=0; for(const it of BUY_ITEMS){ if(it.col===c && it.kind!=='locked' && buyVisible(it) && !buyTeamBlocked(it)){ n++; map[it.id]=(c+1)+'·'+n; } } }
+  return map;
+}
+function buyCard(it, hk){
+  const locked=it.kind==='locked', st=buyState(it), img=it.thumb?weaponThumb(it.thumb):'';
+  const label = it.id==='helm' ? ((()=>{ const {a,h}=getArmor(); return a>0&&!h ? 'Casco' : it.label; })()) : it.label;
+  const icon = it.icon || (it.kind==='gun' ? '🔫' : '');
+  return '<button class="vc '+st.cls+(locked?' locked':'')+'" data-id="'+it.id+'" data-col="'+it.col+'">'
+    +(hk[it.id]?'<span class="vk">'+hk[it.id]+'</span>':'')
+    +'<div class="vimg">'+(img?'<img src="'+img+'" alt="">':'<b>'+icon+'</b>')+'</div>'
+    +'<div class="vn">'+label+'</div><div class="vp">'+st.txt+'</div>'
+    +(locked?'<i class="vlock" title="Próximamente"><svg viewBox="0 0 24 24"><path d="M7 10V8a5 5 0 0 1 10 0v2h1.5A1.5 1.5 0 0 1 20 11.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5v-8A1.5 1.5 0 0 1 5.5 10H7zm2 0h6V8a3 3 0 0 0-6 0v2z" fill="currentColor"/></svg></i>':'')
+    +'</button>';
+}
 function updateBuyMenu(){
   updateMoneyHUD();
   const bme=document.getElementById('buyModeEl'); if(bme) bme.textContent='— '+(defuse.active?'DEFUSE':'EXPLORACIÓN · DINERO INFINITO');
   const root=document.getElementById('buyCols'); if(!root) return;
-  const cols=BUY_COLS.map(c=>({ name:c.name, items:c.items.filter(buyVisible) })).filter(c=>c.items.length);
-  if(buyCol!==null && buyCol>=cols.length) buyCol=null;
-  root.innerHTML = cols.map((c,ci)=>{
-    const rows=c.items.map((it,ii)=>{
-      const st=buyState(it);
-      const label = it.id==='helm' ? ((()=>{ const {a,h}=getArmor(); return a>0&&!h ? 'Casco' : it.label; })()) : it.label;
-      return '<button class="bz-row '+st.cls+'" data-id="'+it.id+'"><span class="k">'+(ii+1)+'</span><span class="n">'+label+'<small>'+it.sub+'</small></span><span class="p">'+st.txt+'</span></button>';
-    }).join('');
-    return '<div class="bz-col'+(buyCol===ci?' sel':'')+'" data-ci="'+ci+'"><h4><i>'+(ci+1)+'</i>'+c.name+'</h4>'+rows+'</div>';
-  }).join('');
+  const hk=buyHotkeys();
+  const cat=(c)=>BUY_ITEMS.filter(i=>i.cat===c && buyVisible(i)).map(i=>buyCard(i,hk)).join('');
+  const sub=(t)=>'<div class="vsub">'+t+'</div>';
+  root.setAttribute('data-sel', buyCol===null ? '' : String(buyCol));
+  root.innerHTML =
+    '<div class="vsec vside"><div class="vhead"><i></i>PISTOLA</div>'+sub('PISTOLAS')+'<div class="vstack">'+cat('side')+'</div></div>'
+   +'<div class="vsec vprim"><div class="vhead"><i></i>PRIMARIA</div><div class="vpgrid">'
+     +'<div class="vcol">'+sub('SUBFUSILES')+'<div class="vstack">'+cat('smg')+'</div>'+sub('ESCOPETAS')+'<div class="vstack">'+cat('shotgun')+'</div></div>'
+     +'<div class="vcol">'+sub('RIFLES')+'<div class="vstack">'+cat('rifle')+'</div></div>'
+     +'<div class="vcol">'+sub('FRANCOTIRADORES')+'<div class="vstack">'+cat('sniper')+'</div>'+sub('PESADAS')+'<div class="vstack">'+cat('heavy')+'</div></div>'
+   +'</div></div>'
+   +'<div class="vsec vshield"><div class="vhead"><i></i>ESCUDOS</div>'+sub('VS. TODO EL DAÑO')+'<div class="vstack">'+cat('shield')+'</div>'+sub('UTILIDAD')+'<div class="vutil">'+cat('util')+'</div></div>';
   const inv=document.getElementById('buyInvEl');
   if(inv){
     const {a,h}=getArmor();
     const prim = owned.awp ? 'AWP' : owned.ak ? 'AK-47' : owned.m4 ? 'M4A4' : '—';
     const gr = Object.keys(grenadeStock).filter(k=>grenadeStock[k]>0).map(k=>GRENADES[k].icon+(grenadeStock[k]>1?'×'+grenadeStock[k]:'')).join(' ') || '—';
     inv.innerHTML = '<span>PRIMARIA <b>'+prim+'</b></span><span>PISTOLA <b>'+(owned.deagle?'Desert Eagle':'—')+'</b></span>'
-      + '<span>CHALECO <b>'+(a>0?(h?'Kevlar + casco':'Kevlar'):'—')+'</b></span><span>GRANADAS <b>'+gr+'</b></span>';
+      + '<span>ESCUDO <b>'+(a>0?(h?'Chaleco + casco':'Chaleco'):'—')+'</b></span><span>UTILIDAD <b>'+gr+'</b></span>';
   }
 }
 function buyItem(it){
   if(!gameActive || gameMode!=='dust2') return;
+  if(it.kind==='locked'){ showFloating(it.label+': próximamente'); return; }
+  if(buyTeamBlocked(it)){ showFloating(WEAPON_LABEL[it.id]+' es solo para '+(WEAPON_TEAM[it.id]==='t'?'terroristas':'antiterroristas')); return; }
   if(defuse.active && !defuse.canBuy()){ showFloating(defuse.buyReason()); return; }
   if(it.kind==='gun') tryBuy(it.id);
   else if(it.kind==='armor') buyArmor(it.id);
@@ -1512,8 +1570,8 @@ function buyKey(e){
   const m=/^(?:Digit|Numpad)(\d)$/.exec(e.code); if(!m) return false;
   e.preventDefault();
   const n=+m[1];
-  const cols=BUY_COLS.map(c=>c.items.filter(buyVisible)).filter(c=>c.length);
-  if(buyCol===null){ if(n>=1 && n<=cols.length){ buyCol=n-1; updateBuyMenu(); } return true; }
+  const cols=[0,1,2,3].map(c=>BUY_ITEMS.filter(i=>i.col===c && i.kind!=='locked' && buyVisible(i) && !buyTeamBlocked(i)));
+  if(buyCol===null){ if(n>=1 && n<=4){ buyCol=n-1; updateBuyMenu(); } return true; }
   if(n>=1 && n<=cols[buyCol].length) buyItem(cols[buyCol][n-1]); else { buyCol=null; updateBuyMenu(); }
   return true;
 }
@@ -1535,8 +1593,8 @@ function setBuyMenu(open){
 }
 function toggleBuyMenu(){ setBuyMenu(!buyMenuOpen); }
 document.getElementById('buyCols')?.addEventListener('click', (e)=>{
-  const row=e.target.closest('.bz-row'); if(!row) return;
-  for(const c of BUY_COLS){ const it=c.items.find(i=>i.id===row.dataset.id); if(it){ buyItem(it); return; } }
+  const card=e.target.closest('.vc'); if(!card) return;
+  const it=BUY_ITEMS.find(i=>i.id===card.dataset.id); if(it) buyItem(it);
 });
 
 
@@ -3958,6 +4016,7 @@ try{
 try{ menu.style.display='none'; }catch(e){}
 try{ fafiApplySensitivity(); }catch(e){}
 try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }catch(e){}
+
 
 
 
