@@ -15,7 +15,7 @@
 export const ZONAS = {
   dust2: {   // Dust 2 (assets/Mapas para tt vs ct/de_dust2_-_cs_map.glb), normalizado a 64 m
     t:  { x:  -5.0, y:  0.2, z:  24.2, r: 5.0 },     // T spawn (sur, junto a la zona de compra T del radar)
-    ct: { x:   7.6, y: -0.2, z: -14.8, r: 4.5 },     // CT spawn (norte, a la derecha de B y a la izquierda de A)
+    ct: { x:   7.6, y: -2.9, z: -14.8, r: 4.5 },     // CT spawn (norte, planta baja techada bajo la plataforma, a la derecha de B y a la izquierda de A)
     A:  { x:  17.9, y: -0.2, z: -16.9, r: 4.5 },     // sitio A (noreste, plataforma al final de Long A / Catwalk)
     B:  { x: -15.1, y: -1.3, z: -19.4, r: 4.5 }      // sitio B (noroeste, tras los túneles)
   },
