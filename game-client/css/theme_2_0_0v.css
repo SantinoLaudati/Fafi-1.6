@@ -306,3 +306,28 @@ body.df-on #weaponMode,body.df-on #weapon-info .icon{display:none}
 #weapon-info #ammoEl{font-size:46px;font-weight:700;color:#fff!important;text-shadow:0 2px 6px #000}
 #gBar{display:none}
 #weaponMode,#instructions,.fafi16-note{display:none!important}
+
+/* Fafi Pass */
+#fafi16-tab-pass{padding:18px 26px}
+.fp-head{display:flex;justify-content:space-between;align-items:center}
+.fp-head h2{margin:0;letter-spacing:4px;color:#e0a82e}
+.fp-sub{color:#8a9ab0;font-size:12px;margin-top:4px}
+.fp-lv{text-align:center;border:2px solid #e0a82e;padding:6px 18px}
+.fp-lv b{display:block;font-size:34px;color:#fff;line-height:1}
+.fp-lv span{font-size:10px;letter-spacing:2px;color:#8a9ab0}
+.fp-bar{height:8px;background:rgba(255,255,255,.1);margin:14px 0 4px}
+.fp-bar i{display:block;height:100%;background:linear-gradient(90deg,#e0a82e,#ffd770)}
+.fp-xp{font-size:11px;color:#8a9ab0;letter-spacing:1px}
+.fp-actions{margin:12px 0}
+.fp-claimall{background:#e0a82e;color:#111;border:none;padding:9px 18px;font-weight:700;letter-spacing:2px;cursor:pointer}
+.fp-claimall:disabled{opacity:.35;cursor:default}
+.fp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;max-height:52vh;overflow:auto;padding-right:6px}
+.fp-cell{position:relative;border:1px solid rgba(255,255,255,.12);border-top:3px solid var(--c);background:rgba(8,12,18,.7);padding:8px 10px 10px;min-height:92px;display:flex;flex-direction:column;gap:3px}
+.fp-cell em{font-style:normal;font-size:11px;color:#8a9ab0}
+.fp-cell b{font-size:13px;color:#fff;font-weight:600}
+.fp-cell span{font-size:10px;letter-spacing:2px;color:var(--c)}
+.fp-cell.lock{opacity:.45}
+.fp-cell.got{opacity:.6}
+.fp-cell.can{box-shadow:0 0 0 1px var(--c)}
+.fp-cell button{margin-top:auto;background:var(--c);color:#111;border:none;padding:4px;font-weight:700;font-size:11px;cursor:pointer}
+.fp-cell u{margin-top:auto;font-size:10px;text-decoration:none;color:#7aff9a}

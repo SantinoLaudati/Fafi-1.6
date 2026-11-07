@@ -10,11 +10,13 @@ import { openCrate, preloadCrate } from './cajas_2_0_0v.js';
 import { SKINS_DB, skinById, applyKnifeSkin, loadKnife } from './skins_2_0_0v.js';
 import * as menu2 from './menu2_2_0_0v.js';
 import { SFX } from './sfx_2_0_0v.js';
+import './pass_2_0_0v.js';
+window.fafiShowFloating=(t)=>{ try{ showFloating(t); }catch(e){} };
 
 
 
 /* === FAFI 1.6 MAIN port: todo el menú + configurables sobre motor V2 (sin colisiones con V2) === */
-window.fafiCoins = 2000;
+window.fafiCoins = 400;
 window.userInventory = [];
 window.equippedSkins = { ak:null, m4:null, awp:null, deagle:null, knife:null };
 window.currentUserId = null;
@@ -221,7 +223,7 @@ async function fafiDbSaveMatch(m){
   }catch(e){ console.warn('Fafi DB: guardar partida', e); }
 }
 function fafiResetUserState(){
-  window.fafiCoins=2000; window.userInventory=[]; window.equippedSkins={ak:null,m4:null,awp:null,deagle:null,knife:null};
+  window.fafiCoins=400; window.userInventory=[]; window.equippedSkins={ak:null,m4:null,awp:null,deagle:null,knife:null};
   window.purchaseHistory=[]; window.friendsList=[]; window.campaignLevel=1; window.fafiAimSpeedMult=1; window.fafiSensVal=5;
   for(const a of window.achievements){ a.unlocked=false; }
 }
@@ -448,7 +450,7 @@ let fafiOpeningBox=false;
 async function fafiBuyBox(type){
   if(fafiOpeningBox) return;
   const cost = type==='basic'?200:(type==='advanced'?500:1000);
-  if(window.fafiCoins<cost){ alert('¡No tienes suficientes FafiCoins! Juega AIM para ganar.'); return; }
+  if(window.fafiCoins<cost){ alert('¡No tienes suficientes FafiCoins! Gana experiencia en el Fafi Pass jugando Defuse.'); return; }
   fafiOpeningBox=true;
   try{
     let won, refund;
@@ -1353,7 +1355,7 @@ const defuse = createDefuse({
   explosionFx:(pos,R)=>explosionEffect(pos,R), acquireLight:(c,i,d,p)=>acquireLight(c,i,d,p), releaseLight:(l)=>releaseLight(l),
   damageFlash:(f)=>{ const e=document.getElementById('dfDamage'); if(e){ e.style.opacity=Math.min(0.85,0.25+f*0.6); setTimeout(()=>{ e.style.opacity=0; }, 140); } },
   botShotFx:()=>{}, colScale:()=>colScale,
-  onMatchEnd:(m)=>{ fafiDbSaveMatch(m); },
+  onMatchEnd:(m)=>{ fafiDbSaveMatch(m); try{ window.fafiPassMatch && window.fafiPassMatch(m); }catch(e){} },
   botThrow:(k,o,d,u)=>{ try{ if(grenades.ready()) grenades.throw(k,o,d,u); }catch(e){} },
   hitFeedback:(pos,head,helmet,dir)=>{ SFX.play(helmet?'hit_helmet':head?'headshot':'hit',{vol:helmet?0.9:1}); hitMarker.classList.add('show'); setTimeout(()=>hitMarker.classList.remove('show'),120); if(helmet){ sparkFx(pos,dir); } else bloodFx(pos,dir,head); if(head) showFloating(helmet?'CASCO':'HEADSHOT'); },
   bloodFx:(pos,dir,head)=>bloodFx(pos,dir,head),
@@ -2175,7 +2177,7 @@ function endGame(){
   rRank.textContent=rank;
   resultOverlay.classList.add('show');
   try{
-    const earned=Math.floor(score/10);
+    const earned=0;     // el modo Aim es solo practica: no da Fafi Coins
     if(earned>0 && window.currentUserId){ window.fafiCoins+=earned; fafiSaveGameData(); fafiUpdateCoinsDisplay(); }
     if(score>=1000) fafiUnlock('aim_pro');
     if(window.campaignActiveLevel && score>=600){
@@ -4293,7 +4295,9 @@ timeLeft=Infinity;
 updateHUD();
 
 /* === Wiring FAFI16 shell -> motor V2 === */
+window.fafiSave=()=>fafiSaveGameData(); window.fafiRefreshCoins=()=>fafiUpdateCoinsDisplay();
 function fafiSwitchTab(id, el){
+  if(id==='pass'){ try{ window.fafiPassOpen && window.fafiPassOpen(); }catch(e){} }
   if(id==='equip'){ menu2.openInventory(); return; }
   if(id==='tienda'){ menu2.openStore(); return; }
   document.querySelectorAll('.fafi16-panel').forEach(p=>p.classList.remove('active'));

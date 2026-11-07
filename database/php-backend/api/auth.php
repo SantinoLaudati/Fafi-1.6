@@ -93,7 +93,7 @@ function handleRegister($input) {
         db()->insert('configuraciones_jugador', ['usuario_id' => $userId]);
         db()->insert('progreso_campana', ['usuario_id' => $userId, 'ultimo_nivel' => 1]);
         db()->insert('estadisticas_jugador', ['usuario_id' => $userId]);
-        db()->insert('monedas_jugador', ['usuario_id' => $userId, 'moneda_gratuita' => 2000]);
+        db()->insert('monedas_jugador', ['usuario_id' => $userId, 'moneda_gratuita' => 400]);
         
         // Give starter items
         $starterItems = db()->fetchAll(

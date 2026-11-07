@@ -111,7 +111,7 @@ export function openStore() {
   };
   const refreshBtn = () => {
     const b = root.querySelector('#sh-open'); if (!b) return; const c = CRATES[st.tier], need = c.price - (window.fafiCoins || 0);
-    b.disabled = st.busy || need > 0; b.textContent = need > 0 ? 'FALTAN ◉ ' + need + ' · JUEGA AIM PARA GANAR COINS' : 'ABRIR CAJA · ◉ ' + c.price;
+    b.disabled = st.busy || need > 0; b.textContent = need > 0 ? 'FALTAN ◉ ' + need + ' · RECLAMALAS EN EL FAFI PASS' : 'ABRIR CAJA · ◉ ' + c.price;
   };
   const buy = async (t) => {
     if (st.busy) return; st.busy = true; refreshBtn();
