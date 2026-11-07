@@ -3584,6 +3584,7 @@ function toggleSpectator(){
 window.addEventListener('keydown', (e)=>{
   // debug desactivado en producción (descomenta si necesitas calibrar teclado)
   // console.log('tecla:', e.code, 'key:', e.key, 'keyCode:', e.keyCode);
+  if(e.code==='F5' || (e.ctrlKey && e.code==='KeyR')){ e.preventDefault(); return; }   // F5 y Ctrl+R no recargan la página
   keys[e.code]=true;
   if(buyMenuOpen){ if(buyKey(e)) return; }
   // P = modo vuelo sin daño (atraviesa todo) · Z = guarda aquí el spawn CT · C = guarda aquí el spawn T
