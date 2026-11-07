@@ -1884,7 +1884,7 @@ function updateHUD(){
     timeEl.textContent = isFinite(timeLeft) ? timeLeft.toFixed(1) : '∞';
     if(isFinite(timeLeft) && timeLeft<10) timeEl.style.color='#ff3b3b'; else timeEl.style.color='#fff';
     const label = timeEl.parentElement.querySelector('.hud-label');
-    if(label) label.textContent = 'TIEMPO';
+    if(label) label.textContent = 'PRACTICA';
   }
   if(typeof updateMoneyHUD==='function') updateMoneyHUD();
   if(typeof updateDebugPanel==='function') updateDebugPanel();
@@ -2025,7 +2025,7 @@ function startGame(mode='aim', team=null){
   gameMode = mode;
   for(const k in animAmmo){ animAmmo[k].ammo=ANIM_WEAPONS[k].mag; animAmmo[k].reserve=ANIM_WEAPONS[k].reserve; }
   const isDust2 = (mode==='dust2');
-  score=0; hits=0; shots=0; timeLeft= isDust2 ? Infinity : 30;
+  score=0; hits=0; shots=0; timeLeft= Infinity;
   ammoInMag=30; reserveAmmo=90; isReloading=false; reloadProgress=0; isAiming=false; aimProgress=0; recoilKick=0;
   // === Reset economía/inventario ===
   if(isDust2){
@@ -2223,7 +2223,7 @@ function goMenu(){
     else { menu.style.display='flex'; }
   }catch(e){ menu.style.display='flex'; }
   // reset HUD modo
-  timeLeft = 30;
+  timeLeft = Infinity;
   updateHUD();
 }
 
@@ -4288,7 +4288,7 @@ window.addEventListener('blur', ()=> { setAiming(false); isHoldingShoot=false; }
 // init three early so menu shows instantly
 initThree();
 gameActive=false;
-timeLeft=30;
+timeLeft=Infinity;
 updateHUD();
 
 /* === Wiring FAFI16 shell -> motor V2 === */
