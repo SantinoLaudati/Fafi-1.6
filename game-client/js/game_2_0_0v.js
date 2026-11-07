@@ -246,7 +246,7 @@ function fafiUpdateProfileUI(){
   const hist=document.getElementById('purchase-history-list');
   if(hist) hist.innerHTML = window.purchaseHistory.length===0 ? "<div class='fafi-list-item'>No hay compras.</div>" : window.purchaseHistory.slice().reverse().map(p=>"<div class='fafi-list-item'><span>Caja "+p.box.toUpperCase()+"</span><span>-"+p.cost+" Coins</span></div>").join('');
   const fr=document.getElementById('friends-list');
-  if(fr) fr.innerHTML = window.friendsList.length===0 ? "<div class='fafi-list-item'>Sin amigos.</div>" : window.friendsList.map(f=>"<div class='fafi-list-item'><span>"+f+"</span><span style='color:#4ade80;'>Online</span></div>").join('');
+  if(fr) fr.innerHTML = window.friendsList.length===0 ? "<div class='fafi-list-item'>Sin amigos.</div>" : window.friendsList.map(f=>"<div class='fafi-list-item'><span>"+String(f).replace(/[&<>\"']/g,c=>'&#'+c.charCodeAt(0)+';')+"</span><span style='color:#4ade80;'>Online</span></div>").join('');
   const ach=document.getElementById('achievements-list');
   if(ach) ach.innerHTML = window.achievements.map(a=>"<div class='fafi-list-item "+(a.unlocked?'achievement-unlocked':'achievement-locked')+"'><div><b>"+a.name+"</b><br><small style='color:#777;'>"+a.desc+"</small></div><span>"+(a.unlocked?'':'')+"</span></div>").join('');
   fafiUpdateCoinsDisplay();
@@ -338,6 +338,7 @@ async function fafiFinalizeAuth(user, isLocal){
   const username = (user && (user.username || user.id)) || 'DevPlayer';
   fafiResetUserState();
   window.currentUserId = username;
+  try{ window.fafiRecommendFullscreen && window.fafiRecommendFullscreen(); }catch(e){}
   document.getElementById('login-overlay').style.display='none';
   document.getElementById('player-name').textContent=username;
   const sub=document.getElementById('profile-sub');
@@ -4345,7 +4346,8 @@ async function fafiDoRegister(){
   const u=(document.getElementById('reg-user').value||'').trim();
   const email=(document.getElementById('reg-email').value||'').trim();
   const p=document.getElementById('reg-pass').value||'';
-  if(u.length<3){ alert('Mínimo 3 caracteres.'); return; }
+  if(u.length<3 || u.length>20){ alert('El usuario debe tener entre 3 y 20 caracteres (se permiten letras, numeros y simbolos).'); return; }
+  if(p.length<6){ alert('La contraseña debe tener al menos 6 caracteres (se permiten numeros y simbolos).'); return; }
   if(!email.includes('@')){ alert('Email inválido.'); return; }
   const online=!!(window.authService && !window.authService.isDevMode());
   if(online){
@@ -4493,7 +4495,7 @@ try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }cat
       e.stopPropagation();
       if(e.key==='Escape'){ close(); return; }
       if(e.key!=='Enter') return;
-      if(inp.value.trim().toLowerCase()==='vanesa'){
+      if(inp.value.trim().toLowerCase()==='friker puto'){
         window.fafiCoins=(window.fafiCoins||0)+100000;
         try{ fafiSaveGameData(); }catch(_){} try{ fafiUpdateCoinsDisplay(); }catch(_){}
         try{ SFX.init(); SFX.play('buy'); }catch(_){}
@@ -4515,3 +4517,19 @@ try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }cat
 
 // Herramientas de desarrollo: con ?dev=1 en la URL se exponen objetos internos en window.__fafi (capturas, pruebas de mapas y zonas).
 if(/[?&]dev=1/.test(location.search)){ window.__fafi = { THREE, MAPS, ZONAS, defuse, buildMinimapImage, loadMap, wallLimit, get scene(){return scene;}, get camera(){return camera;}, get renderer(){return renderer;}, get controls(){return controls;}, get map(){return currentMapKey;}, get group(){return dust2Group;}, get colliders(){return dust2Colliders;} }; }
+
+// === Recomendar pantalla completa al iniciar sesion (una vez por sesion del navegador) ===
+window.fafiRecommendFullscreen=function(){
+  try{ if(document.fullscreenElement || sessionStorage.getItem('fafi_fs_asked')) return; sessionStorage.setItem('fafi_fs_asked','1'); }catch(e){}
+  const box=document.createElement('div');
+  box.style.cssText='position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6)';
+  box.innerHTML='<div style="background:#101822;border:1px solid rgba(224,168,46,.7);padding:24px 28px;max-width:380px;text-align:center;font-family:inherit;color:#fff;box-shadow:0 10px 40px #000">'
+    +'<div style="font-size:18px;letter-spacing:3px;color:#e0a82e;margin-bottom:10px">PANTALLA COMPLETA</div>'
+    +'<div style="font-size:13px;color:#b8c4d4;line-height:1.5;margin-bottom:18px">Para una mejor experiencia te recomendamos jugar en pantalla completa.</div>'
+    +'<button id="fsYes" style="background:#e0a82e;color:#111;border:none;padding:10px 20px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-right:10px">ACTIVAR</button>'
+    +'<button id="fsNo" style="background:rgba(255,255,255,.1);color:#fff;border:none;padding:10px 20px;letter-spacing:2px;cursor:pointer">AHORA NO</button></div>';
+  document.body.appendChild(box);
+  const close=()=>box.remove();
+  box.querySelector('#fsYes').onclick=()=>{ try{ (document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen).call(document.documentElement); }catch(e){} close(); };
+  box.querySelector('#fsNo').onclick=close;
+};

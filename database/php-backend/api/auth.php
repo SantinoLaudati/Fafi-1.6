@@ -51,7 +51,7 @@ function handleRegister($input) {
         return;
     }
     
-    if (strlen($username) < 3 || strlen($username) > 20) {
+    if (mb_strlen($username, 'UTF-8') < 3 || mb_strlen($username, 'UTF-8') > 20 || preg_match('/\p{Cc}/u', $username)) {
         http_response_code(400);
         echo json_encode(['error' => 'El usuario debe tener entre 3 y 20 caracteres']);
         return;
