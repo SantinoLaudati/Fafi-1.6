@@ -5,8 +5,8 @@ awp     489.52  495.58  501.73   (disparos cada 1,45 s con cola larga: cadencia 
 deagle  160.92  164.72  165.52
 shotgun 514.55  515.55  520.73   (escopeta pump)
 shorty  621.65  623.90  627.13
-ak      151.82  152.48  155.13
-vandal  227.85  235.80  237.25
+ak      (archivo "CS GO AK-47 Sound Effect.mp3" de Desktop/sonidos) 1.22  5.32  7.18
+vandal  (archivo "Valorant gun sound Vandal.mp3" de Desktop/sonidos) 0.58  2.32  3.35
 m4      558.63  560.42  561.70
 m4b     125.82  128.65  129.40   (silenciada: sonidos suaves y agudos)
 p90     107.25  110.40  113.43
