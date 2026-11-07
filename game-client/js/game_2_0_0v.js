@@ -3320,16 +3320,17 @@ function shoot(){
     const walkMultDeagle = isMovingNowPre ? (isCrouching?1.28:1.82) : 1.0;
     const aimMultDeagle = isAiming ? 0.38 : 1.0;
     const firstShotBonus = (consecutiveSpam===1 && spreadAccum<0.006 && !isMovingNowPre) ? 0.6 : 1.0;
-    const verticalKick = (isAiming ? 0.020 : 0.036) * walkMultDeagle * aimMultDeagle * firstShotBonus * (1 + Math.min(consecutiveSpam-1,4)*0.12);
-    const horizKick = ((Math.random()-0.5)*0.016 + Math.sin(consecutiveSpam*1.7)*0.005) * walkMultDeagle * aimMultDeagle * firstShotBonus;
+    const pistolK = currentWeapon==='five' ? 0.4 : 1;     // la Five-SeveN es la pistola inicial: retroceso mucho menor
+    const verticalKick = (isAiming ? 0.020 : 0.036) * walkMultDeagle * aimMultDeagle * firstShotBonus * (1 + Math.min(consecutiveSpam-1,4)*0.12) * pistolK;
+    const horizKick = ((Math.random()-0.5)*0.016 + Math.sin(consecutiveSpam*1.7)*0.005) * walkMultDeagle * aimMultDeagle * firstShotBonus * pistolK;
     viewRecoilX += verticalKick;
     viewRecoilY += horizKick;
     camera.rotateX(-verticalKick);
     camera.rotateY(-horizKick);
-    const addSpreadDeagle = (isAiming?0.0014:0.0038) * (1 + spamHeat*0.92) * walkMultDeagle;
+    const addSpreadDeagle = (isAiming?0.0014:0.0038) * (1 + spamHeat*0.92) * walkMultDeagle * pistolK;
     const maxSpreadDeagle = isAiming ? (isMovingNowPre?0.022:0.010) : (isMovingNowPre?0.088:0.032);
     spreadAccum = Math.min(spreadAccum + addSpreadDeagle, maxSpreadDeagle);
-    recoilKick = (isAiming?0.88:1.38) * (1 + spamHeat*0.16);
+    recoilKick = (isAiming?0.88:1.38) * (1 + spamHeat*0.16) * pistolK;
   } else {
     // AK: recoil progresivo con spam + agachado reduce
     spamHeat = Math.min(spamHeat + (isMovingNowPre?0.33:0.23), 3.4);
