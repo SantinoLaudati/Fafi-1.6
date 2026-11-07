@@ -680,12 +680,3 @@ WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Karambit | 
 INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
 SELECT `id`, 'knife', 'legendaria', 'skin:k_galaxia' FROM `articulos_tienda` WHERE `nombre` = 'Karambit | Nebulosa del Vacío'
 ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
-
--- Surf: mejor tiempo de cada jugador
-CREATE TABLE IF NOT EXISTS `records_surf` (
-    `usuario_id` BIGINT UNSIGNED NOT NULL,
-    `mejor_tiempo` DECIMAL(8,2) NOT NULL,
-    `fecha` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`usuario_id`),
-    CONSTRAINT `fk_surf_user` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

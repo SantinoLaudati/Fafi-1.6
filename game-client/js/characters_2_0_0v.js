@@ -12,6 +12,7 @@ import { makeBlobShadow, alignBlobToSun } from './quality_2_0_0v.js';
 import { patchMaterial, setPattern } from './skinshader_2_0_0v.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
+let charK = 1; export function setCharK(k) { charK = k; }     // escala del personaje según el mapa
 export const CHAR_HEIGHT = 1.12;               // altura de un personaje en el mundo (m)
 const ASSET = 'assets/';
 
@@ -335,7 +336,7 @@ export function createCharacter(team, variant = 0) {
   const src = cache[def.id];
   if (!src) return null;
   const model = cloneSkinned(src.scene);
-  const s = CHAR_HEIGHT / src.height;
+  const s = CHAR_HEIGHT * charK / src.height;
   const root = new THREE.Group();
   root.add(model);
   model.scale.multiplyScalar(s);

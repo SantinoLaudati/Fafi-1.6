@@ -4,7 +4,7 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 import { QUALITY, SUN_DIR, loadQualityLevel, saveQualityLevel, applyQuality, updateSun, makeBlobShadow, rebuildQuality, saveOverrides, loadOverrides, pixelRatioFor, setDynScale, getDynScale } from './quality_2_0_0v.js';
 import { createDefuse, TEAM_BADGE } from './defuse_2_0_0v.js';
 import { createGrenades, GRENADES } from './grenades_2_0_0v.js';
-import { loadCharacterAssets, loadWeaponPack, makeViewWeapon, makeWorldWeapon, repaintWeapon, setWeaponSkin, loadExtraWeapon, extraWeaponReady } from './characters_2_0_0v.js';
+import { setCharK, loadCharacterAssets, loadWeaponPack, makeViewWeapon, makeWorldWeapon, repaintWeapon, setWeaponSkin, loadExtraWeapon, extraWeaponReady } from './characters_2_0_0v.js';
 import { ZONAS } from './zonas_2_0_0v.js';
 import { openCrate, preloadCrate } from './cajas_2_0_0v.js';
 import { SKINS_DB, skinById, applyKnifeSkin, loadKnife } from './skins_2_0_0v.js';
@@ -591,7 +591,8 @@ const wallLimit = {xmin:-10.2, xmax:10.2, zmin:-11, zmax:16};
 let isCrouching=false, crouchProgress=0;
 const baseStandHeight=1.6, baseCrouchHeight=1.05, basePlayerRadius=0.25;
 let standHeight=baseStandHeight, crouchHeight=baseCrouchHeight;
-const eyeStandHeight = 0.85, eyeCrouchHeight = 0.58; // OJOS fijos a 0.85m (no escalan con , . K L)
+let eyeStandHeight = 0.85, eyeCrouchHeight = 0.58;   // los ojos van a la altura de la cabeza del modelo (se recalculan al activar cada mapa)
+let charKVal = 1;
 let freeCam=false;
 const SPAWN_ZONE_RADIUS = 3; // radio visual/zona de cada spawn marcado
 let tSpawnOverride=null, ctSpawnOverride=null; // {x,z} marcados con < y Z
@@ -820,7 +821,6 @@ const MAPS = {
     name:'MIRAGE', file:MAP_DIR+'optimizados/cs_mirage_lite.glb', size:84,
     logo:'assets/Logos mapas/mirage logo.png', baked:false, hide:/Blocker/, noCollide:/Plants|WindowsAndDoors/, zones:ZONAS.mirage || null, nav:{ cell:0.9, step:1.0, headroom:1.2 }
   },
-  surf: { name:'SURF', file:'surf', size:100, logo:'assets/Logos mapas/mirage logo.png', surf:true, zones:null }
 };
 function mapFile(key){ const d=MAPS[key]; return d.files ? d.files[QUALITY[qualityLevel].tex] : d.file; }
 // spawns marcados a mano en la partida (Z = CT, C = T, con el modo vuelo P); se guardan en localStorage 'fafi_spawns'
@@ -913,6 +913,8 @@ function activateMap(key){
   dust2Group.userData.bounds=e.bounds.clone();
   dust2Colliders=e.colliders; colScale=Math.max(0.4, Math.min(1, (e.scale||1)*0.8)); stepMax = 0.68;
   currentMapKey=key;
+  charKVal = 0.93*({dust2:1,italy:1,mirage:0.96,office:0.88}[key]||1); setCharK(charKVal);      // personajes más bajos y acordes al tamaño de cada mapa
+  eyeStandHeight = 0.97*charKVal; eyeCrouchHeight = eyeStandHeight - 0.25*charKVal;              // cámara a la altura de los ojos del modelo
   SFX.surface = key==='office' ? 'step_metal' : (key==='italy' || key==='mirage') ? 'step_stone' : 'step';
   try{ applyAtmosphere(); }catch(e){}
   wallLimit.xmin=e.bounds.min.x+1.0; wallLimit.xmax=e.bounds.max.x-1.0;
@@ -1336,6 +1338,7 @@ const defuse = createDefuse({
   keys,
   mapKey:()=>currentMapKey, mapFile:()=>currentMapFile, mapDef:()=>MAPS[currentMapKey],
   eyeHeight:()=>eyeStandHeight,
+  charK:()=>charKVal,
   playerName:()=>(window.currentUserId||'Jugador'),
   playerMoving:()=>!!(keys['KeyW']||keys['KeyA']||keys['KeyS']||keys['KeyD']),
   playerGrounded:()=>playerGrounded,
@@ -2108,37 +2111,6 @@ function startGame(mode='aim', team=null){
   updateHUD();
 }
 function startAimMode(){ startGame('aim'); }
-// ===== MODO SURF =====
-let surfState=null, surfMap=null;
-async function startSurf(){
-  if(!scene) initThree();
-  try{
-    const m=await import('./surf_2_0_0v.js');
-    if(!surfMap){
-      surfMap=m.buildSurfMap();
-      if(await bvhPromise){ for(const c of surfMap.colliders){ try{ if(!c.geometry.boundsTree) c.geometry.computeBoundsTree(); }catch(err){} } }
-      const sp={ x:surfMap.start.x, y:surfMap.start.y, z:surfMap.start.z };
-      mapCache['surf|surf']={ model:surfMap.group, bounds:surfMap.bounds, colliders:surfMap.colliders, spawns:{ t:sp, ct:sp }, scale:1 };
-      surfState=m.createSurf();
-    }
-    window.fafiDefuse=false; window.campaignActiveLevel=0;
-    try{ if(typeof fafiHideShell==='function') fafiHideShell(); }catch(e){}
-    selectedMap='surf'; activateMap('surf');
-    startGame('dust2','ct');
-    surfState.reset(surfMap);
-    showFloating('SURF: deslizate por las rampas — mové el mouse hacia el lado de la rampa y apretá A o D. Si caés vuelves a empezar.');
-  }catch(err){ console.warn('surf', err); showFloating('No se pudo iniciar SURF'); }
-}
-function surfFrame(dt){
-  const dir=new THREE.Vector3(); camera.getWorldDirection(dir); dir.y=0; if(dir.lengthSq()<1e-6) dir.set(0,0,-1); dir.normalize();
-  const rgt=new THREE.Vector3(-dir.z,0,dir.x);
-  const out=surfState.step(dt,{ fx:dir.x, fz:dir.z, rx:rgt.x, rz:rgt.z, forward:(keys['KeyW']?1:0)-(keys['KeyS']?1:0), right:(keys['KeyD']?1:0)-(keys['KeyA']?1:0), jump:!!keys['Space'] }, dust2Colliders);
-  surfState.eye(camera); controls.getObject().position.copy(camera.position);
-  playerGrounded=surfState.grounded; playerVelY=surfState.vel.y; pVel.set(surfState.vel.x,0,surfState.vel.z);
-  if(out.respawn) showFloating('Caíste: volvés al inicio');
-  if(out.finished){ showFloating('¡META! Tiempo: '+out.time.toFixed(2)+' s'+(surfState.best!=null?'  ·  mejor: '+surfState.best.toFixed(2)+' s':'')); try{ if(window.authService && window.authService.isAuthenticated() && !window.authService.devMode) window.apiService.saveSurf(out.time).catch(()=>{}); }catch(e){} }
-  const fc=document.getElementById('fpsCounter'); if(fc && fc.dataset.surf!==String(Math.round(surfState.speed()*10))){ fc.dataset.surf=String(Math.round(surfState.speed()*10)); }
-}
 function startDust2Mode(){
   const btn = document.getElementById('dust2Btn');
   const shellBtn = document.getElementById('fafiPlayDust2');
@@ -3817,7 +3789,6 @@ function handleMovement(dt){
   if(pauseOverlay.classList.contains('show') || resultOverlay.classList.contains('show')) return;
 
   // === DUST2 FÍSICAS COMPLETAS ===
-  if(gameMode==='dust2' && currentMapKey==='surf' && surfState && dust2Colliders.length){ surfFrame(dt); return; }
   if(gameMode==='dust2' && dust2Colliders.length){
     const useArrows = !isAiming;
     const forward = (keys['KeyW']?1:0) - (keys['KeyS']?1:0) + (useArrows ? ((keys['ArrowUp']?1:0) - (keys['ArrowDown']?1:0)) : 0);
@@ -4392,7 +4363,6 @@ try{
   document.getElementById('login-pass')?.addEventListener('keydown',(e)=>{ if(e.key==='Enter') fafiDoLogin(); });
   document.getElementById('reg-pass')?.addEventListener('keydown',(e)=>{ if(e.key==='Enter') fafiDoRegister(); });
   document.getElementById('fafiPlayAim')?.addEventListener('click',()=>{ window.campaignActiveLevel=0; window.fafiAimSpeedMult=1; startGame('aim'); });
-  document.getElementById('fafiPlaySurf')?.addEventListener('click',()=>{ startSurf(); });
   document.getElementById('fafiPlayDust2')?.addEventListener('click',()=>{ window.campaignActiveLevel=0; window.fafiAimSpeedMult=1; window.fafiDefuse=false; startDust2Mode(); });
   document.getElementById('fafiPlayDefuse')?.addEventListener('click',()=>{ window.campaignActiveLevel=0; window.fafiAimSpeedMult=1; window.fafiDefuse=true; startDust2Mode(); });
   document.getElementById('dfBadgeCT').innerHTML=TEAM_BADGE.ct; document.getElementById('dfBadgeT').innerHTML=TEAM_BADGE.t;

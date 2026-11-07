@@ -63,8 +63,9 @@ export function createDefuse(A) {
   const chickens = createChickens(A);
 
   // ---------------------------------------------------------------- utilidades
+  const K = () => (A.charK ? A.charK() : 1);   // escala de los personajes según el mapa: todas las alturas (ojos, hitbox) la usan
   const CROUCH_H = 0.19;     // cuánto baja el cuerpo de un bot agachado (igual que en characters_2_0_0v.js)
-  const eyeOf = (u, out) => out.set(u.pos.x, u.pos.y + (u.isPlayer ? 0 : 0.98 - CROUCH_H * (u.crouchAmt || 0)), u.pos.z);
+  const eyeOf = (u, out) => out.set(u.pos.x, u.pos.y + (u.isPlayer ? 0 : 0.98 * K() - CROUCH_H * K() * (u.crouchAmt || 0)), u.pos.z);
   function playerFeet() { const c = A.camera.position; return tmpV3.set(c.x, c.y - A.eyeHeight(), c.z); }
   function syncPlayerUnit() {
     const p = D.player; if (!p) return;
@@ -512,7 +513,7 @@ export function createDefuse(A) {
     u.hp -= dmg;
     if (attacker && attacker !== u && attacker.team !== u.team) attacker.dmg = (attacker.dmg || 0) + Math.min(dmg, u.hp + dmg);   // daño causado (para el marcador)
     const isBullet = !!BULLET[weapon];
-    const hp = hitPos || { x: u.pos.x, y: u.pos.y + (head ? 0.99 : 0.65), z: u.pos.z };
+    const hp = hitPos || { x: u.pos.x, y: u.pos.y + (head ? 0.99 : 0.65) * K(), z: u.pos.z };
     if (u.isPlayer) {
       A.damageFlash(Math.min(1, dmg / 60));
       if (isBullet) SFX.play(helmetHit ? 'hit_helmet' : head ? 'hit_head' : 'hit_flesh', { vol: 0.8 });
@@ -554,7 +555,7 @@ export function createDefuse(A) {
   // ---------------------------------------------------------------- bots
   function canSee(a, b, now) {
     if (a.flashedUntil > now) return false;
-    const ea = eyeOf(a, new THREE.Vector3()); const eb = b.isPlayer ? new THREE.Vector3(b.pos.x, b.pos.y + A.eyeHeight() - 0.25, b.pos.z) : new THREE.Vector3(b.pos.x, b.pos.y + 0.7, b.pos.z);
+    const ea = eyeOf(a, new THREE.Vector3()); const eb = b.isPlayer ? new THREE.Vector3(b.pos.x, b.pos.y + A.eyeHeight() - 0.25, b.pos.z) : new THREE.Vector3(b.pos.x, b.pos.y + 0.7 * K(), b.pos.z);
     const dx = eb.x - ea.x, dz = eb.z - ea.z; const dist = Math.hypot(dx, dz);
     if (dist > 70) return false;
     if (now > a.alertUntil) {
@@ -666,7 +667,7 @@ export function createDefuse(A) {
     }
     const eye = eyeOf(u, new THREE.Vector3());
     const mz = (u.char && muzzleWorld(u.char, new THREE.Vector3())) || eye.clone();
-    const tp = t.isPlayer ? new THREE.Vector3(t.pos.x, t.pos.y + A.eyeHeight() - 0.35, t.pos.z) : new THREE.Vector3(t.pos.x, t.pos.y + 0.6 - 0.1 * (t.crouchAmt || 0), t.pos.z);
+    const tp = t.isPlayer ? new THREE.Vector3(t.pos.x, t.pos.y + A.eyeHeight() - 0.35, t.pos.z) : new THREE.Vector3(t.pos.x, t.pos.y + (0.6 - 0.1 * (t.crouchAmt || 0)) * K(), t.pos.z);
     const dist = eye.distanceTo(tp);
     const moving = u.speed > 0.3;
     let p = 0.55 * u.skill - dist * 0.0085 - (moving ? 0.12 : 0);
@@ -741,7 +742,7 @@ export function createDefuse(A) {
   const _sa = new THREE.Vector3(), _sb = new THREE.Vector3();
   function strafeStep(u, dt) {
     const lx = Math.cos(u.yaw) * u.strafeDir, lz = -Math.sin(u.yaw) * u.strafeDir;
-    _sa.set(u.pos.x, u.pos.y + 0.7, u.pos.z); _sb.set(u.pos.x + lx * 0.7, u.pos.y + 0.7, u.pos.z + lz * 0.7);
+    _sa.set(u.pos.x, u.pos.y + 0.7 * K(), u.pos.z); _sb.set(u.pos.x + lx * 0.7, u.pos.y + 0.7 * K(), u.pos.z + lz * 0.7);
     const nx = u.pos.x + lx * 1.9 * dt, nz = u.pos.z + lz * 1.9 * dt;
     const gy = groundAt(nx, nz, u.pos.y);
     if (!losClear(_sa, _sb) || gy === null || Math.abs(gy - u.pos.y) > 0.35) { u.strafeDir *= -1; u.strafeFor = Math.min(u.strafeFor, 0.12); return false; }
@@ -1060,13 +1061,13 @@ export function createDefuse(A) {
   // Hitbox del bot: cabeza (esfera) + torso con brazos (cápsula ancha) + piernas (cápsula); todo el cuerpo recibe disparos
   const _za = new THREE.Vector3(), _zb = new THREE.Vector3();
   function hitZone(prev, pos, u) {
-    const ch = CROUCH_H * (u.crouchAmt || 0), x = u.pos.x, y = u.pos.y, z = u.pos.z;
+    const ch = CROUCH_H * K() * (u.crouchAmt || 0), x = u.pos.x, y = u.pos.y, z = u.pos.z;
     let best = null;
     const test = (name, y0, y1, r) => { _za.set(x, y0, z); _zb.set(x, y1, z); const h = segSeg(prev, pos, _za, _zb); if (h.d < r && (!best || h.s < best.s)) best = { zone: name, s: h.s }; };
-    test('head', y + 0.99 - ch, y + 0.99 - ch, 0.19);
+    const k = K(); test('head', y + 0.99 * k - ch, y + 0.99 * k - ch, 0.19 * k);
     const head = best; best = null;
-    test('torso', y + 0.36, y + 0.92 - ch, 0.29);          // torso + brazos; sube hasta el cuello para no dejar huecos
-    test('legs', y + 0.0, y + 0.42 - ch * 0.5, 0.23);
+    test('torso', y + 0.36 * k, y + 0.92 * k - ch, 0.29 * k);          // torso + brazos; sube hasta el cuello para no dejar huecos
+    test('legs', y + 0.0, y + 0.42 * k - ch * 0.5, 0.23 * k);
     if (head && (!best || head.s <= best.s + 0.08)) return head;      // la cabeza tiene prioridad si la bala la atraviesa casi a la vez
     return best;
   }
@@ -1101,7 +1102,7 @@ export function createDefuse(A) {
       const to = tmpV.set(u.pos.x - origin.x, u.pos.y + 0.55 - origin.y, u.pos.z - origin.z); const d = to.length();
       if (d > range) continue;
       if (to.normalize().dot(dir) < 0.7) continue;
-      A.hitFeedback(tmpV2.set(u.pos.x, u.pos.y + 0.6, u.pos.z), false, false, dir);
+      A.hitFeedback(tmpV2.set(u.pos.x, u.pos.y + 0.6 * K(), u.pos.z), false, false, dir);
       damageUnit(u, WSTAT.knife.dmg, D.player, false, 'knife'); hit = true;
     }
     return hit;
@@ -1110,7 +1111,7 @@ export function createDefuse(A) {
   function areaDamage(pos, radius, maxDmg, attacker, weapon) {
     for (const u of D.units) {
       if (!u.alive) continue;
-      const c = u.isPlayer ? tmpV.set(u.pos.x, u.pos.y + 0.7, u.pos.z) : tmpV.set(u.pos.x, u.pos.y + 0.6, u.pos.z);
+      const c = u.isPlayer ? tmpV.set(u.pos.x, u.pos.y + 0.7, u.pos.z) : tmpV.set(u.pos.x, u.pos.y + 0.6 * K(), u.pos.z);
       const d = c.distanceTo(pos); if (d > radius) continue;
       if (!losClear(pos, c)) continue;
       const dmg = Math.round(maxDmg * (1 - d / radius));
@@ -1121,7 +1122,7 @@ export function createDefuse(A) {
     const now = performance.now();
     for (const u of D.units) {
       if (!u.alive) continue;
-      const e = u.isPlayer ? new THREE.Vector3(u.pos.x, u.pos.y + A.eyeHeight(), u.pos.z) : new THREE.Vector3(u.pos.x, u.pos.y + 0.98 - CROUCH_H * (u.crouchAmt || 0), u.pos.z);
+      const e = u.isPlayer ? new THREE.Vector3(u.pos.x, u.pos.y + A.eyeHeight(), u.pos.z) : new THREE.Vector3(u.pos.x, u.pos.y + 0.98 * K() - CROUCH_H * K() * (u.crouchAmt || 0), u.pos.z);
       const d = e.distanceTo(pos); if (d > 22) continue;
       if (!losClear(pos, e)) continue;
       if (u.isPlayer) {
