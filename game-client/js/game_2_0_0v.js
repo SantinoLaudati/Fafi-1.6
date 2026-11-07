@@ -512,7 +512,7 @@ let audioCtx;
 // arma: munición y animaciones
 let isAiming=false, aimProgress=0, isReloading=false, reloadProgress=0;
 let ammoInMag=30, maxMag=30, reserveAmmo=90;
-let awpAmmo=10, awpMaxMag=10, awpReserve=30;
+let awpAmmo=3, awpMaxMag=3, awpReserve=9;
 let akStoredAmmo=30, akStoredReserve=90;
 let weaponBasePos=null, weaponAimPos=null;
 let weaponBaseRot=null, weaponAimRot=null;
@@ -527,16 +527,16 @@ const M4_PATTERN=AK_PATTERN.map(([a,b])=>[a*0.78,-b*0.7]);
 // Retroceso y precisión por arma (estilo CS:GO). k/h = escala del patrón vertical/horizontal, rnd = temblor aleatorio, sp/max = cuánto se abre la mira al disparar,
 // base/move = imprecisión quieto/en movimiento, kick = golpe visual del arma, pellets/cone = escopetas.
 const WREC = {
-  ak:      { pat:'ak', k:1.00, h:1.00, rnd:1.0, sp:1.00, max:1.00, base:1.0, move:1.0, kick:1.00 },
-  vandal:  { pat:'ak', k:0.92, h:0.90, rnd:0.9, sp:0.92, max:0.95, base:0.9, move:0.9, kick:0.95 },
-  m4:      { pat:'m4', k:1.00, h:1.00, rnd:0.9, sp:0.90, max:0.95, base:0.9, move:1.0, kick:0.90 },
-  m4b:     { pat:'m4', k:0.95, h:0.90, rnd:0.9, sp:0.85, max:0.90, base:0.8, move:0.9, kick:0.88 },
-  p90:     { pat:'m4', k:0.55, h:0.80, rnd:1.4, sp:0.75, max:1.00, base:1.1, move:0.7, kick:0.60 },
-  smg:     { pat:'m4', k:0.60, h:0.80, rnd:1.3, sp:0.78, max:1.00, base:1.0, move:0.7, kick:0.65 },
-  negev:   { pat:'ak', k:1.25, h:1.60, rnd:2.4, sp:1.40, max:1.60, base:1.6, move:1.6, kick:1.20 },
-  vss:     { pat:'m4', k:1.30, h:0.60, rnd:0.5, sp:2.00, max:0.80, base:0.5, move:2.0, kick:1.40 },
-  shotgun: { pat:'m4', k:1.60, h:0.50, rnd:0.5, sp:1.00, max:0.80, base:1.5, move:1.2, kick:1.80, pellets:8, cone:0.050 },
-  shorty:  { pat:'m4', k:1.90, h:0.70, rnd:0.8, sp:1.00, max:0.80, base:1.5, move:1.2, kick:2.20, pellets:8, cone:0.075 }
+  ak:      { pat:'ak', k:1.45, h:1.45, rnd:1.6, sp:1.25, max:1.25, base:1.2, move:3.2, kick:1.15 },
+  vandal:  { pat:'ak', k:1.35, h:1.30, rnd:1.5, sp:1.15, max:1.20, base:1.1, move:3.0, kick:1.10 },
+  m4:      { pat:'m4', k:1.45, h:1.40, rnd:1.4, sp:1.10, max:1.15, base:1.1, move:3.0, kick:1.05 },
+  m4b:     { pat:'m4', k:1.35, h:1.25, rnd:1.3, sp:1.05, max:1.10, base:1.0, move:2.8, kick:1.00 },
+  p90:     { pat:'m4', k:0.85, h:1.10, rnd:2.0, sp:1.00, max:1.30, base:1.3, move:2.4, kick:0.80 },
+  smg:     { pat:'m4', k:0.90, h:1.10, rnd:1.9, sp:1.00, max:1.30, base:1.2, move:2.4, kick:0.85 },
+  negev:   { pat:'ak', k:1.70, h:2.10, rnd:3.2, sp:1.80, max:2.00, base:2.2, move:4.0, kick:1.40 },
+  vss:     { pat:'m4', k:1.80, h:0.90, rnd:0.9, sp:2.40, max:1.00, base:0.7, move:5.0, kick:1.60 },
+  shotgun: { pat:'m4', k:2.00, h:0.80, rnd:0.8, sp:1.00, max:0.90, base:1.8, move:2.0, kick:2.00, pellets:8, cone:0.060 },
+  shorty:  { pat:'m4', k:2.30, h:0.90, rnd:1.0, sp:1.00, max:0.90, base:1.8, move:2.0, kick:2.40, pellets:8, cone:0.085 }
 };
 function patternKick(pat, idx){ const n=pat.length; return pat[idx<n ? idx : n-8+((idx-n)%8)]; }
 // === VIEWMODEL: arma y manos se dibujan en un 2º pase con su propia cámara (capa 1) ===
@@ -633,7 +633,7 @@ let isKnifeSwinging=false, knifeSwingProgress=0, knifeSwingDir=1;
 // AWP
 let awpModel=null, awpBasePos=null, awpBaseRot=null, awpAimPos=null, awpAimRot=null;
 let isBoltCycling=false, boltProgress=0;
-const awpMag=10; const awpReserveInit=30;
+const awpMag=3; const awpReserveInit=9;
 // Deagle CS:GO
 let deagleModel=null, deagleBasePos=null, deagleBaseRot=null, deagleAimPos=null, deagleAimRot=null;
 let deagleAmmo=7, deagleMaxMag=7, deagleReserve=35;
@@ -815,7 +815,7 @@ const MAPS = {
   // Mirage (versión liviana): 18 mallas de color plano, ~26 000 triángulos
   mirage: {
     name:'MIRAGE', file:MAP_DIR+'optimizados/cs_mirage_lite.glb', size:84,
-    logo:'assets/Logos mapas/mirage logo.png', baked:false, zones:ZONAS.mirage || null, nav:{ cell:0.9, step:1.0, headroom:1.2 }
+    logo:'assets/Logos mapas/mirage logo.png', baked:false, hide:/Blocker/, noCollide:/Plants|WindowsAndDoors/, zones:ZONAS.mirage || null, nav:{ cell:0.9, step:1.0, headroom:1.2 }
   }
 };
 function mapFile(key){ const d=MAPS[key]; return d.files ? d.files[QUALITY[qualityLevel].tex] : d.file; }
@@ -995,7 +995,7 @@ function loadMap(key, onDone, silent){
     });
     model.updateMatrixWorld(true);
     const bounds=new THREE.Box3().setFromObject(model);
-    const colliders=[]; model.traverse(o=>{ if(o.isMesh) colliders.push(o); });
+    const colliders=[]; model.traverse(o=>{ if(!o.isMesh) return; if(def.hide && def.hide.test(o.name)){ o.visible=false; return; } if(def.noCollide && def.noCollide.test(o.name)) return; colliders.push(o); });   // mallas auxiliares (bloqueadores de luz) fuera; plantas, puertas y ventanas no bloquean al jugador
     if(loadingEl) loadingEl.textContent='Optimizando '+def.name+'...';
     try{ await mergeStaticVisuals(model, colliders); }catch(err){ console.warn('merge estático', err); }
     if(loadingEl) loadingEl.textContent='Preparando colisiones de '+def.name+'...';
@@ -1283,7 +1283,7 @@ let playerFrozen=false, spectating=false, viewmodelHidden=false;
 let flashT=0, flashMax=1;
 function giveDefaultLoadout(full){
   // refill de munición cada ronda
-  akStoredAmmo=30; akStoredReserve=90; awpAmmo=10; awpReserve=30; deagleAmmo=7; deagleReserve=35;
+  akStoredAmmo=30; akStoredReserve=90; awpAmmo=3; awpReserve=9; deagleAmmo=7; deagleReserve=35;
   for(const k in animAmmo){ animAmmo[k].ammo=ANIM_WEAPONS[k].mag; animAmmo[k].reserve=ANIM_WEAPONS[k].reserve; }
   if(full){
     owned={ knife:true, deagle:true, ak:false, awp:false, m4:false };
@@ -1736,7 +1736,7 @@ function tryBuy(w){
   owned[w]=true;
   // munición completa al comprar
   if(w==='ak'){ akStoredAmmo=30; akStoredReserve=90; }
-  if(w==='awp'){ awpAmmo=10; awpReserve=30; }
+  if(w==='awp'){ awpAmmo=3; awpReserve=9; }
   if(w==='deagle'){ deagleAmmo=7; deagleReserve=35; }
   if(ANIM_WEAPONS[w]){ animAmmo[w].ammo=ANIM_WEAPONS[w].mag; animAmmo[w].reserve=ANIM_WEAPONS[w].reserve; }
   switchWeapon(w);
@@ -2006,7 +2006,7 @@ function startGame(mode='aim', team=null){
   if(isDust2){
     money=3000;
     owned={ knife:true, deagle:false, ak:false, awp:false, m4:false };
-    akStoredAmmo=30; akStoredReserve=90; awpAmmo=10; awpReserve=30; deagleAmmo=7; deagleReserve=35;
+    akStoredAmmo=30; akStoredReserve=90; awpAmmo=3; awpReserve=9; deagleAmmo=7; deagleReserve=35;
     currentWeapon='knife';
     buyMenuOpen=false;
     document.getElementById('buyMenu')?.classList.remove('show');
@@ -3312,18 +3312,19 @@ function shoot(){
   const isMovingNow = (keys['KeyW']||keys['KeyA']||keys['KeyS']||keys['KeyD']);
   let baseSpread;
   if(currentWeapon==='awp'){
-    baseSpread = isAiming ? 0.00012 : 0.012;
-    if(isMovingNow) baseSpread += isAiming ? 0.0009 : 0.010;
+    baseSpread = isAiming ? 0.00012 : 0.07;     // sin mira la AWP dispara a cualquier lado
+    if(isMovingNow) baseSpread += isAiming ? 0.02 : 0.10;
     if(isCrouching && isAiming) baseSpread *= 0.38;
   } else if(currentWeapon==='deagle'){
     baseSpread = isAiming ? 0.00042 : 0.0018;
-    if(isMovingNow) baseSpread += isAiming ? 0.0018 : 0.013;
+    if(isMovingNow) baseSpread += isAiming ? 0.006 : 0.045;
     if(isCrouching) baseSpread *= isAiming?0.58:0.78;
     if(consecutiveSpam===1 && !isMovingNow) baseSpread *= 0.48;
   } else {
     const rs = WREC[currentWeapon] || WREC.ak;
     baseSpread = 0.0009 * rs.base;
-    if(isMovingNow) baseSpread += 0.0032 * rs.move;
+    if(isMovingNow) baseSpread += 0.010 * rs.move;     // caminando y disparando el spray se abre muchísimo
+    if(canScope(currentWeapon) && !isAiming) baseSpread += isMovingNow ? 0.11 : 0.06;   // francotirador sin mira: las balas van para cualquier lado
     if(isCrouching && !isMovingNow) baseSpread *= 0.7;
   }
   // como en CS:GO: en el aire la imprecisión se dispara (saltar y disparar casi nunca acierta)
