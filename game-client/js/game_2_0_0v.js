@@ -4,7 +4,7 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 import { QUALITY, SUN_DIR, loadQualityLevel, saveQualityLevel, applyQuality, updateSun, makeBlobShadow, rebuildQuality, saveOverrides, loadOverrides, pixelRatioFor, setDynScale, getDynScale } from './quality_2_0_0v.js';
 import { createDefuse, TEAM_BADGE } from './defuse_2_0_0v.js';
 import { createGrenades, GRENADES } from './grenades_2_0_0v.js';
-import { loadWeaponPack, makeViewWeapon, makeWorldWeapon, repaintWeapon, setWeaponSkin, loadExtraWeapon, extraWeaponReady } from './characters_2_0_0v.js';
+import { loadCharacterAssets, loadWeaponPack, makeViewWeapon, makeWorldWeapon, repaintWeapon, setWeaponSkin, loadExtraWeapon, extraWeaponReady } from './characters_2_0_0v.js';
 import { ZONAS } from './zonas_2_0_0v.js';
 import { openCrate, preloadCrate } from './cajas_2_0_0v.js';
 import { SKINS_DB, skinById, applyKnifeSkin } from './skins_2_0_0v.js';
@@ -283,6 +283,47 @@ function fafiShowShell(){
   try{ if(typeof menu!=='undefined'&&menu) menu.style.display='none'; }catch(e){}
   fafiUpdateProfileUI(); fafiRenderEquipTab(); fafiApplySensitivity(); fafiApplyQuality();
 }
+// Precarga posterior al login: mapas (con colisiones y optimización), personajes, armas, granadas y modelos de la campaña.
+// Muestra una barra de progreso; un fallo en un recurso no detiene el resto.
+let _preloaded=false;
+async function fafiPreloadAll(){
+  if(_preloaded) return; _preloaded=true;
+  let ov=document.getElementById('preloadOverlay');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='preloadOverlay';
+    ov.style.cssText='position:fixed;inset:0;z-index:99998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(circle at 50% 35%,#16202c,#07090d);color:#e8e8e8;font-family:inherit';
+    ov.innerHTML='<div style="font-size:42px;font-weight:800;letter-spacing:6px">FAFI <span style="color:#d69f0f">1.6</span></div><div id="pl-msg" style="font-size:13px;letter-spacing:2px;color:#9aa0aa;text-transform:uppercase">Preparando el juego...</div><div style="width:min(420px,80vw);height:8px;background:#1b2230;border-radius:4px;overflow:hidden"><div id="pl-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#d69f0f,#ffd86b);transition:width .25s"></div></div><div id="pl-pct" style="font-size:12px;color:#6f7682">0%</div>';
+    document.body.appendChild(ov);
+  }
+  ov.style.display='flex';
+  const low=qualityLevel==='min';
+  const names=Object.keys(MAPS); names.sort((a,b)=>(a===selectedMap?-1:0)-(b===selectedMap?-1:0));
+  const withTimeout=(p,ms)=>Promise.race([p, new Promise(r=>setTimeout(r,ms))]);
+  const tasks=[
+    ['Armas', ()=>loadWeaponPack()],
+    ['Personajes', ()=>loadCharacterAssets(['t','ct'])],
+    ['Armas extra', ()=>Promise.all(Object.keys(EXTRA_W).map(id=>loadExtraWeapon(id)))],
+    ['Granadas', ()=>grenades.ready() ? Promise.resolve() : grenades.load().then(()=>buildGrenadeHolders())],
+  ];
+  // mapas: en calidad mínima (poca RAM) solo el elegido; en el resto, todos
+  (low?names.slice(0,1):names).forEach(k=>tasks.push(['Mapa '+MAPS[k].name, async()=>{
+    await withTimeout(new Promise(res=>loadMap(k,res,true)),180000);
+    const e=mapCache[k+'|'+mapFile(k)];
+    if(e && e.colliders) await defuse.warm(k, mapFile(k), e.bounds, e.colliders, MAPS[k].nav||{});     // navegación de los bots lista de antemano
+  }]));
+  tasks.push(['Bomba y gallinas', ()=>defuse.warmAssets()]);
+  tasks.push(['Modelos', async()=>{ try{ const m=await import('./modelos_2_0_0v.js'); if(m.loadModels) await withTimeout(m.loadModels(),60000); }catch(e){} }]);
+  let done=0; const msg=document.getElementById('pl-msg'), bar=document.getElementById('pl-bar'), pct=document.getElementById('pl-pct');
+  const upd=(label)=>{ const p=Math.round(done/tasks.length*100); if(bar) bar.style.width=p+'%'; if(pct) pct.textContent=p+'%'; if(msg&&label) msg.textContent=label; };
+  // los mapas se cargan de a uno (RAM y CPU); lo demás en paralelo
+  const mapTasks=tasks.filter(t=>t[0].startsWith('Mapa ')), other=tasks.filter(t=>!t[0].startsWith('Mapa '));
+  upd('Descargando...');
+  const run=async(t)=>{ upd('Cargando: '+t[0]); try{ await t[1](); }catch(e){ console.warn('precarga', t[0], e); } done++; upd(); };
+  await Promise.all([ Promise.all(other.map(run)), (async()=>{ for(const t of mapTasks) await run(t); })() ]);
+  upd('Listo'); if(bar) bar.style.width='100%'; if(pct) pct.textContent='100%';
+  await new Promise(r=>setTimeout(r,250));
+  ov.style.display='none';
+}
 async function fafiFinalizeAuth(user, isLocal){
   const username = (user && (user.username || user.id)) || 'DevPlayer';
   fafiResetUserState();
@@ -297,6 +338,7 @@ async function fafiFinalizeAuth(user, isLocal){
     fafiLoadGameData();
   }
   fafiApplySensitivity(); fafiApplyQuality();
+  try{ await fafiPreloadAll(); }catch(e){ console.warn('precarga', e); }      // descarga y prepara todo antes de mostrar el menú: al entrar se puede jugar de una
   fafiShowShell();
   try{ if(typeof showFloating==='function'&&typeof gameActive!=='undefined'&&gameActive) showFloating('¡Hola '+username+'!'); }catch(e){}
 }
@@ -910,11 +952,11 @@ async function mergeStaticVisuals(model, meshes){
   console.log('mapa fusionado:', list.length, 'mallas ->', out.length);
 }
 
-function loadMap(key, onDone){
+function loadMap(key, onDone, silent){
   const def=MAPS[key];
   if(!def) return;
   const ck=key+'|'+mapFile(key);
-  if(mapCache[ck]){ activateMap(key); if(onDone) onDone(); return; }
+  if(mapCache[ck]){ if(!silent) activateMap(key); if(onDone) onDone(); return; }
   if(dust2Loading) return;
   dust2Loading=true; refreshMapPicker();
   const loadingEl=document.getElementById('dust2Loading');
@@ -957,7 +999,7 @@ function loadMap(key, onDone){
     mapCache[ck]=entry;
     dust2Loading=false;
     if(loadingEl) loadingEl.style.display='none';
-    activateMap(key);
+    if(!silent) activateMap(key);
     if(onDone) onDone();
   }, (xhr)=>{
     if(loadingEl && xhr.lengthComputable){
@@ -968,13 +1010,14 @@ function loadMap(key, onDone){
     dust2Loading=false;
     if(loadingEl){ loadingEl.textContent='Error cargando '+def.name; setTimeout(()=>{ loadingEl.style.display='none'; }, 1800); }
     refreshMapPicker();
+    if(silent){ if(onDone) onDone(); return; }          // precarga: si falla no se guarda ningún mapa de reemplazo
     if(!mapCache[ck]){
       // Fallback simple: plano grande
       const fb=new THREE.Mesh(new THREE.PlaneGeometry(50,50), new THREE.MeshStandardMaterial({color:0x2a2a2a, roughness:0.9}));
       fb.rotation.x=-Math.PI/2; fb.receiveShadow=true; fb.updateMatrixWorld(true);
       const grp=new THREE.Group(); grp.add(fb);
       mapCache[ck]={ model:grp, bounds:new THREE.Box3(new THREE.Vector3(-25,-1,-25), new THREE.Vector3(25,4,25)), colliders:[fb], spawns:{ t:{x:0,z:20}, ct:{x:0,z:-20} } };
-      activateMap(key);
+      if(!silent) activateMap(key);
       if(onDone) onDone();
     }
   });
@@ -3586,6 +3629,11 @@ window.addEventListener('keydown', (e)=>{
   if(e.code==='KeyF'){
     e.preventDefault();
     tryInspect();
+  }
+  // R = recargar
+  if(e.code==='KeyR' && !e.repeat && !e.ctrlKey && !e.metaKey && gameActive && controls.isLocked){
+    e.preventDefault();
+    tryReload();
   }
 });
 window.addEventListener('keyup', (e)=>{ keys[e.code]=false; });

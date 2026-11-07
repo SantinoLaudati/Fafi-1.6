@@ -9,19 +9,8 @@ en su página de origen antes de publicar el juego.
 Voz neuronal `es_MX-claude-high` de [Piper](https://github.com/rhasspy/piper) (MIT; modelo Apache-2.0, https://huggingface.co/rhasspy/piper-voices),
 generada sin conexión a partir de `assets/historia/guion.json`. Es voz sintética; para una voz humana usa `herramientas/grabar-locucion_2_0_0v.html`.
 
-## Efectos de sonido
-- Disparos (`assets/audio/armas`): grabaciones reales de OpenGameArt. `pistola_cz.wav`, `fusil_mosin.wav`, `fusil_sks.wav` y `escopeta.wav` de Vincent Sevedge
-  (CC-BY 3.0, https://opengameart.org/content/gunshot-sounds); `ak47.ogg` de The Free Firearm Sound Library (CC0, https://opengameart.org/content/the-free-firearm-sound-library).
-- Impactos, dolor y equipo (`assets/audio/impactos`), todo de OpenGameArt:
-  `carne_bala*.wav` y `carne_perfora.wav` de «Fleshy Fight Sounds» (OGA-BY 3.0, https://opengameart.org/content/fleshy-fight-sounds);
-  `casco*.ogg` (bala contra el casco) de «100 CC0 metal and wood SFX» (CC0, https://opengameart.org/content/100-cc0-metal-and-wood-sfx);
-  `dolor*.wav`, `muerte*.wav`, `chaleco.wav` y `sin_balas.wav` de «FPS Placeholder Sounds» (CC-BY 3.0, https://opengameart.org/content/fps-placeholder-sounds);
-  `cerrojo_awp.wav` de «Handling Guns» (CC-BY-SA 3.0, https://opengameart.org/content/handling-guns).
-  Los disparos llevan además una reverberación de campo abierto generada en tiempo real (`js/sfx_2_0_0v.js`).
-- Resto (`assets/audio/sfx`): [Mixkit](https://mixkit.co/free-sound-effects/) (licencia Mixkit: uso libre, sin atribución obligatoria; no se pueden redistribuir como archivos sueltos).
-
-## Música
-La música orquestal de las cinemáticas se genera en tiempo real con WebAudio (`js/historia_2_0_0v.js`).
+## Sonido
+El juego no reproduce ningún sonido (efectos, ambiente ni música); se eliminaron todos los archivos de audio. La locución de la campaña (`assets/historia/audio`) se conserva solo para marcar la duración de cada plano y va silenciada.
 
 ## Mapas, armas, cuchillo, personajes, granadas y caja
 Archivos `.glb` aportados por el equipo en `game-client/assets` (ver README.md).

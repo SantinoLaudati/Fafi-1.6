@@ -53,7 +53,7 @@ function softTex(rgba0, rgba1) {
 function createAudio() {
   const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
   const ac = new AC(); const A = { ac };
-  const master = ac.createGain(); master.gain.value = 0.9;
+  const master = ac.createGain(); master.gain.value = 0;   // sin sonido (silenciado)
   const comp = ac.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 4;
   master.connect(comp); comp.connect(ac.destination);
   const len = ac.sampleRate * 2.8, ir = ac.createBuffer(2, len, ac.sampleRate);
@@ -572,7 +572,7 @@ export async function playChapter(id, { onEnd, beat: startBeat = 0 } = {}) {
     const enterBeat = (i) => {
       beatIdx = i; segIdx = -1;
       try { narr && narr.pause(); } catch (e) {}
-      narr = new Audio('assets/historia/audio/c' + id + '_' + i + '.wav'); narr.volume = 1; mastered(narr); const p = narr.play(); if (p && p.catch) p.catch(() => {});
+      narr = new Audio('assets/historia/audio/c' + id + '_' + i + '.wav'); narr.volume = 1; narr.muted = true; mastered(narr); const p = narr.play(); if (p && p.catch) p.catch(() => {});
       ov.sub.textContent = meta.beats[i]; ov.sub.style.opacity = 1;
     };
     const enterSeg = (beat, si) => {

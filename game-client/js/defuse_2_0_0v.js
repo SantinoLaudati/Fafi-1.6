@@ -238,6 +238,17 @@ export function createDefuse(A) {
   }
   function hideLoading() { const el = $('dfLoading'); if (el) el.classList.remove('show'); }
 
+  // Precarga (tras el login): construye la navegación de un mapa y descarga bomba y gallinas, así al iniciar la partida no hay esperas.
+  async function warm(key, file, bounds, colliders, nd) {
+    const k = key + "|" + file; if (navCache[k]) return;
+    const nav = new NavGrid(bounds, colliders, (nd && nd.cell) || 1.0, { headroom: nd && nd.headroom, step: nd && nd.step });
+    await nav.build(() => {}); navCache[k] = nav;
+  }
+  async function warmAssets() {
+    if (!bombProto) { try { bombProto = (await new Promise((res, rej) => makeLoader().load(BOMB_FILE, g => res(g), undefined, rej))).scene; } catch (e) { /* se usa el reemplazo al iniciar */ } }
+    try { await chickens.load(); } catch (e) {}
+  }
+
   async function startMatch(team) {
     if (D.loading) return;
     D.loading = true; D.team = team;
@@ -1113,7 +1124,7 @@ export function createDefuse(A) {
 
   // ---------------------------------------------------------------- API pública
   return {
-    D, startMatch, endMatch, update, bulletHit, meleeHit, areaDamage, flashArea, registerSmoke, drawRadar,
+    D, startMatch, warm, warmAssets, endMatch, update, bulletHit, meleeHit, areaDamage, flashArea, registerSmoke, drawRadar,
     renderScoreboard, smokeBlocks,
     noise(pos, radius) { if (D.active && D.player) noise(pos, radius, D.player); },
     get active() { return D.active; },
