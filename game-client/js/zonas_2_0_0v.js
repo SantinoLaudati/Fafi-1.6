@@ -26,10 +26,10 @@ export const ZONAS = {
     B:  { x:  12.7, y: -4.2, z:   9.9, r: 5.0 }      // sitio B: plaza del mercado (cruce central)
   },
   mirage: {  // cs_mirage (optimizados/cs_mirage_lite.glb, normalizado a 84 m): spawns y sites marcados a mano sobre el mapa anterior; si caen fuera de zona caminable se ajustan al punto más cercano
-    t:  { x: -13.5, y: -6.36, z:  -7.04, r: 5.0 },     // T spawn (marcado a mano en el juego)
-    ct: { x:  11.54, y: -4.94, z:  33.97, r: 5.0 },    // CT spawn
-    A:  { x:  16.72, y: -4.83, z: -13.31, r: 5.0 },    // sitio A
-    B:  { x: -18.21, y: -5.11, z:  10.54, r: 5.0 }     // sitio B
+    t:  { x:  25.59, y:  -9.08, z: -10.30, r: 5.0 },     // T spawn (marcado a mano sobre mirage lite)
+    ct: { x: -21.87, y: -11.46, z:  16.19, r: 5.0 },    // CT spawn
+    A:  { x: -26.06, y:  -9.61, z: -16.51, r: 5.0 },    // sitio A
+    B:  { x:   2.33, y:  -9.61, z:  22.23, r: 5.0 }     // sitio B
   },
   office: {  // cs_office: T dentro del edificio (noreste), CT fuera en el aparcamiento (suroeste)
     t:  { x:  20.4, y:  2.4, z: -16.7, r: 4.5 },     // T spawn (interior noreste)
