@@ -1609,18 +1609,18 @@ function spend(price){
 // Para habilitar una: cambiar kind a 'gun', añadir su precio a WEAPON_PRICES y su lógica de arma.
 const BUY_ITEMS = [
   { id:'deagle', kind:'gun', cat:'side', col:0, label:'Desert Eagle', thumb:'deagle' },
-  { id:'five',   kind:'locked', cat:'side', col:0, label:'Five-SeveN', price:500, thumb:'five' },
-  { id:'p90',    kind:'locked', cat:'smg', col:1, label:'P90', price:2350, thumb:'p90' },
-  { id:'smg',    kind:'locked', cat:'smg', col:1, label:'SMG Silenciada', price:1500, thumb:'smg' },
-  { id:'shotgun', kind:'locked', cat:'shotgun', col:1, label:'Escopeta Pump', price:1050, thumb:'shotgun' },
-  { id:'shorty', kind:'locked', cat:'shotgun', col:1, label:'Shorty', price:1100, thumb:'shorty' },
+  { id:'five',   kind:'gun', cat:'side', col:0, label:'Five-SeveN', price:500, thumb:'five' },
+  { id:'p90',    kind:'gun', cat:'smg', col:1, label:'P90', price:2350, thumb:'p90' },
+  { id:'smg',    kind:'gun', cat:'smg', col:1, label:'SMG Silenciada', price:1500, thumb:'smg' },
+  { id:'shotgun', kind:'gun', cat:'shotgun', col:1, label:'Escopeta Pump', price:1050, thumb:'shotgun' },
+  { id:'shorty', kind:'gun', cat:'shotgun', col:1, label:'Shorty', price:1100, thumb:'shorty' },
   { id:'ak',  kind:'gun', cat:'rifle', col:1, label:'AK-47', thumb:'ak' },
   { id:'m4',  kind:'gun', cat:'rifle', col:1, label:'M4A4',  thumb:'m4' },
-  { id:'vandal', kind:'locked', cat:'rifle', col:1, label:'Vandal', price:2900, thumb:'vandal' },
-  { id:'m4b',    kind:'locked', cat:'rifle', col:1, label:'M4 Táctico', price:2900, thumb:'m4b' },
+  { id:'vandal', kind:'gun', cat:'rifle', col:1, label:'Vandal', price:2900, thumb:'vandal' },
+  { id:'m4b',    kind:'gun', cat:'rifle', col:1, label:'M4 Táctico', price:2900, thumb:'m4b' },
   { id:'awp', kind:'gun', cat:'sniper', col:1, label:'AWP', thumb:'awp' },
-  { id:'vss', kind:'locked', cat:'sniper', col:1, label:'VSS Vintorez', price:2800, thumb:'vss' },
-  { id:'negev', kind:'locked', cat:'heavy', col:1, label:'Negev', price:1700, thumb:'negev' },
+  { id:'vss', kind:'gun', cat:'sniper', col:1, label:'VSS Vintorez', price:2800, thumb:'vss' },
+  { id:'negev', kind:'gun', cat:'heavy', col:1, label:'Negev', price:1700, thumb:'negev' },
   { id:'vest', kind:'armor', cat:'shield', col:2, label:'Chaleco ligero',   icon:'' },
   { id:'helm', kind:'armor', cat:'shield', col:2, label:'Chaleco + casco',  icon:'' },
   { id:'kit',   kind:'util', cat:'util', col:2, label:'Kit de defusa', icon:'' },
@@ -1729,6 +1729,7 @@ function updateBuyMenu(){
 function buyItem(it){
   if(!gameActive || false) return;
   if(it.kind==='locked'){ showFloating(it.label+': próximamente'); return; }
+  if(EXTRA_W[it.id] && !ANIM_WEAPONS[it.id]){ showFloating(it.label+': cargando, intenta de nuevo'); try{ enableExtraWeapons(true); }catch(e){} return; }
   if(buyTeamBlocked(it)){ showFloating(WEAPON_LABEL[it.id]+' es solo para '+(WEAPON_TEAM[it.id]==='t'?'terroristas':'antiterroristas')); return; }
   if(defuse.active && !defuse.canBuy()){ showFloating(defuse.buyReason()); return; }
   if(it.kind==='gun') tryBuy(it.id);
@@ -2404,7 +2405,7 @@ async function enableExtraWeapons(on){
       const s=SECONDARIES.indexOf(id); if(s>=0) SECONDARIES.splice(s,1);
       const w=WBAR_SLOTS.findIndex(x=>x[0]===id); if(w>=0) WBAR_SLOTS.splice(w,1);
       if(animW[id]) animW[id].holder.visible=false;
-      const it=BUY_ITEMS.find(i=>i.id===id); if(it) it.kind='locked';
+
     }
     if(EXTRA_W[currentWeapon]) switchWeaponForce('knife');
   }

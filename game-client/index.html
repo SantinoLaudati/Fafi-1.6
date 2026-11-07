@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FAFI 1.6 V2 - AIM PRACTICE</title>
+<title>FAFI 1.6 V2 - MODO AIM</title>
 <link rel="stylesheet" href="css/style_2_0_0v.css">
 <link rel="stylesheet" href="css/theme_2_0_0v.css">
 <link rel="stylesheet" href="css/historia_2_0_0v.css">
@@ -70,7 +70,7 @@
         </div>
       </div>
       <div class="mm-modes">
-        <button class="mm-card mm-aim" id="fafiPlayAim"><i></i><em>ENTRENAMIENTO</em><b>Campo de tiro</b><span>30 s de blancos móviles. Todas las armas libres.</span></button>
+        <button class="mm-card mm-aim" id="fafiPlayAim"><i></i><em>MODO AIM</em><b>Modo Aim</b><span>Práctica sin límite de tiempo. Todas las armas desbloqueadas en la tienda (B).</span></button>
         <button class="mm-card mm-def" id="fafiPlayDefuse"><i></i><em>5 vs 5 · BOTS</em><b>Defuse</b><span>Terroristas contra antiterroristas: planta o desactiva la bomba.</span></button>
         <button class="mm-card mm-free" id="fafiPlayDust2"><i></i><em>EXPLORACIÓN</em><b>Mapa libre</b><span>Dust II, Italy y Office sin reglas, para practicar.</span></button>
         <button class="mm-card mm-story" id="fafiOpenCampaign"><i></i><em>CAMPAÑA</em><b>Modo historia</b><span>Los hechos de la Segunda Guerra Mundial hasta el Día D.</span></button>
@@ -138,11 +138,11 @@
   <div class="subtitle">FAFI 1.6 — ELIGE MODO</div>
   <div class="menu-card">
       <h2>MODO DE JUEGO</h2>
-      <button class="btn btn-primary" id="playBtn">▶ AIM PRACTICE</button>
+      <button class="btn btn-primary" id="playBtn">▶ MODO AIM</button>
       <button class="btn btn-primary" id="dust2Btn" style="margin-top:10px; background: linear-gradient(180deg,#ff8c2a,#ff3b18); box-shadow: 0 6px 18px rgba(255,60,20,0.5);">DUST II — EXPLORACIÓN</button>
       <div id="dust2Loading" style="display:none; margin-top:12px; font-size:12px; letter-spacing:1px; color:#ff8c2a; font-weight:700;">Cargando Dust2... 0%</div>
     <div class="info">
-      <b>AIM:</b> 30s - blancos móviles en galería (todas las armas libres)<br>
+      <b>AIM:</b> práctica sin límite de tiempo, blancos móviles (todas las armas en la tienda)<br>
       <b>DUST II:</b> Empiezas con cuchillo + $3000 — <b>B</b> abre compra CS:GO (Deagle $700, AK $2500, M4A4 $3100, AWP $4750)<br>
       WASD: Caminar • SHIFT: Agacharse/ Sprint • Mouse: Mirar<br>
       1:Primaria 2:Secundaria 3:Cuchillo 4-7:Granadas / Q Rueda: Cambiar • Click Izq: Disparar/Apuñalar • Click Der: Mira/Zoom AWP • R: Recargar • F: Inspeccionar • B: Comprar (Dust2)
@@ -171,7 +171,7 @@
       <div class="hud-item" id="hudAcc"><div class="hud-label">PRECISIÓN</div><div class="hud-value" id="accEl">0%</div></div>
       <div class="hud-item" id="moneyBox" style="display:none;min-width:110px;border-color:rgba(122,255,122,0.5)"><div class="hud-label" style="color:#7aff7a">DINERO</div><div class="hud-value" id="moneyEl" style="color:#7aff7a">$3000</div></div>
     </div>
-    <div class="hud-item" style="min-width:90px"><div class="hud-label">TIEMPO</div><div class="hud-value" id="timeEl">30.0</div></div>
+    <div class="hud-item" style="min-width:90px"><div class="hud-label">TIEMPO</div><div class="hud-value" id="timeEl">∞</div></div>
   </div>
   <div id="fpsCounter">60 FPS</div>
   <div id="minimapWrap"><canvas id="minimap" width="296" height="296"></canvas></div>
@@ -238,7 +238,7 @@
 
   <div id="resultOverlay">
     <h2>¡TIEMPO!</h2>
-    <p style="color:#8a9ab0">Resultados AIM PRACTICE</p>
+    <p style="color:#8a9ab0">Resultados MODO AIM</p>
     <div class="stats">
       <div class="stat"><b id="rScore">0</b><span>PUNTOS</span></div>
       <div class="stat"><b id="rHits">0</b><span>ACIERTOS</span></div>
