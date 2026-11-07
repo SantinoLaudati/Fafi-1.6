@@ -43,10 +43,11 @@ export function createGrenades(A) {
   function held(type) { return protos[type] ? protos[type].clone(true) : new THREE.Group(); }
 
   // ---- lanzamiento ----
-  function throwG(type, origin, dir, owner, power = 1) {
+  function throwG(type, origin, dir, owner, power = 1, inherit = null) {
     const m = held(type);
     m.position.copy(origin); A.world.add(m);
     const vel = dir.clone().multiplyScalar(11 * power); vel.y += 2.6 * power;
+    if (inherit) vel.add(inherit);
     active.push({ type, mesh: m, vel, age: 0, owner, rest: false, spin: new THREE.Vector3(Math.random() * 6, Math.random() * 6, Math.random() * 6), bounced: 0 });
   }
 

@@ -491,7 +491,10 @@ function vmAdd(obj){
   vmRoot.add(obj); return obj;
 }
 function vmLayer(obj){ obj.traverse(o=>{ if(!o.isLight) o.layers.set(1); }); return obj; }
+let _rfN=0;
 function renderFrame(){
+  // sombras: si los FPS bajan de 60 el mapa de sombras se recalcula cada 2 o 3 cuadros (casi no se nota y ahorra mucho en placas lentas)
+  { const sm=renderer.shadowMap; if(sm.enabled){ const k=fpsVal<45?3:fpsVal<57?2:1; sm.autoUpdate=false; if((++_rfN)%k===0) sm.needsUpdate=true; } }
   renderer.render(scene, camera);                            // mundo (capa 0)
   if(!viewCamera || !vmRoot) return;
   camera.updateMatrixWorld();
@@ -1285,9 +1288,12 @@ function buildGrenadeHolders(){
   }
   scene.add(camera);
 }
-function startThrow(){
+let rmbDown=false;   // clic derecho apretado (para el tipo de lanzamiento de granadas)
+function startThrow(power){
   if(gThrow.active) return;
   const k=currentWeapon; if(!GRENADES[k] || grenadeStock[k]<=0) return;
+  // como en CS:GO: clic izq = lanzamiento fuerte, clic der = suave, ambos = medio
+  gThrow.power = power!=null ? power : (rmbDown ? 0.7 : 1);
   gThrow.active=true; gThrow.t=0; gThrow.released=false; gThrow.type=k;
   SFX.play('grenade_pin');
 }
@@ -1295,7 +1301,9 @@ function releaseGrenade(){
   const k=gThrow.type;
   const fwd=new THREE.Vector3(); camera.getWorldDirection(fwd);
   const origin=camera.position.clone().addScaledVector(fwd,0.55); origin.y-=0.12;
-  grenades.throw(k, origin, fwd.clone().add(new THREE.Vector3(0,0.18,0)).normalize(), defuse.active?defuse.player:null);
+  const pw=gThrow.power||1;
+  // el arco sube con más fuerza y la granada hereda parte de tu velocidad al correr (CS:GO)
+  grenades.throw(k, origin, fwd.clone().add(new THREE.Vector3(0,pw<1?0.3:0.18,0)).normalize(), defuse.active?defuse.player:null, pw*0.9+0.1*pw*pw, new THREE.Vector3(pVel.x*1.25,0,pVel.z*1.25));
   SFX.play('grenade_throw');
   setStock(k, grenadeStock[k]-1);
   showFloating(GRENADES[k].label+' lanzada');
@@ -4040,8 +4048,10 @@ window.addEventListener('mousedown', (e)=>{
       if(currentWeapon==='knife') knifeAttack(); else shoot();
     }
   }
+  if(e.button===2) rmbDown=true;
   if(e.button===2 && controls.isLocked){
-    if(currentWeapon==='knife') knifeAttack();
+    if(GRENADES[currentWeapon]){ if(!isHoldingShoot) startThrow(0.4); }
+    else if(currentWeapon==='knife') knifeAttack();
     else if(currentWeapon==='awp') cycleAwpZoom();
     else if(currentWeapon==='ak' || (ANIM_WEAPONS[currentWeapon] && ANIM_WEAPONS[currentWeapon].aim)) setAiming(true);
     // deagle no apunta
@@ -4049,6 +4059,7 @@ window.addEventListener('mousedown', (e)=>{
 });
 window.addEventListener('mouseup', (e)=>{
   if(e.button===0) isHoldingShoot = false;
+  if(e.button===2) rmbDown=false;
   if(e.button===2 && (currentWeapon==='ak' || (ANIM_WEAPONS[currentWeapon] && ANIM_WEAPONS[currentWeapon].aim))) setAiming(false);
   // AWP es pulsar/soltar (toggle), no se quita al soltar
 });

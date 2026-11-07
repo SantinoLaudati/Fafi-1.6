@@ -13,7 +13,7 @@ vec3 skV(vec2 p){ vec2 g = floor(p), f = fract(p); float d1 = 9.0, d2 = 9.0; flo
 `;
 
 const PATTERN_FRAG = `
-  vec3 skinGlow = vec3(0.0);
+  vec3 skinGlow = vec3(0.0); float skRough = 1.0, skMetal = 0.0;
   if (uPat > 0.5) {
     float skBit = mod(floor(uZoneMask / exp2(floor(vZone + 0.5))), 2.0);
     if (skBit > 0.5) {
@@ -37,6 +37,13 @@ const PATTERN_FRAG = `
       else if (P == 13) { float w = sin(pp.x * 18.0 + sin(pp.y * 14.0 + pp.z * 6.0) * 2.4) * 0.5 + 0.5; col = mix(uC1, uC2, w); col = mix(col, uC3, smoothstep(0.9, 1.0, w)); gm = smoothstep(0.9, 1.0, w); }
       else if (P == 14) { vec2 p = pp.xy * vec2(1.0, 2.0) * vec2(5.0, 5.0); vec2 f = fract(p); vec2 id = floor(p); float e = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y)); col = mix(uC1, uC2, skH(id) * 0.8); col = mix(uC3, col, smoothstep(0.02, 0.09, e)); gm = 1.0 - smoothstep(0.02, 0.07, e); }
       float wear = 0.9 + 0.1 * skN(pp.xy * 60.0 + pp.z * 40.0);
+      float scr = smoothstep(0.80, 0.93, skN(pp.xy * vec2(260.0, 34.0) + pp.z * 120.0)) * uWear;
+      float flk = smoothstep(0.70, 0.82, skN(pp.xy * vec2(46.0, 130.0) + 7.0)) * uWear;
+      float grime = smoothstep(0.55, 0.95, skF(pp.xy * vec2(9.0, 22.0) + pp.z * 5.0)) * uWear;
+      col = mix(col, col * 0.5, flk * 0.45);
+      col = mix(col, col * 0.62, grime * 0.35);
+      col = mix(col, vec3(0.80, 0.82, 0.86) * max(lum, 0.4), scr * 0.38);
+      skRough = 1.0 - 0.62 * uGloss + 0.5 * scr + 0.25 * grime; skMetal = 0.55 * uGloss * (1.0 - 0.6 * scr);
       col = mix(col, col * (0.3 + lum * 1.5), uTex);
       diffuseColor.rgb = col * wear * diffuse.r;
       skinGlow = (uC2 * gm + uC1 * 0.0) * uEmit;
@@ -49,7 +56,7 @@ export function patchMaterial(mat) {
   if (mat.userData.skinU) return mat.userData.skinU;
   const u = {
     uPat: { value: 0 }, uC1: { value: new THREE.Color(0xffffff) }, uC2: { value: new THREE.Color(0x888888) }, uC3: { value: new THREE.Color(0x222222) },
-    uFreq: { value: new THREE.Vector3(1, 1, 1) }, uMin: { value: new THREE.Vector3() }, uLen: { value: 1 }, uZoneMask: { value: 511 }, uEmit: { value: 0 }, uTime: { value: 0 }, uTex: { value: 0 }
+    uFreq: { value: new THREE.Vector3(1, 1, 1) }, uMin: { value: new THREE.Vector3() }, uLen: { value: 1 }, uZoneMask: { value: 511 }, uEmit: { value: 0 }, uTime: { value: 0 }, uTex: { value: 0 }, uGloss: { value: 0.5 }, uWear: { value: 0.5 }
   };
   mat.userData.skinU = u;
   mat.onBeforeCompile = (sh) => {
@@ -58,11 +65,11 @@ export function patchMaterial(mat) {
       .replace('#include <common>', '#include <common>\nattribute float zone;\nvarying float vZone;\nvarying vec3 vObj;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvZone = zone; vObj = position;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uPat, uLen, uZoneMask, uEmit, uTime, uTex;\nuniform vec3 uC1, uC2, uC3, uFreq, uMin;\nvarying float vZone;\nvarying vec3 vObj;\n' + NOISE)
+      .replace('#include <common>', '#include <common>\nuniform float uPat, uLen, uZoneMask, uEmit, uTime, uTex, uGloss, uWear;\nuniform vec3 uC1, uC2, uC3, uFreq, uMin;\nvarying float vZone;\nvarying vec3 vObj;\n' + NOISE)
       .replace('#include <color_fragment>', '#include <color_fragment>\n' + PATTERN_FRAG)
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += skinGlow;');
   };
-  mat.customProgramCacheKey = () => 'skinpat1';
+  mat.customProgramCacheKey = () => 'skinpat2';
   mat.needsUpdate = true;
   return u;
 }
@@ -77,5 +84,6 @@ export function setPattern(mat, spec, bb) {
   u.uC1.value.setHex(c[0]); u.uC2.value.setHex(c[1] ?? c[0]); u.uC3.value.setHex(c[2] ?? c[1] ?? c[0]);
   const f = spec.freq || 1; u.uFreq.value.set(f, f, f);
   u.uEmit.value = spec.emit || 0; u.uTex.value = spec.tex || 0;
+  u.uGloss.value = spec.gloss != null ? spec.gloss : 0.6; u.uWear.value = spec.wear != null ? spec.wear : 0.55;
   let mask = 0; for (const z of (spec.zones || ['all'])) mask |= ZONE_BIT[z] || 0; u.uZoneMask.value = mask || 511;
 }
