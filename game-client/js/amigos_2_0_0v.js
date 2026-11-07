@@ -129,5 +129,6 @@ export function initAmigos() {
   // refresco periódico mientras la pestaña de perfil está abierta (para ver solicitudes nuevas)
   pollTimer = setInterval(() => { if (document.getElementById('fafi16-tab-perfil')?.classList.contains('active') && !document.hidden) load(); }, 20000);
   window.fafiRefreshFriends = load;
+  document.getElementById('fsToggle')?.addEventListener('click', () => { const m = document.getElementById('menus'); m.classList.toggle('side-closed'); document.getElementById('fsToggle').textContent = m.classList.contains('side-closed') ? '«' : '»'; });
   load();
 }

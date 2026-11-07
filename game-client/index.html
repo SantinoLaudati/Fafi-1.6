@@ -80,12 +80,11 @@
     </div>
     <div id="fafi16-tab-perfil" class="fafi16-panel">
       <div class="fafi16-panel-title">Tu Perfil Fafi</div>
-      <span class="fafi16-label">Historial de Compras (Fafi Coins)</span>
-      <div class="fafi-list-container" id="purchase-history-list"></div>
-      <span class="fafi16-label">Amigos</span>
-      <div id="friends-ui"></div>
-      <span class="fafi16-label">Logros Desbloqueados</span>
-      <div class="fafi-list-container" id="achievements-list" style="max-height:170px;"></div>
+      <div class="pf-grid">
+        <section class="pf-sec pf-wide" id="pf-slot"></section>
+        <section class="pf-sec"><h3>Logros desbloqueados</h3><div class="fafi-list-container" id="achievements-list" style="max-height:260px;"></div></section>
+        <section class="pf-sec"><h3>Historial de compras (Fafi Coins)</h3><div class="fafi-list-container" id="purchase-history-list" style="max-height:260px;"></div></section>
+      </div>
     </div>
     <div id="fafi16-tab-ajustes" class="fafi16-panel">
       <div class="fafi16-panel-title">Ajustes del Juego (se aplican al motor V2)</div>
@@ -104,6 +103,7 @@
       <button class="fafi16-btn-standard" id="logoutBtn" style="margin-top:16px;">CERRAR SESIÓN</button>
     </div>
   </div>
+  <aside id="friendsSide"><div class="fs-head"><b>AMIGOS</b><button id="fsToggle" title="Ocultar/mostrar">»</button></div><div id="friends-ui"></div></aside>
 </div>
 
 <div id="campaign-map-overlay"></div>

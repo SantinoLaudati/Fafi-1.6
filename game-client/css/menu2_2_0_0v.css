@@ -179,3 +179,21 @@
 #teamOverlay .map-pick{height:auto!important;flex:1 1 0!important;min-width:140px!important;max-width:300px}
 #teamOverlay #pmOff{overflow:hidden}
 #teamOverlay .pm-bar .pm-rules{flex:1}
+
+/* ===== Perfil en secciones + lista de amigos como barra lateral derecha ===== */
+#menus.has-side .fafi16-content-area{padding-right:330px}
+#friendsSide{position:fixed;right:0;top:0;bottom:0;width:310px;z-index:30;display:none;flex-direction:column;background:linear-gradient(180deg,rgba(14,18,25,.97),rgba(8,10,14,.97));border-left:1px solid rgba(255,255,255,.1);padding:84px 12px 12px;overflow:auto;box-shadow:-10px 0 30px rgba(0,0,0,.45)}
+#menus.has-side #friendsSide{display:flex}
+#menus.has-side.side-closed #friendsSide{transform:translateX(262px)}
+#menus.has-side.side-closed .fafi16-content-area{padding-right:60px}
+#friendsSide .fs-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;letter-spacing:4px;color:#e0a82e;font-size:12px}
+#friendsSide .fs-head button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:3px;width:34px;height:28px;cursor:pointer}
+#friendsSide #friends-ui .fr-list{max-height:none;min-height:120px}
+#friendsSide #friends-ui .fr-row{flex-wrap:wrap}
+#friendsSide #friends-ui .fr-btn{padding:4px 7px;font-size:10px}
+.pf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;width:100%}
+.pf-sec{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:14px 16px}
+.pf-sec.pf-wide{grid-column:1/-1}
+.pf-sec h3{margin:0 0 10px;font-size:12px;letter-spacing:4px;color:#e0a82e;text-transform:uppercase;font-weight:700}
+.pf-sec .fafi-list-container{margin-bottom:0}
+#pf-box{margin-bottom:0!important;border:0!important;background:none!important;padding:0!important}

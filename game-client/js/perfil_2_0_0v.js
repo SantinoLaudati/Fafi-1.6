@@ -93,7 +93,7 @@ export function initPerfil() {
   if (!panel || document.getElementById('pf-box')) return;
   const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
   const box = document.createElement('div'); box.id = 'pf-box';
-  const title = panel.querySelector('.fafi16-panel-title'); (title ? title.after(box) : panel.prepend(box));
+  const slot = document.getElementById('pf-slot'); if (slot) { slot.innerHTML = '<h3>Mi perfil</h3>'; slot.appendChild(box); } else { const title = panel.querySelector('.fafi16-panel-title'); (title ? title.after(box) : panel.prepend(box)); }
   const render = () => {
     const p = getMyProfile(), ach = achievements();
     box.innerHTML = `<div class="pf-left"><div id="pfAv">${avatarHtml(user(), p.avatar, 96)}</div><button class="pf-btn" id="pfPhoto">CAMBIAR FOTO</button><input type="file" id="pfFile" accept="image/*" hidden><button class="pf-btn" id="pfDelPhoto">QUITAR</button></div>

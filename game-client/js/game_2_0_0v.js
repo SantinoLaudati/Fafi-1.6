@@ -279,7 +279,7 @@ function fafiHideShell(){
 function fafiShowShell(){
   if(!window.currentUserId) return;
   fafiHideShell();
-  const m=document.getElementById('menus'); if(m) m.style.display='flex';
+  const m=document.getElementById('menus'); if(m){ m.style.display='flex'; m.classList.add('has-side'); }
   try{ if(typeof menu!=='undefined'&&menu) menu.style.display='none'; }catch(e){}
   fafiUpdateProfileUI(); fafiRenderEquipTab(); fafiApplySensitivity(); fafiApplyQuality();
 }
