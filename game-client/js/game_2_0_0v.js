@@ -4384,7 +4384,7 @@ async function fafiDoRegister(){
   const p=document.getElementById('reg-pass').value||'';
   if(u.length<3 || u.length>20){ alert('El usuario debe tener entre 3 y 20 caracteres (se permiten letras, numeros y simbolos).'); return; }
   if(p.length<6){ alert('La contraseña debe tener al menos 6 caracteres (se permiten numeros y simbolos).'); return; }
-  if(!email.includes('@')){ alert('Email inválido.'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('Email inválido (ejemplo: nombre@correo.com).'); return; }
   const online=!!(window.authService && !window.authService.isDevMode());
   if(online){
     try{

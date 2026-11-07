@@ -12,3 +12,10 @@ if (!dev) {
   window.addEventListener('contextmenu', stop, true);
   window.addEventListener('dragstart', stop, true);
 }
+
+// Escribiendo en un campo de texto (usuario, email, contrasena, chat...) los atajos del juego no deben tocar la tecla:
+// antes teclas como AltGr+2 (@ en teclado espanol) o la del grafiti se cancelaban y no se podia escribir.
+const typing = (t) => t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+for (const type of ['keydown', 'keyup', 'keypress']) {
+  window.addEventListener(type, (e) => { if (e.code !== 'F12' && typing(e.target)) e.stopImmediatePropagation(); }, true);
+}
