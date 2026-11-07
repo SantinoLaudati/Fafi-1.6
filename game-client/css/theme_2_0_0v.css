@@ -293,3 +293,6 @@ body.df-on #weaponMode,body.df-on #weapon-info .icon{display:none}
 #awpCd.on{display:block}
 #awpCd i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#ffb020,#ffe27a)}
 #awpCd span{position:absolute;inset:0;text-align:center;font-size:10px;line-height:16px;letter-spacing:3px;color:#fff;text-shadow:0 0 3px #000}
+
+/* aviso de solicitudes de amistad pendientes sobre la pestaña Perfil */
+.fafi16-tab-btn[data-badge]:not([data-badge=""])::after{content:attr(data-badge);display:inline-block;margin-left:6px;min-width:16px;padding:0 4px;border-radius:8px;background:#e23b3b;color:#fff;font-size:10px;line-height:16px;text-align:center;vertical-align:middle}

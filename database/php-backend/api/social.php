@@ -54,18 +54,24 @@ function handleSocial($method, $id, $action, $input, $user) {
 }
 
 function handleGetFriends($user) {
+    // amigos y solicitudes enviadas (usuario_id = yo) + solicitudes pendientes que me enviaron otros (amigo_id = yo).
+    // amigo_id siempre es "la otra persona"; direccion indica quién inició la solicitud.
     $result = db()->fetchAll(
-        'SELECT la.amigo_id, la.estado, la.fecha_solicitud,
-                u.username, u.estado as user_estado
-         FROM lista_amigos la
-         JOIN usuarios u ON la.amigo_id = u.id
-         WHERE la.usuario_id = ?
-         ORDER BY 
-            CASE la.estado WHEN \'aceptada\' THEN 0 WHEN \'pendiente\' THEN 1 ELSE 2 END,
-            la.fecha_solicitud DESC',
-        [$user['id']]
+        'SELECT t.amigo_id, t.estado, t.fecha_solicitud, t.direccion, u.username, u.estado as user_estado
+         FROM (
+            SELECT la.amigo_id AS amigo_id, la.estado, la.fecha_solicitud, \'enviada\' AS direccion
+              FROM lista_amigos la WHERE la.usuario_id = ?
+            UNION ALL
+            SELECT la.usuario_id AS amigo_id, la.estado, la.fecha_solicitud, \'recibida\' AS direccion
+              FROM lista_amigos la WHERE la.amigo_id = ? AND la.estado = \'pendiente\'
+         ) t
+         JOIN usuarios u ON t.amigo_id = u.id
+         ORDER BY
+            CASE t.estado WHEN \'aceptada\' THEN 0 WHEN \'pendiente\' THEN 1 ELSE 2 END,
+            t.fecha_solicitud DESC',
+        [$user['id'], $user['id']]
     );
-    
+
     echo json_encode(['friends' => $result]);
 }
 
@@ -109,6 +115,11 @@ function handleAddFriend($input, $user) {
             echo json_encode(['error' => 'Ya son amigos']);
             return;
         } elseif ($status === 'pendiente') {
+            // si la otra persona ya me había enviado una solicitud, agregarla equivale a aceptarla
+            if ((int)$existing['usuario_id'] === (int)$targetId) {
+                handleAcceptFriend((int)$targetId, $user);
+                return;
+            }
             http_response_code(409);
             echo json_encode(['error' => 'Solicitud ya enviada o pendiente']);
             return;

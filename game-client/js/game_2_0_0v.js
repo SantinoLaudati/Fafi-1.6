@@ -940,6 +940,10 @@ function refreshMapPicker(){
       b.addEventListener('click', ()=>selectMap(k));
       el.appendChild(b);
     }
+    const rnd=document.createElement('button');
+    rnd.className='map-pick map-rand'; rnd.innerHTML='<div class="mp-art" style="display:flex;align-items:center;justify-content:center;font-size:54px;background:linear-gradient(135deg,#1a2230,#0e1218)">🎲</div><div class="mp-body"><em>SORPRESA</em><strong>ALEATORIO</strong><p>Elige un mapa al azar entre todos los disponibles.</p></div>';
+    rnd.addEventListener('click', ()=>{ const ks=Object.keys(MAPS); selectMap(ks[Math.floor(Math.random()*ks.length)]); });
+    el.appendChild(rnd);
   }
   el.querySelectorAll('.map-pick').forEach(b=>{
     const k=b.dataset.map;
@@ -4212,6 +4216,9 @@ try{
       if(gameMode==='dust2') applyAtmosphere();
     }catch(err){ console.warn('gfx', err); }
   });
+  window.fafiSaveGameData = fafiSaveGameData;
+  import('./online_2_0_0v.js').then(m=>m.initOnlineLobby(()=>selectedMap)).catch(err=>console.warn('online', err));
+  import('./amigos_2_0_0v.js').then(m=>m.initAmigos()).catch(err=>console.warn('amigos', err));
   import('./ajustes_2_0_0v.js').then(m=>m.initAjustes({ getQualityLevel:()=>qualityLevel })).catch(err=>console.warn('ajustes', err));
   document.getElementById('logoutBtn')?.addEventListener('click',()=>{ if(fafiDbOnline()) fafiDbSaveConfig(); fafiSaveGameData(); window.currentUserId=null; if(window.authService) try{ window.authService.logout(); window.authService.disableDevMode(); }catch(e){} document.getElementById('menus').style.display='none'; document.getElementById('login-overlay').style.display='flex'; try{ menu.style.display='none'; }catch(e){} });
   document.getElementById('againBtn')?.addEventListener('click',()=>{ setTimeout(()=>{ try{ fafiHideShell(); }catch(e){} },50); });
