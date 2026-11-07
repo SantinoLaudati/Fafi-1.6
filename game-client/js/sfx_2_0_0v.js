@@ -11,11 +11,24 @@ let ctx = null, master = null, wanted = false, loading = null;
 const bufs = {};                                         // nombre -> [AudioBuffer]
 const last = {};
 let lis = { x: 0, y: 0, z: 0, rx: 1, rz: 0 };
+// volumen configurable (Ajustes > Sonido): general + por categoría; se guarda en localStorage 'fafi_audio'
+const CATS = ['armas', 'recarga', 'pasos', 'impactos', 'granadas', 'bomba', 'menu'];
+const CFG = { master: 0.35, mute: false, armas: 1, recarga: 1, pasos: 1, impactos: 1, granadas: 1, bomba: 1, menu: 1 };
+try { Object.assign(CFG, JSON.parse(localStorage.getItem('fafi_audio') || '{}')); } catch (e) {}
+function catOf(n) {
+  if (/^(step|land)/.test(n)) return 'pasos';
+  if (/^(reload|draw|dry|bolt|inspect)/.test(n)) return 'recarga';
+  if (/^(hit|headshot|bulletwall|whizz|knife)/.test(n)) return 'impactos';
+  if (/^(grenade|he$|flash|smoke|molotov)/.test(n)) return 'granadas';
+  if (/^(c4|bomb)/.test(n)) return 'bomba';
+  if (/^(ui|buy|team|round)/.test(n)) return 'menu';
+  return 'armas';
+}
 
 function ensure() {
   if (ctx) return ctx;
   const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
-  ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.8;
+  ctx = new AC(); master = ctx.createGain(); master.gain.value = CFG.mute ? 0 : CFG.master;
   const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
   master.connect(comp); comp.connect(ctx.destination);
   return ctx;
@@ -44,7 +57,7 @@ function start(name, o = {}) {
   if (!ctx || !list || !list.length) return null;
   let i = Math.floor(Math.random() * list.length); if (list.length > 1 && i === last[w]) i = (i + 1) % list.length; last[w] = i;
   const src = ctx.createBufferSource(); src.buffer = list[i];
-  const g = ctx.createGain(); let vol = (o.vol == null ? 1 : o.vol) * (LIB[w] ? LIB[w].v : 1);
+  const g = ctx.createGain(); let vol = (o.vol == null ? 1 : o.vol) * (LIB[w] ? LIB[w].v : 1) * (CFG[catOf(w)] ?? 1);
   let node = src;
   if (o.pos) {                                           // sonido en el espacio: se atenúa con la distancia y se panea según de qué lado está
     const dx = o.pos.x - lis.x, dz = o.pos.z - lis.z, d = Math.hypot(dx, o.pos.y - lis.y, dz);
@@ -75,7 +88,10 @@ export const SFX = {
     camera.updateMatrixWorld(); const e = camera.matrixWorld.elements;
     lis.x = e[12]; lis.y = e[13]; lis.z = e[14]; lis.rx = e[0]; lis.rz = e[2];
   },
-  setVolume(v = 0.8) { if (master) master.gain.value = v; },
+  setVolume(v = 0.35) { CFG.master = v; if (master) master.gain.value = CFG.mute ? 0 : v; },
+  getConfig() { return { ...CFG }; },
+  categories: CATS,
+  setConfig(c) { Object.assign(CFG, c); try { localStorage.setItem('fafi_audio', JSON.stringify(CFG)); } catch (e) {} if (master) master.gain.value = CFG.mute ? 0 : CFG.master; },
   duck() {},
   get ctx() { return null; },                            // la cinemática no usa este contexto (va silenciada)
   get ready() { return !!ctx; },

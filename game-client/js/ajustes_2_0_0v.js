@@ -206,7 +206,28 @@ export function initAjustes(opts = {}) {
     applyCrosshair(c);
   };
 
-  root.innerHTML = '<div id="axGfx"></div><div id="axXhBox"></div>';
-  renderGfx(); renderXh();
+  // ----- sonido -----
+  const renderAudio = () => {
+    const S = window.SFX; if (!S || !S.getConfig) return;
+    const c = S.getConfig();
+    const names = { armas: 'Disparos de armas', recarga: 'Recarga y sacar arma', pasos: 'Pasos y aterrizaje', impactos: 'Impactos y cuchillo', granadas: 'Granadas', bomba: 'Bomba (C4)', menu: 'Menú y rondas' };
+    const row = (k, label) => `<div class="ax-row" data-a="${k}"><label for="axa_${k}">${label}</label><input type="range" id="axa_${k}" min="0" max="100" step="1" value="${Math.round((k === 'master' ? c.master : c[k]) * 100)}"><b>${Math.round((k === 'master' ? c.master : c[k]) * 100)}%</b></div>`;
+    root.querySelector('#axAudio').innerHTML = `<div class="ax-h" style="margin-top:8px">Sonido</div>
+      <div class="ax-note">No hay música en la partida: solo efectos. Bajá el volumen general o el de cada grupo a tu gusto; se guarda en este equipo.</div>
+      <div class="ax-row" data-a="mute"><label for="axa_mute">Silenciar todo</label><div class="ax-tg"><input type="checkbox" id="axa_mute" ${c.mute ? 'checked' : ''}><span>${c.mute ? 'Silenciado' : 'Con sonido'}</span></div></div>
+      ${row('master', 'Volumen general')}
+      ${S.categories.map((k) => row(k, names[k])).join('')}
+      <div class="ax-btns"><button class="ax-btn" id="axaTest">PROBAR DISPARO</button><button class="ax-btn" id="axaReset">RESTABLECER SONIDO</button></div>`;
+    const box = root.querySelector('#axAudio');
+    box.querySelectorAll('.ax-row').forEach((row) => {
+      const k = row.dataset.a, el = row.querySelector('input');
+      if (k === 'mute') el.addEventListener('change', () => { row.querySelector('span').textContent = el.checked ? 'Silenciado' : 'Con sonido'; S.setConfig({ mute: el.checked }); });
+      else el.addEventListener('input', () => { row.querySelector('b').textContent = el.value + '%'; S.setConfig({ [k]: el.value / 100 }); });
+    });
+    box.querySelector('#axaTest').addEventListener('click', () => { S.init(); S.weapon = 'ak'; S.play('ak'); });
+    box.querySelector('#axaReset').addEventListener('click', () => { S.setConfig({ master: 0.35, mute: false, armas: 1, recarga: 1, pasos: 1, impactos: 1, granadas: 1, bomba: 1, menu: 1 }); renderAudio(); });
+  };
+  root.innerHTML = '<div id="axAudio"></div><div id="axGfx"></div><div id="axXhBox"></div>';
+  renderAudio(); renderGfx(); renderXh();
   window.addEventListener('fafi-gfx-refresh', renderGfx);
 }
