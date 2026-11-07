@@ -3514,6 +3514,14 @@ window.addEventListener('keydown', (e)=>{
   // P = modo vuelo sin daño (atraviesa todo) · Z = guarda aquí el spawn CT · C = guarda aquí el spawn T
   if(gameActive && gameMode==='dust2' && !e.repeat && !e.ctrlKey && !e.altKey){
     if(e.code==='KeyP'){ e.preventDefault(); toggleSpectator(); window.fafiGod=freeCam; showFloating(freeCam?'VUELO + INVULNERABLE (P para salir)':'Vuelo desactivado'); return; }
+    if(e.code==='KeyK'){   // K = muestra los spawns/sites guardados de este mapa para copiarlos (Ctrl+C en el cuadro)
+      e.preventDefault(); try{ document.exitPointerLock(); }catch(err){}
+      const all=loadZoneOverrides(), mine=all[currentMapKey]||{};
+      const txt=JSON.stringify({map:currentMapKey, ...mine});
+      try{ navigator.clipboard.writeText(txt); }catch(err){}
+      setTimeout(()=>window.prompt('Spawns y sites guardados de '+currentMapKey+' (ya copiados al portapapeles; si no, Ctrl+C aquí):', txt), 50);
+      return;
+    }
     if(e.code==='KeyZ' || e.code==='KeyC' || e.code==='KeyN' || e.code==='KeyM'){
       e.preventDefault();
       const team={KeyZ:'ct',KeyC:'t',KeyN:'A',KeyM:'B'}[e.code]; const isSite=(team==='A'||team==='B');
