@@ -10,7 +10,7 @@ Voz neuronal `es_MX-claude-high` de [Piper](https://github.com/rhasspy/piper) (M
 generada sin conexión a partir de `assets/historia/guion.json`. Es voz sintética; para una voz humana usa `herramientas/grabar-locucion_2_0_0v.html`.
 
 ## Sonido
-El juego no reproduce ningún sonido (efectos, ambiente ni música); se eliminaron todos los archivos de audio. La locución de la campaña (`assets/historia/audio`) se conserva solo para marcar la duración de cada plano y va silenciada.
+Solo suenan: los disparos de las armas (recortes de «TODAS LAS ARMAS DE CSGO CON SUS SONIDOS.mp3», ver `assets/audio/armas/ORIGEN.txt`), y los pasos, granadas y clics de menú (`assets/audio/efectos`), recortados de las muestras de [Mixkit](https://mixkit.co/free-sound-effects/) (licencia Mixkit: uso libre, sin atribución obligatoria) que ya usaba el juego. Todo lo demás está silenciado. La locución de la campaña (`assets/historia/audio`) se conserva solo para marcar la duración de cada plano y va silenciada.
 
 ## Mapas, armas, cuchillo, personajes, granadas y caja
 Archivos `.glb` aportados por el equipo en `game-client/assets` (ver README.md).

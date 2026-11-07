@@ -1,10 +1,21 @@
-// Audio del juego: solo los disparos de las armas (recortados de "TODAS LAS ARMAS DE CSGO CON SUS SONIDOS.mp3").
-// Cada arma tiene 3 variantes propias en assets/audio/armas (arma_1.ogg ... arma_3.ogg); no hay otros sonidos.
-// La interfaz (SFX.play, SFX.at, SFX.loop...) se mantiene para que el resto del código no cambie: lo que no es un disparo no suena.
-const BASE = 'assets/audio/armas/';
+// Audio del juego. Solo suenan: disparos de las armas (recortados de "TODAS LAS ARMAS DE CSGO CON SUS SONIDOS.mp3", 3 variantes por arma
+// en assets/audio/armas), pasos y aterrizaje, granadas (pin, lanzamiento, rebote y explosiones) y menú (clics). Todo lo demás está silenciado.
+// La interfaz (SFX.play, SFX.at, SFX.loop...) se mantiene para que el resto del código no cambie: un nombre sin sonido simplemente no suena.
+const ARMAS = 'assets/audio/armas/', EFECTOS = 'assets/audio/efectos/';
 const WEAPONS = ['ak', 'm4', 'awp', 'deagle', 'five', 'p90', 'smg', 'shotgun', 'shorty', 'm4b', 'vandal', 'vss', 'negev'];
+// nombre -> { dir, n variantes, v volumen }
+const LIB = {};
+for (const w of WEAPONS) LIB[w] = { dir: ARMAS, n: 3, v: 1 };
+Object.assign(LIB, {
+  awp: { dir: ARMAS, n: 3, v: 1.0 }, vss: { dir: ARMAS, n: 3, v: 0.7 }, m4b: { dir: ARMAS, n: 3, v: 0.7 }, smg: { dir: ARMAS, n: 3, v: 0.8 }, five: { dir: ARMAS, n: 3, v: 0.8 },
+  deagle: { dir: ARMAS, n: 3, v: 0.95 }, negev: { dir: ARMAS, n: 3, v: 0.9 },
+  step: { dir: EFECTOS, n: 3, v: 0.6 }, step_grass: { dir: EFECTOS, n: 3, v: 0.6 }, step_stone: { dir: EFECTOS, n: 3, v: 0.65 }, step_metal: { dir: EFECTOS, n: 3, v: 0.65 },
+  land: { dir: EFECTOS, n: 1, v: 0.7 },
+  ui: { dir: EFECTOS, n: 1, v: 0.5 }, buy: { dir: EFECTOS, n: 1, v: 0.6 },
+  grenade_pin: { dir: EFECTOS, n: 1, v: 0.7 }, grenade_throw: { dir: EFECTOS, n: 1, v: 0.6 }, grenade_bounce: { dir: EFECTOS, n: 1, v: 0.5 },
+  he: { dir: EFECTOS, n: 1, v: 1.0 }, flash: { dir: EFECTOS, n: 1, v: 0.8 }, smoke: { dir: EFECTOS, n: 1, v: 0.8 }, molotov: { dir: EFECTOS, n: 1, v: 0.85 },
+});
 const ALIAS = { rifle: 'ak' };                           // nombres genéricos que usa el juego
-const VOL = { awp: 1.0, deagle: 0.95, shotgun: 1.0, shorty: 1.0, negev: 0.9, vss: 0.7, m4b: 0.7, smg: 0.8, five: 0.8 };
 let ctx = null, master = null, wanted = false;
 const bufs = {};                                         // nombre -> [AudioBuffer]
 const last = {};                                         // última variante usada (no se repite seguida)
@@ -18,13 +29,14 @@ function ensure() {
   master.connect(comp); comp.connect(ctx.destination);
   return ctx;
 }
-async function loadWeapon(w) {
-  if (bufs[w]) return;
-  bufs[w] = [];
-  for (let i = 1; i <= 3; i++) {
+async function loadSound(name) {
+  if (bufs[name]) return;
+  bufs[name] = [];
+  const d = LIB[name]; if (!d) return;
+  for (let i = 1; i <= d.n; i++) {
     try {
-      const ab = await (await fetch(BASE + w + '_' + i + '.ogg')).arrayBuffer();
-      bufs[w].push(await new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)));
+      const ab = await (await fetch(d.dir + name + '_' + i + '.ogg')).arrayBuffer();
+      bufs[name].push(await new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)));
     } catch (e) { /* variante faltante: se usan las demás */ }
   }
 }
@@ -33,10 +45,10 @@ function start(name, o = {}) {
   if (!ctx || !list || !list.length) return null;
   let i = Math.floor(Math.random() * list.length); if (list.length > 1 && i === last[w]) i = (i + 1) % list.length; last[w] = i;
   const src = ctx.createBufferSource(); src.buffer = list[i];
-  src.playbackRate.value = 1 + (Math.random() - 0.5) * 0.04;
-  const g = ctx.createGain(); let vol = (o.vol == null ? 1 : o.vol) * (VOL[w] || 1);
+  src.playbackRate.value = 1 + (Math.random() - 0.5) * 0.06;
+  const g = ctx.createGain(); let vol = (o.vol == null ? 1 : o.vol) * (LIB[w] ? LIB[w].v : 1);
   let node = src;
-  if (o.pos) {                                           // sonido de un bot: se atenúa con la distancia y se panea según de qué lado está
+  if (o.pos) {                                           // sonido en el espacio: se atenúa con la distancia y se panea según de qué lado está
     const dx = o.pos.x - lis.x, dz = o.pos.z - lis.z, d = Math.hypot(dx, o.pos.y - lis.y, dz);
     vol *= 1 / (1 + Math.max(0, d - (o.ref || 3)) * 0.07);
     if (ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, (dx * lis.rx + dz * lis.rz) / Math.max(d, 1) * 0.9)); src.connect(p); node = p; }
@@ -48,12 +60,12 @@ function start(name, o = {}) {
 }
 
 export const SFX = {
-  // se llama desde un gesto del usuario: crea el contexto y descarga los disparos
+  // se llama desde un gesto del usuario: crea el contexto y descarga los sonidos
   init() {
     if (wanted) { if (ctx && ctx.state === 'suspended') ctx.resume(); return; }
     wanted = true; if (!ensure()) return;
     if (ctx.state === 'suspended') ctx.resume();
-    WEAPONS.forEach(loadWeapon);
+    Object.keys(LIB).forEach(loadSound);
   },
   preload() { return Promise.resolve(); },
   play(name, o) { return wanted ? start(name, o || {}) : null; },
@@ -70,6 +82,12 @@ export const SFX = {
   get ready() { return !!ctx; },
   surface: 'step',
   bus() { return null; },
-  has(name) { return WEAPONS.includes(ALIAS[name] || name); },
+  has(name) { return !!LIB[ALIAS[name] || name]; },
 };
 window.SFX = SFX;
+
+// menú: clic en botones, pestañas, tarjetas de modo/mapa/bando y selectores
+document.addEventListener('click', (e) => {
+  if (!wanted) return;
+  if (e.target.closest && e.target.closest('button, .fafi16-tab-btn, .mm-card, .map-pick, .team-card, .q-btn, .box-buy, .btn-buy, .skin-card, .loot-box, .lo-card')) SFX.play('ui');
+}, true);
