@@ -457,6 +457,7 @@ export function createDefuse(A) {
   const PEN = { ak: 0.775, m4: 0.7, awp: 0.95, deagle: 0.93, knife: 0.85, he: 0.5 };
   const BULLET = { ak: 1, m4: 1, awp: 1, deagle: 1, knife: 1 };
   function damageUnit(u, dmg, attacker, head, weapon, hitPos) {
+    if (u.isPlayer && window.fafiGod) return false;      // modo vuelo (P): nada daña al jugador
     if (!u.alive || D.state === 'freeze' || D.state === 'end' && attacker) return false;
     const now = performance.now();
     // chaleco / casco: absorbe parte del daño (la cabeza solo se protege con casco)

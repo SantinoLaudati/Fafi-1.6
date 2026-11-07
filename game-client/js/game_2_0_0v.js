@@ -756,6 +756,9 @@ const MAPS = {
   }
 };
 function mapFile(key){ const d=MAPS[key]; return d.files ? d.files[QUALITY[qualityLevel].tex] : d.file; }
+// spawns marcados a mano en la partida (Z = CT, C = T, con el modo vuelo P); se guardan en localStorage 'fafi_spawns'
+function loadZoneOverrides(){ try{ return JSON.parse(localStorage.getItem('fafi_spawns')||'{}')||{}; }catch(e){ return {}; } }
+{ const so=loadZoneOverrides(); for(const k in so){ const d=MAPS[k]; if(!d||!d.zones) continue; d.zones={...d.zones}; for(const t of ['t','ct']) if(so[k][t]) d.zones[t]={...d.zones[t], ...so[k][t]}; } }
 let currentMapKey='dust2';
 let currentMapFile=null;
 let selectedMap='dust2';
@@ -3463,6 +3466,25 @@ window.addEventListener('keydown', (e)=>{
   // console.log('tecla:', e.code, 'key:', e.key, 'keyCode:', e.keyCode);
   keys[e.code]=true;
   if(buyMenuOpen){ if(buyKey(e)) return; }
+  // P = modo vuelo sin daño (atraviesa todo) · Z = guarda aquí el spawn CT · C = guarda aquí el spawn T
+  if(gameActive && gameMode==='dust2' && !e.repeat && !e.ctrlKey && !e.altKey){
+    if(e.code==='KeyP'){ e.preventDefault(); toggleSpectator(); window.fafiGod=freeCam; showFloating(freeCam?'VUELO + INVULNERABLE (P para salir)':'Vuelo desactivado'); return; }
+    if(e.code==='KeyZ' || e.code==='KeyC'){
+      e.preventDefault();
+      const team=e.code==='KeyZ'?'ct':'t';
+      const feet={x:+camera.position.x.toFixed(2), z:+camera.position.z.toFixed(2)};
+      let y=camera.position.y-eyeStandHeight;
+      try{ const rc=new THREE.Raycaster(new THREE.Vector3(feet.x,camera.position.y,feet.z), new THREE.Vector3(0,-1,0), 0, 40); const h=rc.intersectObjects(dust2Colliders,false)[0]; if(h) y=h.point.y; }catch(err){}
+      feet.y=+y.toFixed(2);
+      const so=loadZoneOverrides(); (so[currentMapKey]=so[currentMapKey]||{})[team]=feet;
+      try{ localStorage.setItem('fafi_spawns', JSON.stringify(so)); }catch(err){}
+      const d=MAPS[currentMapKey]; if(d){ d.zones={...(d.zones||{})}; d.zones[team]={...(d.zones[team]||{r:5}), ...feet}; }
+      try{ markSpawn(team); }catch(err){}
+      console.log('SPAWN '+team.toUpperCase()+' '+currentMapKey+':', JSON.stringify(feet));
+      showFloating('Spawn '+(team==='ct'?'CT':'T')+' guardado: x '+feet.x+'  y '+feet.y+'  z '+feet.z+' (rige desde la próxima ronda/partida)');
+      return;
+    }
+  }
   if(e.code==='KeyB' && !e.repeat && gameActive && gameMode==='dust2' && !resultOverlay.classList.contains('show')){ e.preventDefault(); toggleBuyMenu(); return; }
   // 1/2/3/4 y Q/Rueda para cambiar arma (en Dust2 solo si la posees)
   // Ranuras como en CS: 1 primaria · 2 secundaria · 3 cuchillo · 4 flash · 5 humo · 6 HE · 7 molotov
