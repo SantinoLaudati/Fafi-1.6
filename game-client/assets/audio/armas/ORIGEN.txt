@@ -1,6 +1,0 @@
-Sonidos de disparo. Solo se usan las dos grabaciones de la carpeta Desktop/sonidos:
-  ak      <- "CS GO AK-47 Sound Effect.mp3"   (3 disparos sueltos: 4.66 s, 5.32 s y 7.18 s)
-  vandal  <- "Valorant gun sound Vandal.mp3"  (disparos sueltos: 0.58 s y 3.99 s)
-Las demás armas (m4, m4b, p90, smg, five, deagle, awp, shotgun, shorty, vss, negev) se generan a partir de esas dos grabaciones cambiando el tono,
-filtrando y agregando cuerpo/eco: bash herramientas/derivar-sonidos_2_0_0v.sh
-Cada archivo contiene UN solo disparo, empieza en el golpe (sin silencio previo) y termina con un fundido corto.

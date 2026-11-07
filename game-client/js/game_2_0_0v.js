@@ -2448,7 +2448,7 @@ function switchWeapon(to){
   else if(ANIM_WEAPONS[to]){ maxMag=ANIM_WEAPONS[to].mag; ammoInMag=animAmmo[to].ammo; reserveAmmo=animAmmo[to].reserve; }
   else if(GRENADES[to]){ maxMag=1; ammoInMag=grenadeStock[to]; reserveAmmo=0; }
   else if(to==='knife'){ /* sin munición */ }
-  SFX.play(to==='knife'?'draw_knife':'draw');
+  SFX.weapon=to; SFX.play(to==='knife'?'draw_knife':'draw');
   currentWeapon=to;
   updateWeaponVisibility();
   if(ANIM_WEAPONS[to]) animWeaponDraw(to);
@@ -2456,6 +2456,7 @@ function switchWeapon(to){
   if(buyMenuOpen) updateBuyMenu();
 }
 function tryReload(){
+  SFX.weapon=currentWeapon;
   if(GRENADES[currentWeapon]) return;
   if(spectating) return;
   if(!gameActive || isReloading) return;
@@ -2484,7 +2485,7 @@ function finishReload(){
   document.getElementById('reloadText').classList.remove('show');
   document.getElementById('reloadFill').style.width='0%';
   updateAmmoHUD();
-  SFX.play('bolt', { vol:0.8 });
+  SFX.weapon=currentWeapon; SFX.play('reload_end');
 }
 
 // Como en CS:GO, solo las armas con mira telescópica (AWP y francotiradores) tienen zoom; el resto dispara siempre "desde la cadera".
@@ -3195,6 +3196,7 @@ function updateViewRecoil(dt){
 }
 
 function shoot(){
+  SFX.weapon=currentWeapon;
   if(spectating || playerFrozen) return;
   if(!gameActive || !controls.isLocked) return;
   if(typeof buyMenuOpen!=='undefined' && buyMenuOpen) return;
@@ -3303,7 +3305,7 @@ function shoot(){
 
   SFX.play((ANIM_WEAPONS[currentWeapon] && ANIM_WEAPONS[currentWeapon].snd) || (['ak','awp','deagle','m4'].includes(currentWeapon)?currentWeapon:'rifle'));
   if(defuse.active) defuse.noise(camera.position, currentWeapon==='awp'?60:38);
-  if(currentWeapon==='awp') setTimeout(()=>SFX.play('bolt',{vol:0.9}), 520);
+  if(currentWeapon==='awp'){ setTimeout(()=>SFX.play('bolt',{vol:0.9}), 520); setTimeout(()=>{ SFX.weapon='awp'; SFX.play('bolt_awp2',{vol:0.9}); }, 900); }
 
   // dirección con dispersión: AWP muy precisa con mira, AK progresivo
   raycaster.setFromCamera({x:0,y:0}, camera);

@@ -440,7 +440,7 @@ export function createDefuse(A) {
     const m = ensureBombMesh(); m.position.copy(D.bomb.pos); m.rotation.y = by.yaw;
     m.userData.light = A.acquireLight(0xff2020, 0, 3.5, new THREE.Vector3(D.bomb.pos.x, D.bomb.pos.y + 0.28, D.bomb.pos.z)) || { intensity: 0 };
     D.state = 'planted'; D.stateT = CFG.bombTime;
-    SFX.at("c4_plant", D.bomb.pos, { ref: 10 }); D.bomb.lastOn = false;
+    SFX.at("c4_plant", D.bomb.pos, { ref: 10 }); SFX.play("bomb_planted"); D.bomb.lastOn = false;
     if (by.isPlayer) { by.money = Math.min(CFG.maxMoney, by.money + CFG.plantReward); A.setMoney(by.money); }
     banner('BOMBA PLANTADA', 'Sitio ' + D.bomb.site + ' • ' + CFG.bombTime + ' s', 't');
     D.units.forEach(u => { if (u.alive && u.team === 'ct' && !u.isPlayer) { u.goal = null; u.path = null; } });
