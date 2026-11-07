@@ -36,7 +36,7 @@ export const HEAD_MULT = { knife: 1, shotgun: 1.6, shorty: 1.6 };
 export const RANGE_LOSS = { ak: 0.003, m4: 0.003, vandal: 0.003, m4b: 0.003, awp: 0.0008, vss: 0.002, deagle: 0.003, five: 0.006, p90: 0.006, smg: 0.007, negev: 0.004, shotgun: 0.045, shorty: 0.055, knife: 0 };
 
 const CFG = {
-  freeze: 10, roundTime: 105, bombTime: 40, endDelay: 6, winRounds: 4,
+  freeze: 10, roundTime: 105, bombTime: 40, endDelay: 6, winRounds: 12, maxRounds: 18, halfAfter: 9,   // 18 rondas: a las 9 se cambian los bandos; gana quien llega a 12 (o quien tenga más al terminar la 18)
   plantTime: 3.2, defuseTime: 10, defuseKitTime: 5,
   startMoney: 800, win: 3250, lose: 1400, loseStep: 500, loseMax: 3400, killReward: 300, plantReward: 300, maxMoney: 16000,
   buyAfterStart: 20
@@ -310,8 +310,26 @@ export function createDefuse(A) {
     A.setPlayerFrozen(false); A.setViewmodelVisible(true);
   }
 
+  // cambio de bando a mitad de partida: el jugador y los bots pasan al otro equipo (con su modelo), el marcador sigue a cada equipo y se reinicia la economía
+  function swapSides() {
+    const nt = D.team === 't' ? 'ct' : 't', enemy = D.team;
+    const pl0 = D.player, keep = { kills: pl0.kills, deaths: pl0.deaths, dmg: pl0.dmg, hs: pl0.hs, name: pl0.name };
+    cleanupUnits();
+    D.team = nt; D.units = [];
+    const p = makeUnit(nt, keep.name, true, 0); p.char = null; D.player = p; D.units.push(p);
+    p.kills = keep.kills; p.deaths = keep.deaths; p.dmg = keep.dmg; p.hs = keep.hs;
+    for (let i = 0; i < 4; i++) D.units.push(makeUnit(nt, BOT_NAMES[nt][i], false, i));
+    for (let i = 0; i < 5; i++) D.units.push(makeUnit(enemy, BOT_NAMES[enemy][i], false, i));
+    D.score = { ct: D.score.t, t: D.score.ct }; D.loseStreak = { ct: D.loseStreak.t, t: D.loseStreak.ct };
+    for (const u of D.units) { u.money = CFG.startMoney; u.diedLast = true; }
+    try { const zc = D.zones, b0 = A.bounds; chickens.spawn([D.nav.randomNear(zc.t.x, zc.t.z, 9), D.nav.randomNear(zc.t.x, zc.t.z, 9), D.nav.randomNear((b0.min.x + b0.max.x) / 2, (b0.min.z + b0.max.z) / 2, 8)].filter(Boolean)); } catch (e) {}
+    A.setMoney(p.money);
+    setTimeout(() => banner('CAMBIO DE BANDO', 'Ahora jugás de ' + (nt === 't' ? 'terrorista' : 'antiterrorista'), nt), 400);
+  }
   function nextRound(first) {
     D.round++;
+    let fresh = first;
+    if (!first && D.round === CFG.halfAfter + 1) { swapSides(); fresh = true; }          // mitad de la partida: se cambian los bandos
     D.bomb.planted = false; D.bomb.dropped = false; D.bomb.carrier = null; D.bomb.timer = 0;
     removeBombMesh();
     D.hold.kind = null; D.hold.t = 0;
@@ -328,18 +346,18 @@ export function createDefuse(A) {
       const look = openLook(p, z[enemyOf(u.team)]);
       u.hp = 100; u.alive = true; u.target = null; u.hasBomb = false; u.plantT = 0; u.defuseT = 0; u.flashedUntil = 0; u.burstLeft = 0;
       u.nextShot = 0; u.alertUntil = 0; u.spotted = 0; u.hint = null; u.chaseUntil = 0; u.strafeFor = 0; u.badGoals = 0;
-      if (first || u.diedLast) { u.armor = 0; u.helmet = false; }
+      if (fresh || u.diedLast) { u.armor = 0; u.helmet = false; }
       if (u.char) { reviveCharacter(u.char); u.char.root.visible = true; }
       placeUnit(u, p, look);
       if (!u.isPlayer) {
-        botLoadout(u, !(first || u.diedLast));          // quien sobrevive conserva su arma; quien murió compra de nuevo
+        botLoadout(u, !(fresh || u.diedLast));          // quien sobrevive conserva su arma; quien murió compra de nuevo
         u.diedLast = false;
         u.kit = u.team === 'ct' && Math.random() < 0.5;
       }
     }
     // jugador: equipo según supervivencia
     const pl = D.player;
-    if (first || pl.diedLast) A.resetLoadout(D.team, true); else A.resetLoadout(D.team, false);
+    if (fresh || pl.diedLast) A.resetLoadout(D.team, true); else A.resetLoadout(D.team, false);
     pl.diedLast = false;
     A.setMoney(pl.money);
     // bomba: la lleva un T al azar (o el jugador)
@@ -382,7 +400,7 @@ export function createDefuse(A) {
     if (mine) SFX.play("round_win");
     D.hold.kind = null;
     refreshHud(true);
-    if (D.score[winner] >= CFG.winRounds) {
+    if (D.score[winner] >= CFG.winRounds || D.round >= CFG.maxRounds) {
       D.matchOver = true;
       try {   // resultado para la base de datos (historial, estadísticas y ranking)
         const pl = D.player;
@@ -390,7 +408,8 @@ export function createDefuse(A) {
           kills: pl.kills, deaths: pl.deaths, dmg: pl.dmg || 0, hs: pl.hs || 0, seconds: (performance.now() - (D.t0 || performance.now())) / 1000 });
       } catch (e) { console.warn('onMatchEnd', e); }
       setTimeout(() => {
-        banner(mine ? '¡VICTORIA!' : 'DERROTA', 'Marcador final ' + D.score.ct + ' - ' + D.score.t + ' (CT - T). Pulsá ESC para volver al menú.', winner);
+        const champ = D.score.ct === D.score.t ? null : (D.score.ct > D.score.t ? 'ct' : 't');
+        banner(champ === null ? 'EMPATE' : (champ === D.team ? '¡VICTORIA!' : 'DERROTA'), 'Marcador final ' + D.score.ct + ' - ' + D.score.t + ' (CT - T). Pulsá ESC para volver al menú.', champ || winner);
       }, 1800);
     }
   }
@@ -997,7 +1016,7 @@ export function createDefuse(A) {
     };
     const tbl = team => '<div class="team ' + team + '"><h3>' + TEAM_BADGE[team] + (team === 'ct' ? 'ANTITERRORISTAS' : 'TERRORISTAS') + '<em>' + D.score[team] + '</em></h3><table><tr><th>Jugador</th><th>K</th><th>M</th><th>HS</th><th>ADR</th><th>$</th></tr>' + D.units.filter(u => u.team === team).sort((a, b) => b.kills - a.kills).map(row).join('') + '</table></div>';
     const me = D.player || {};
-    const head = '<div class="sbHead"><b>' + mapName + '</b><span>RONDA ' + D.round + ' · primero en ganar ' + CFG.winRounds + '</span><span>Tus bajas: <b>' + (me.kills || 0) + '</b> · Muertes: <b>' + (me.deaths || 0) + '</b> · Daño: <b>' + Math.round(me.dmg || 0) + '</b></span></div>';
+    const head = '<div class="sbHead"><b>' + mapName + '</b><span>RONDA ' + D.round + ' · 18 rondas · gana quien llegue a ' + CFG.winRounds + '</span><span>Tus bajas: <b>' + (me.kills || 0) + '</b> · Muertes: <b>' + (me.deaths || 0) + '</b> · Daño: <b>' + Math.round(me.dmg || 0) + '</b></span></div>';
     el.innerHTML = head + tbl('ct') + tbl('t');
   }
 

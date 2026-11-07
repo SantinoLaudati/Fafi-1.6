@@ -136,3 +136,46 @@
 #teamOverlay .team-card h3{font-size:24px;letter-spacing:4px;margin-bottom:6px}#teamOverlay .team-card p{font-family:Georgia,serif;font-size:14px;line-height:1.45;color:#d5dae0;max-width:90%}
 .tc-go{display:inline-block;margin-top:12px;letter-spacing:4px;font-size:12px;font-weight:600}
 .team-card.t .tc-go{color:#ffb070}.team-card.ct .tc-go{color:#8fc0ff}
+
+/* ===== Menú de partida (estilo CS:GO): pestañas arriba, mapas en columnas altas, barra GO abajo ===== */
+#teamOverlay{flex-direction:column;justify-content:flex-start;align-items:stretch;padding:0;background:linear-gradient(180deg,#10151c 0%,#0a0d12 60%,#06080b 100%);overflow:hidden}
+#teamOverlay .pm-nav{display:flex;align-items:center;gap:24px;height:64px;padding:0 28px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.01));border-bottom:1px solid rgba(255,255,255,.08)}
+#teamOverlay .pm-logo{font-size:22px;font-weight:800;letter-spacing:5px;color:#fff}#teamOverlay .pm-logo span{color:#e0a82e}
+#teamOverlay .pm-tabs{display:flex;gap:6px;margin:0 auto}
+#teamOverlay .pm-tab{background:none;border:0;border-bottom:3px solid transparent;color:#b8c0ca;font:700 15px/1 inherit;letter-spacing:3px;padding:22px 22px 19px;cursor:pointer}
+#teamOverlay .pm-tab:hover{color:#fff}#teamOverlay .pm-tab.sel{color:#5bb7ff;border-bottom-color:#5bb7ff;background:rgba(91,183,255,.08)}
+#teamOverlay .pm-back{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#dfe5ec;padding:9px 18px;font-weight:700;letter-spacing:2px;cursor:pointer;border-radius:3px}
+#teamOverlay .pm-sub{text-align:center;padding:14px 0 10px;letter-spacing:5px;font-size:12px;color:#8e98a5;background:rgba(0,0,0,.25);border-bottom:1px solid rgba(255,255,255,.05)}
+#teamOverlay #pmOff,#teamOverlay #pmOn{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:18px 20px}
+#teamOverlay #pmOn[hidden],#teamOverlay #pmOff[hidden]{display:none}
+#teamOverlay .map-picker{display:flex;gap:16px;justify-content:center;align-items:stretch;width:100%;max-width:1500px;margin:0;overflow-x:auto;padding:6px}
+#teamOverlay .map-pick{position:relative;flex:0 0 clamp(170px,18vw,290px);height:min(62vh,560px);padding:0;border:2px solid rgba(255,255,255,.08);border-radius:2px;overflow:hidden;background:#0d1117;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;display:block;text-align:left}
+#teamOverlay .map-pick:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.4)}
+#teamOverlay .map-pick .mp-art{position:absolute;inset:0;height:100%;background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.14),rgba(0,0,0,0) 62%),linear-gradient(180deg,#2b3a4b,#10161e);display:flex;align-items:center;justify-content:center}
+#teamOverlay .map-pick[data-map="dust2"] .mp-art{background:radial-gradient(circle at 50% 38%,rgba(255,235,190,.22),transparent 62%),linear-gradient(180deg,#8d7646,#2a2314)}
+#teamOverlay .map-pick[data-map="italy"] .mp-art{background:radial-gradient(circle at 50% 38%,rgba(255,200,200,.18),transparent 62%),linear-gradient(180deg,#7d4a3a,#26150f)}
+#teamOverlay .map-pick[data-map="office"] .mp-art{background:radial-gradient(circle at 50% 38%,rgba(190,220,255,.2),transparent 62%),linear-gradient(180deg,#3f6c9a,#101d2b)}
+#teamOverlay .map-pick[data-map="mirage"] .mp-art{background:radial-gradient(circle at 50% 38%,rgba(255,225,170,.22),transparent 62%),linear-gradient(180deg,#a98b55,#2b2315)}
+#teamOverlay .map-pick .mp-art img{width:64%;height:auto;max-height:46%;object-fit:contain;opacity:1;border-radius:0;filter:drop-shadow(0 10px 18px rgba(0,0,0,.55));transform:none;margin-top:-14%}
+#teamOverlay .map-pick:hover .mp-art img{transform:scale(1.06)}
+#teamOverlay .map-pick .mp-art::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.78))}
+#teamOverlay .map-pick .mp-body{position:absolute;left:0;right:0;bottom:0;padding:16px 14px 18px;text-align:center;z-index:2}
+#teamOverlay .map-pick .mp-body em{display:block;font-style:normal;font-size:10px;letter-spacing:4px;color:#e0a82e;margin-bottom:4px}
+#teamOverlay .map-pick .mp-body strong{display:block;font-size:clamp(18px,1.9vw,26px);letter-spacing:1px;color:#fff;text-transform:none}
+#teamOverlay .map-pick .mp-body p,#teamOverlay .map-pick .mp-stats{display:none}
+#teamOverlay .map-pick.sel{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.35),0 16px 40px rgba(0,0,0,.6);transform:translateY(-4px)}
+#teamOverlay .map-pick.sel::before{content:'✓';position:absolute;top:10px;right:10px;z-index:3;width:26px;height:26px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-weight:800}
+#teamOverlay .map-pick .mp-load{position:absolute;left:0;right:0;bottom:0;height:5px;z-index:4;display:none;background:rgba(255,255,255,.15)}
+#teamOverlay .map-pick.loading .mp-load{display:block}
+#teamOverlay .map-pick::after{content:'LISTO';position:absolute;top:12px;left:12px;z-index:3;font-size:10px;letter-spacing:2px;padding:3px 8px;background:rgba(60,200,120,.85);color:#06210f;font-weight:800;border-radius:2px}
+#teamOverlay .map-pick.loading::after{content:'CARGANDO';background:rgba(224,168,46,.9);color:#241900}
+#teamOverlay .map-rand .mp-art{font-size:64px!important}
+#teamOverlay .pm-bar{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 28px;background:rgba(0,0,0,.45);border-top:1px solid rgba(255,255,255,.08)}
+#teamOverlay .pm-rules{font-size:12px;letter-spacing:2px;color:#9aa4b1}
+#teamOverlay .pm-go{min-width:300px;padding:18px 40px;border:1px solid #4dbf5e;background:linear-gradient(180deg,#2f9e3f,#1c6b27);color:#fff;font-size:30px;font-weight:800;letter-spacing:10px;cursor:pointer;border-radius:2px;box-shadow:0 0 24px rgba(60,200,90,.25)}
+#teamOverlay .pm-go:hover{filter:brightness(1.2)}#teamOverlay .pm-go:disabled{filter:grayscale(1) brightness(.6);cursor:wait}
+#teamOverlay .pm-go.hide{visibility:hidden}
+#teamOverlay .map-picker{flex-wrap:nowrap!important;height:100%;max-height:640px;overflow-x:auto;overflow-y:hidden}
+#teamOverlay .map-pick{height:auto!important;flex:1 1 0!important;min-width:140px!important;max-width:300px}
+#teamOverlay #pmOff{overflow:hidden}
+#teamOverlay .pm-bar .pm-rules{flex:1}

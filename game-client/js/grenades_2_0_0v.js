@@ -46,7 +46,7 @@ export function createGrenades(A) {
   function throwG(type, origin, dir, owner, power = 1, inherit = null) {
     const m = held(type);
     m.position.copy(origin); A.world.add(m);
-    const vel = dir.clone().multiplyScalar(11 * power); vel.y += 2.6 * power;
+    const vel = dir.clone().multiplyScalar(13.5 * power); vel.y += 2.6 * power;
     if (inherit) vel.add(inherit);
     active.push({ type, mesh: m, vel, age: 0, owner, rest: false, spin: new THREE.Vector3(Math.random() * 6, Math.random() * 6, Math.random() * 6), bounced: 0 });
   }
@@ -55,7 +55,7 @@ export function createGrenades(A) {
     for (let i = active.length - 1; i >= 0; i--) {
       const g = active[i]; g.age += dt;
       if (!g.rest) {
-        g.vel.y += GRAV * dt; g.vel.multiplyScalar(Math.exp(-0.14 * dt));   // resistencia del aire
+        g.vel.y += GRAV * dt; g.vel.multiplyScalar(Math.exp(-0.06 * dt));   // resistencia del aire
         const step = g.vel.clone().multiplyScalar(dt); const len = step.length();
         if (len > 1e-5) {
           ray.set(g.mesh.position, step.clone().divideScalar(len)); ray.far = len + 0.06; ray.firstHitOnly = true;

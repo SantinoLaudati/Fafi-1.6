@@ -153,17 +153,17 @@
 
 <div id="dfLoading"><div class="box"><div class="logo">FAFI <span>1.6</span></div><div class="msg">Cargando…</div><div class="barl"><i></i></div></div></div>
 <div id="teamOverlay">
-  <div class="ts-head"><div class="ts-k">DEFUSE 5v5 · PARTIDA RÁPIDA</div><h1>PREPARA TU PARTIDA</h1></div>
-  <div class="ts-step"><span>1</span>ELIGE EL MAPA</div>
-  <div id="mapPicker" class="map-picker"></div>
-  <div class="ts-step"><span>2</span>ELIGE TU BANDO</div>
-  <div class="team-cards">
-    <div class="team-card t" id="teamT"><div class="tc-ic">T</div><h3>TERRORISTAS</h3><p>Planta la bomba en el sitio A o B y defiéndela hasta que explote.</p><span class="tc-go">JUGAR COMO T ▸</span></div>
-    <div class="team-card ct" id="teamCT"><div class="tc-ic">CT</div><h3>ANTITERRORISTAS</h3><p>Defiende los sitios y desactiva la bomba antes de que sea tarde.</p><span class="tc-go">JUGAR COMO CT ▸</span></div>
+  <div class="pm-nav">
+    <div class="pm-logo">FAFI <span>1.6</span></div>
+    <div class="pm-tabs"><button class="pm-tab sel" data-pm="off">COMPETITIVO</button><button class="pm-tab" data-pm="on">ONLINE</button></div>
+    <button class="pm-back" id="teamBack">‹ VOLVER</button>
   </div>
-  <button class="btn btn-secondary" style="width:220px" id="teamBack">VOLVER</button>
+  <div class="pm-sub" id="pmSub">DEFUSE 5v5 · CONTRA BOTS · ELEGÍ EL MAPA</div>
+  <div id="pmOff"><div id="mapPicker" class="map-picker"></div></div>
+  <div id="pmOn" hidden></div>
+  <div class="pm-bar"><div class="pm-rules" id="pmRules">18 rondas · gana el primero en llegar a 12 · bando aleatorio y cambio de lado a mitad de partida</div><button class="pm-go" id="pmGo">GO</button></div>
+  <div id="teamT" style="display:none"></div><div id="teamCT" style="display:none"></div>
 </div>
-
 <div id="game">
   <div id="hud">
     <div style="display:flex;gap:10px">

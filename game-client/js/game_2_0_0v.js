@@ -1324,7 +1324,7 @@ const defuse = createDefuse({
   setSpectating:(v)=>{ spectating=v; if(v){ isHoldingShoot=false; isAiming=false; document.getElementById('scopeOverlay')?.classList.remove('on'); } },
   setViewmodelVisible:(v)=>{ viewmodelHidden=!v; updateWeaponVisibility(); },
   lookAtPlayer:(x,y,z)=>{ camera.up.set(0,1,0); camera.lookAt(x,y,z); },
-  resetLoadout:(team, full)=>{ playerVelY=0; pVel.set(0,0,0); playerGrounded=false; dust2GroundY=null; viewRecoilX=0; viewRecoilY=0; giveDefaultLoadout(full); },
+  resetLoadout:(team, full)=>{ if(team) playerTeam=team; playerVelY=0; pVel.set(0,0,0); playerGrounded=false; dust2GroundY=null; viewRecoilX=0; viewRecoilY=0; giveDefaultLoadout(full); },
   setMoney:(v)=>{ money=v; updateMoneyHUD(); if(buyMenuOpen) updateBuyMenu(); },
   grenadesClear:()=>{ if(typeof clearGrenades==='function') clearGrenades(); },
   explosionFx:(pos,R)=>explosionEffect(pos,R), acquireLight:(c,i,d,p)=>acquireLight(c,i,d,p), releaseLight:(l)=>releaseLight(l),
@@ -1408,7 +1408,8 @@ function releaseGrenade(){
   const origin=camera.position.clone().addScaledVector(fwd,0.55); origin.y-=0.12;
   const pw=gThrow.power||1;
   // el arco sube con más fuerza y la granada hereda parte de tu velocidad al correr (CS:GO)
-  grenades.throw(k, origin, fwd.clone().add(new THREE.Vector3(0,pw<1?0.3:0.18,0)).normalize(), defuse.active?defuse.player:null, pw*0.9+0.1*pw*pw, new THREE.Vector3(pVel.x*1.25,0,pVel.z*1.25));
+  const air=!playerGrounded;   // lanzamiento en salto (jump throw): suma tu velocidad vertical y llega mucho más lejos, como en CS:GO (lineups)
+  grenades.throw(k, origin, fwd.clone().add(new THREE.Vector3(0,pw<1?0.3:0.18,0)).normalize(), defuse.active?defuse.player:null, (pw*0.9+0.1*pw*pw)*(air?1.18:1), new THREE.Vector3(pVel.x*1.25,air?Math.max(0,playerVelY)*1.25:0,pVel.z*1.25));
   SFX.play('grenade_throw');
   setStock(k, grenadeStock[k]-1);
   showFloating(GRENADES[k].label+' lanzada');
@@ -2207,6 +2208,13 @@ playBtn.addEventListener('click', startAimMode);
 document.getElementById('dust2Btn').addEventListener('click', startDust2Mode);
 document.getElementById('teamT').addEventListener('click', ()=>{ if(!mapReady()) return; hideTeamSelect(); startGame('dust2','t'); });
 document.getElementById('teamCT').addEventListener('click', ()=>{ if(!mapReady()) return; hideTeamSelect(); startGame('dust2','ct'); });
+// Menú de partida: GO elige un bando al azar (el bando cambia a mitad de partida); fafiLaunch lo usa también el modo online al repartir equiposwindow.fafiLaunch=(map, side)=>{  if(map && MAPS[map] && map!==selectedMap) selectMap(map); else if(!mapReady()) selectMap(selectedMap);  const go=document.getElementById('pmGo'); if(go) go.disabled=true;  const iv=setInterval(()=>{ if(mapReady()){ clearInterval(iv); if(go) go.disabled=false; hideTeamSelect(); startGame('dust2', side || (Math.random()<0.5?'t':'ct')); } }, 120);};document.getElementById('pmGo')?.addEventListener('click', ()=>window.fafiLaunch(selectedMap, Math.random()<0.5?'t':'ct'));
+window.fafiLaunch=(map, side)=>{
+  if(map && MAPS[map] && map!==selectedMap) selectMap(map); else if(!mapReady()) selectMap(selectedMap);
+  const go=document.getElementById('pmGo'); if(go) go.disabled=true;
+  const iv=setInterval(()=>{ if(mapReady()){ clearInterval(iv); if(go) go.disabled=false; hideTeamSelect(); startGame('dust2', side || (Math.random()<0.5?'t':'ct')); } }, 120);
+};
+document.getElementById('pmGo')?.addEventListener('click', ()=>window.fafiLaunch(selectedMap, Math.random()<0.5?'t':'ct'));
 document.getElementById('teamBack').addEventListener('click', ()=>{
   hideTeamSelect();
   if(teamReturn==='pause' && gameActive) pauseOverlay.classList.add('show');

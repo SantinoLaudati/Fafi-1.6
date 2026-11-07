@@ -70,6 +70,7 @@ class GameServer implements MessageComponentInterface {
             'userId' => $user['id'],
             'username' => $user['username']
         ]));
+        $this->sendRooms($conn);
     }
     
     public function onMessage(ConnectionInterface $from, $msg) {
@@ -94,6 +95,18 @@ class GameServer implements MessageComponentInterface {
                 break;
             case 'chat':
                 $this->handleChat($from, $data);
+                break;
+            case 'list_rooms':
+                $this->sendRooms($from);
+                break;
+            case 'create_room':
+                $this->handleCreateRoom($from, $data);
+                break;
+            case 'vote_map':
+                $this->handleVoteMap($from, $data);
+                break;
+            case 'start_match':
+                $this->handleStartMatch($from);
                 break;
             case 'ping':
                 $from->send(json_encode(['type' => 'pong', 'timestamp' => time() * 1000]));
@@ -133,12 +146,17 @@ class GameServer implements MessageComponentInterface {
                 'id' => $roomId,
                 'mode' => $mode,
                 'players' => [],
+                'name' => substr(trim((string)($data['name'] ?? $roomId)), 0, 24) ?: $roomId,
+                'host' => $conn->userId,
+                'votes' => [],
                 'state' => 'waiting',
                 'createdAt' => time()
             ];
         }
         
         $room = &$this->rooms[$roomId];
+        if (count($room['players']) >= 10 && !isset($room['players'][$conn->userId])) { $conn->send(json_encode(['type' => 'error', 'message' => 'La sala está llena (10/10)'])); return; }
+        if (($room['state'] ?? 'waiting') === 'playing') { $conn->send(json_encode(['type' => 'error', 'message' => 'La partida ya empezó'])); return; }
         
         // Add player to room
         $room['players'][$conn->userId] = [
@@ -164,35 +182,107 @@ class GameServer implements MessageComponentInterface {
         // Send current room state to new player
         $conn->send(json_encode([
             'type' => 'room_state',
-            'room' => ['id' => $roomId, 'mode' => $mode],
+            'room' => ['id' => $roomId, 'mode' => $mode, 'name' => $room['name'] ?? $roomId, 'host' => $room['host'] ?? null, 'votes' => $this->voteCounts($room)],
             'players' => array_values($room['players']),
             'yourId' => $conn->userId
         ]));
         
         echo "{$conn->username} joined room {$roomId}\n";
+        $this->broadcastRooms();
     }
     
     private function handleLeaveRoom(ConnectionInterface $conn) {
         if (!$conn->currentRoom) return;
-        
+
         $roomId = $conn->currentRoom;
-        $room = $this->rooms[$roomId] ?? null;
-        
-        if ($room) {
+        if (isset($this->rooms[$roomId])) {
+            $room = &$this->rooms[$roomId];
             unset($room['players'][$conn->userId]);
-            
-            $this->broadcastToRoom($roomId, [
-                'type' => 'player_left',
-                'playerId' => $conn->userId
-            ]);
-            
-            // Clean up empty rooms
+            unset($room['votes'][$conn->userId]);
+
             if (empty($room['players'])) {
-                unset($this->rooms[$roomId]);
+                unset($room);
+                unset($this->rooms[$roomId]);          // sala vacía: se elimina
+            } else {
+                if (($room['host'] ?? null) === $conn->userId) {
+                    $ids = array_keys($room['players']);
+                    $room['host'] = $ids[0];            // el anfitrión se va: pasa al siguiente jugador
+                }
+                $this->broadcastToRoom($roomId, [
+                    'type' => 'player_left',
+                    'playerId' => $conn->userId,
+                    'host' => $room['host'],
+                    'votes' => $this->voteCounts($room)
+                ]);
             }
         }
-        
+
         $conn->currentRoom = null;
+        $this->broadcastRooms();
+    }
+
+    // ===== salas online: lista, creación, votación de mapa y reparto de equipos =====
+    private function voteCounts($room) {
+        $c = [];
+        foreach (($room['votes'] ?? []) as $m) { $c[$m] = ($c[$m] ?? 0) + 1; }
+        return $c;
+    }
+
+    private function roomSummary() {
+        $out = [];
+        foreach ($this->rooms as $id => $r) {
+            $out[] = ['id' => $id, 'name' => $r['name'] ?? $id, 'players' => count($r['players']), 'max' => 10,
+                      'state' => $r['state'] ?? 'waiting', 'host' => $r['players'][$r['host'] ?? ''] ['username'] ?? ''];
+        }
+        return $out;
+    }
+
+    private function sendRooms(ConnectionInterface $conn) {
+        $conn->send(json_encode(['type' => 'rooms_list', 'rooms' => $this->roomSummary()]));
+    }
+
+    // todos los jugadores conectados ven al instante las salas que se crean, se llenan o se cierran
+    private function broadcastRooms() {
+        $json = json_encode(['type' => 'rooms_list', 'rooms' => $this->roomSummary()]);
+        foreach ($this->clients as $c) { $c->send($json); }
+    }
+
+    private function handleCreateRoom(ConnectionInterface $conn, $data) {
+        $name = substr(trim((string)($data['name'] ?? '')), 0, 24);
+        if ($name === '') $name = 'Sala de ' . $conn->username;
+        $roomId = strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+        $this->handleJoinRoom($conn, ['roomId' => $roomId, 'mode' => 'defuse', 'name' => $name]);
+    }
+
+    private function handleVoteMap(ConnectionInterface $conn, $data) {
+        if (!$conn->currentRoom || !isset($this->rooms[$conn->currentRoom])) return;
+        $map = (string)($data['map'] ?? '');
+        if (!in_array($map, ['dust2', 'italy', 'office', 'mirage'], true)) return;
+        $room = &$this->rooms[$conn->currentRoom];
+        if (($room['state'] ?? 'waiting') !== 'waiting') return;
+        $room['votes'][$conn->userId] = $map;
+        $this->broadcastToRoom($conn->currentRoom, ['type' => 'votes', 'votes' => $this->voteCounts($room)]);
+    }
+
+    // el anfitrión inicia la partida: equipos al azar de hasta 5 (bando T/CT también al azar) y mapa más votado (empate: al azar)
+    private function handleStartMatch(ConnectionInterface $conn) {
+        $roomId = $conn->currentRoom;
+        if (!$roomId || !isset($this->rooms[$roomId])) return;
+        $room = &$this->rooms[$roomId];
+        if (($room['host'] ?? null) !== $conn->userId) { $conn->send(json_encode(['type' => 'error', 'message' => 'Solo el anfitrión puede iniciar'])); return; }
+        if (($room['state'] ?? 'waiting') !== 'waiting') return;
+        $ids = array_keys($room['players']);
+        shuffle($ids);
+        $half = (int)ceil(count($ids) / 2);
+        $teamA = array_slice($ids, 0, $half); $teamB = array_slice($ids, $half);
+        if (random_int(0, 1) === 1) { $t = $teamA; $ct = $teamB; } else { $t = $teamB; $ct = $teamA; }
+        $counts = $this->voteCounts($room);
+        if (empty($counts)) { $maps = ['dust2', 'italy', 'office', 'mirage']; $map = $maps[array_rand($maps)]; }
+        else { $max = max($counts); $top = array_keys(array_filter($counts, fn($v) => $v === $max)); $map = $top[array_rand($top)]; }
+        $names = function ($list) use ($room) { return array_map(fn($id) => ['id' => $id, 'username' => $room['players'][$id]['username']], $list); };
+        $room['state'] = 'playing';
+        $this->broadcastToRoom($roomId, ['type' => 'match_start', 'map' => $map, 'teams' => ['t' => $names($t), 'ct' => $names($ct)]]);
+        $this->broadcastRooms();
     }
     
     private function handlePlayerUpdate(ConnectionInterface $conn, $data) {
