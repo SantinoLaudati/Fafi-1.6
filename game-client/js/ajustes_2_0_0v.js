@@ -43,24 +43,28 @@ function effective(level) {
   const q = QUALITY[level] || QUALITY.high, o = loadOverrides(), dpr = window.devicePixelRatio || 1;
   const d = {
     resScale: q.resScale != null ? q.resScale : Math.min(dpr, q.maxPixelRatio) / dpr,
-    dynRes: true, targetFps: 60, fpsCap: q.fpsCap || 0, aa: q.aa !== false, fov: 75, viewDist: 160, showFps: true,
+    dynRes: true, targetFps: 60, fpsCap: q.fpsCap || 0, aa: q.aa !== false, viewDist: 160, showFps: true, resMode: 'auto', resW: 1920, resH: 1080,
     shadows: !!q.shadows, shadowSize: q.shadowMapSize, shadowRange: q.shadowRange || 30, shadowType: SHADOW_NAME(q.shadowType),
     tone: !!q.tone, exposure: q.exposure || 1.05, fogMul: q.fogMul, time: lsGet(TIME_KEY, 'auto'),
     fx: q.fx != null ? q.fx : 1, maxBots: q.maxBots, tex: q.tex
   };
-  for (const k of ['dynRes', 'targetFps', 'fov', 'viewDist', 'showFps']) if (o[k] != null) d[k] = o[k];
+  for (const k of ['dynRes', 'targetFps', 'viewDist', 'showFps', 'resMode', 'resW', 'resH']) if (o[k] != null) d[k] = o[k];
+  d.fpsCapC = d.fpsCap || '';
   return d;
 }
 
 const pct = (v) => Math.round(v * 100) + '%';
 const GFX = [
   { h: 'IMAGEN Y RENDIMIENTO', items: [
+    { k: 'resMode', t: 'select', label: 'Resolución de pantalla', opts: [['auto', 'Automática (tamaño de la ventana)'], ['1280x720', '1280 x 720'], ['1600x900', '1600 x 900'], ['1920x1080', '1920 x 1080'], ['2560x1440', '2560 x 1440'], ['1024x768', '1024 x 768 (4:3)'], ['custom', 'Personalizada...']], hint: 'Resolución a la que se dibuja el juego; se estira para llenar la ventana. Menos = más FPS.' },
+    { k: 'resW', t: 'num', label: 'Ancho personalizado', min: 320, max: 7680, step: 1, hint: 'Solo con "Personalizada".' },
+    { k: 'resH', t: 'num', label: 'Alto personalizado', min: 240, max: 4320, step: 1, hint: 'Solo con "Personalizada".' },
     { k: 'resScale', t: 'range', label: 'Escala de resolución', min: 0.4, max: 1.5, step: 0.05, fmt: pct, hint: 'Menos = más FPS (imagen más borrosa). Más de 100 % suaviza los bordes pero exige mucho a la placa.' },
     { k: 'dynRes', t: 'toggle', label: 'Resolución dinámica', hint: 'Baja la resolución sola cuando los FPS caen del objetivo y la recupera cuando sobra rendimiento. Recomendado para PC modestas.' },
     { k: 'targetFps', t: 'select', label: 'FPS objetivo (resolución dinámica)', opts: [[30, '30'], [45, '45'], [60, '60'], [90, '90'], [120, '120'], [144, '144']] },
-    { k: 'fpsCap', t: 'select', label: 'Límite de FPS', opts: [[0, 'Sin límite'], [30, '30'], [60, '60'], [90, '90'], [120, '120'], [144, '144']], hint: 'Limitar los FPS baja el calor y el consumo.' },
+    { k: 'fpsCap', t: 'select', label: 'Frecuencia máxima (Hz / FPS)', opts: [[0, 'Sin límite'], [30, '30 Hz'], [60, '60 Hz'], [75, '75 Hz'], [90, '90 Hz'], [100, '100 Hz'], [120, '120 Hz'], [144, '144 Hz'], [165, '165 Hz'], [240, '240 Hz']], hint: 'Limita los fotogramas por segundo del juego. No cambia la frecuencia real de tu monitor (eso se configura en Windows).' },
+    { k: 'fpsCapC', t: 'num', label: 'Hz personalizados', min: 20, max: 500, step: 1, hint: 'Escribe un valor entre 20 y 500.' },
     { k: 'aa', t: 'toggle', label: 'Antialiasing (MSAA)', reload: true, hint: 'Suaviza los bordes. Se aplica al reiniciar el juego.' },
-    { k: 'fov', t: 'range', label: 'Campo de visión (FOV)', min: 60, max: 110, step: 1, fmt: (v) => v + '°' },
     { k: 'viewDist', t: 'range', label: 'Distancia de dibujado', min: 40, max: 300, step: 10, fmt: (v) => v + ' m', hint: 'Lo que está más lejos no se dibuja.' },
     { k: 'showFps', t: 'toggle', label: 'Mostrar contador de FPS' }
   ] },
@@ -88,6 +92,7 @@ const CSS = `
 #ax-root .ax-row label{font-size:13px;color:#e8e8e8}
 #ax-root .ax-row label small{display:block;color:#7c8088;font-size:10.5px;line-height:1.25;margin-top:2px}
 #ax-root .ax-row input[type=range]{width:100%;accent-color:#d69f0f;margin:0}
+#ax-root .ax-row input[type=number]{background:#14171d;color:#fff;border:1px solid #333a46;border-radius:4px;padding:5px 6px;font-size:12px;width:100%;grid-column:2/4;height:30px}
 #ax-root .ax-row select,#ax-root .ax-row input[type=color]{background:#14171d;color:#fff;border:1px solid #333a46;border-radius:4px;padding:5px 6px;font-size:12px;width:100%;grid-column:2/4;height:30px}
 #ax-root .ax-row input[type=color]{padding:1px 3px;width:60px;grid-column:2}
 #ax-root .ax-row b{color:#d69f0f;font-size:12px;text-align:right;font-weight:700}
@@ -112,7 +117,9 @@ function rowHtml(it, v) {
   const hint = it.hint ? `<small>${it.hint}${it.reload ? ' (requiere reiniciar)' : ''}</small>` : (it.reload ? '<small>Requiere reiniciar o recargar el mapa.</small>' : '');
   const lab = `<label for="ax_${it.k}">${it.label}${hint}</label>`;
   if (it.t === 'range') return `<div class="ax-row" data-k="${it.k}">${lab}<input type="range" id="ax_${it.k}" min="${it.min}" max="${it.max}" step="${it.step}" value="${v}"><b>${it.fmt(+v)}</b></div>`;
+  if (it.t === 'num') return `<div class="ax-row" data-k="${it.k}">${lab}<input type="number" id="ax_${it.k}" min="${it.min}" max="${it.max}" step="${it.step}" value="${v == null ? '' : v}"></div>`;
   if (it.t === 'toggle') return `<div class="ax-row" data-k="${it.k}">${lab}<div class="ax-tg"><input type="checkbox" id="ax_${it.k}" ${v ? 'checked' : ''}><span>${v ? 'Activado' : 'Desactivado'}</span></div></div>`;
+  if (it.k === 'fpsCap' && v && !it.opts.some(([o]) => String(o) === String(v))) it = { ...it, opts: [...it.opts, [v, v + ' Hz']] };
   return `<div class="ax-row" data-k="${it.k}">${lab}<select id="ax_${it.k}">${it.opts.map(([val, name]) => `<option value="${val}" ${String(val) === String(v) ? 'selected' : ''}>${name}</option>`).join('')}</select></div>`;
 }
 
@@ -148,6 +155,8 @@ export function initAjustes(opts = {}) {
       if (it.t === 'range') {
         el.addEventListener('input', () => { row.querySelector('b').textContent = it.fmt(+el.value); });
         el.addEventListener('change', () => commit(k, +el.value));
+      } else if (it.t === 'num') {
+        el.addEventListener('change', () => { const n = Math.max(it.min, Math.min(it.max, Math.round(+el.value) || it.min)); el.value = n; if (k === 'fpsCapC') { commit('fpsCap', n); renderGfx(); } else { commit(k, n); if (k === 'resW' || k === 'resH') commit('resMode', 'custom'); } });
       } else if (it.t === 'toggle') {
         el.addEventListener('change', () => { row.querySelector('span').textContent = el.checked ? 'Activado' : 'Desactivado'; commit(k, el.checked); if (it.reload) holder.querySelector('#axMsg').textContent = 'Reiniciá la página para aplicar el antialiasing.'; });
       } else {

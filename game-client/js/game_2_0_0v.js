@@ -523,7 +523,7 @@ let akStoredAmmo=30, akStoredReserve=90;
 let weaponBasePos=null, weaponAimPos=null;
 let weaponBaseRot=null, weaponAimRot=null;
 let recoilKick=0;
-let baseFov=(loadOverrides().fov||75); const aimFov=52;
+let baseFov=75; const aimFov=52;
 const awpAimFov=11;               // zoom 2 del AWP (como CS:GO: dos niveles)
 const awpAimFov1=33;              // zoom 1
 let awpZoom=1, awpRescope=false;
@@ -552,9 +552,23 @@ function patternKick(pat, idx){ const n=pat.length; return pat[idx<n ? idx : n-8
 // angular ni se atraviesan paredes (se dibuja encima del mundo).
 const VM_HFOV=84, VM_MAX_ASPECT=16/9;
 let VM_PUSH=-0.32;
+// resolucion de dibujado: automatica (ventana) o personalizada (se dibuja a ese tamano y se estira a la ventana)
+function customRes(){
+  const o=loadOverrides(); let w=0,h=0;
+  const m=/^(\d+)x(\d+)$/.exec(String(o.resMode||'')); if(m){ w=+m[1]; h=+m[2]; } else if(o.resMode==='custom'){ w=+o.resW; h=+o.resH; }
+  return (w>=320&&w<=7680&&h>=240&&h<=4320) ? {w,h} : null;
+}
+function viewAspect(){ const c=customRes(); return c ? c.w/c.h : innerWidth/Math.max(1,innerHeight); }
+function fitRenderer(){
+  if(!renderer) return; const c=customRes();
+  if(c){ const s=getDynScale(); renderer.setPixelRatio(1); renderer.setSize(Math.round(c.w*s),Math.round(c.h*s),false); const st=renderer.domElement.style; st.width='100%'; st.height='100%'; }
+  else { renderer.setPixelRatio(pixelRatioFor(qualityLevel)); renderer.setSize(innerWidth,innerHeight); }
+  if(camera){ camera.aspect=viewAspect(); camera.updateProjectionMatrix(); }
+  try{ vmResize(); }catch(e){}
+}
 let viewCamera=null, vmRoot=null;
-function vmVFov(){ const a=Math.min(innerWidth/Math.max(1,innerHeight), VM_MAX_ASPECT); return THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(VM_HFOV)/2)/a)); }
-function vmResize(){ if(!viewCamera) return; viewCamera.aspect=innerWidth/Math.max(1,innerHeight); viewCamera.fov=vmVFov(); viewCamera.updateProjectionMatrix(); }
+function vmVFov(){ const a=Math.min(viewAspect(), VM_MAX_ASPECT); return THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(VM_HFOV)/2)/a)); }
+function vmResize(){ if(!viewCamera) return; viewCamera.aspect=viewAspect(); viewCamera.fov=vmVFov(); viewCamera.updateProjectionMatrix(); }
 function vmAdd(obj){
   obj.traverse(o=>{ o.layers.set(1); if(o.isMesh){ o.castShadow=false; o.receiveShadow=false; o.frustumCulled=false; } });
   vmRoot.add(obj); return obj;
@@ -675,6 +689,7 @@ function applyGraphicsQuality(){
   shadowKBase = shadowK = (qualityLevel==='high') ? 1 : 2;
   _shadowDue = true;
   const q = applyQuality(renderer, sunLight, qualityLevel);
+  fitRenderer();
   if(fillLight) fillLight.visible = q.fill && gameMode!=='dust2';
   if(scene && scene.fog && scene.userData.fogBase){ scene.fog.near=scene.userData.fogBase[0]*q.fogMul; scene.fog.far=scene.userData.fogBase[1]*q.fogMul; }
   // recompilar materiales (tipo de sombra / tone mapping)
@@ -793,10 +808,7 @@ function initThree(){
 
 
   window.addEventListener('resize', ()=>{
-    camera.aspect=innerWidth/innerHeight;
-    camera.updateProjectionMatrix();
-    vmResize();
-    renderer.setSize(innerWidth,innerHeight);
+    fitRenderer();
   });
   animate();
 }
@@ -4171,7 +4183,7 @@ function adaptResolution(fps){
       else if(cur>0.75){ setDynScale(cur-0.05); applyDynRes(); } } }
   else { dynBadStreak=0; if(fps >= target*0.985){ if(++dynGood>=8){ dynGood=0; if(cur<1){ setDynScale(cur+0.05); applyDynRes(); } else if(shadowK>shadowKBase) shadowK--; } } else dynGood=0; }
 }
-function applyDynRes(){ renderer.setPixelRatio(pixelRatioFor(qualityLevel)); renderer.setSize(innerWidth,innerHeight); }
+function applyDynRes(){ fitRenderer(); }
 function updateFPS(now){
   fpsFrames++;
   const el=now-fpsLastT;
@@ -4450,7 +4462,7 @@ try{
   window.addEventListener('fafi-gfx-change', ()=>{
     try{
       rebuildQuality(); const o=loadOverrides();
-      baseFov=o.fov||75; if(camera){ camera.fov=baseFov; camera.far=o.viewDist||160; camera.updateProjectionMatrix(); }
+      baseFov=75; if(camera){ camera.fov=baseFov; camera.far=o.viewDist||160; camera.updateProjectionMatrix(); }
       setDynScale(1); applyGraphicsQuality(); applyDebrisFx();
       const fc=document.getElementById('fpsCounter'); if(fc) fc.style.visibility = o.showFps===false ? 'hidden' : '';
       if(gameMode==='dust2') applyAtmosphere();
