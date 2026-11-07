@@ -6,7 +6,7 @@ const PASOS = 'assets/audio/pasos/';
 const PISTOLS = ['deagle', 'five'];
 const WEAPON_VARIANTS = ['reload_out', 'reload_in', 'reload_end', 'draw'];
 const LIB = {};                                          // nombre -> { v, files: [ruta] }
-for (const [n, v] of [['step', 0.3], ['step_grass', 0.28], ['step_stone', 0.32], ['step_metal', 0.3]]) LIB[n] = { v, files: [1, 2, 3].map((i) => PASOS + n + '_' + i + '.ogg') };
+for (const [n, v] of [['step', 0.6], ['step_grass', 0.6], ['step_stone', 0.6], ['step_metal', 0.6]]) LIB[n] = { v, files: [1, 2, 3].map((i) => PASOS + n + '_' + i + '.ogg') };
 let ctx = null, master = null, wanted = false, loading = null;
 const bufs = {};                                         // nombre -> [AudioBuffer]
 const last = {};

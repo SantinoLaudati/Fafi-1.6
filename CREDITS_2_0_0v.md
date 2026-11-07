@@ -10,7 +10,7 @@ Voz neuronal `es_MX-claude-high` de [Piper](https://github.com/rhasspy/piper) (M
 generada sin conexión a partir de `assets/historia/guion.json`. Es voz sintética; para una voz humana usa `herramientas/grabar-locucion_2_0_0v.html`.
 
 ## Sonido
-Todos los sonidos de armas, recargas, impactos, granadas, bomba, menú y rondas salen del pack de sonidos aportado por el equipo (`game-client/assets/audio/pack`, convertido con `herramientas/convertir-sonidos_2_0_0v.sh` según `herramientas/sonidos-mapa_2_0_0v.txt`); cada archivo se usa una sola vez. Los pasos son sonidos sintetizados (`assets/audio/pasos`). La locución de la campaña (`assets/historia/audio`) solo marca la duración de cada plano y va silenciada.
+Todos los sonidos de armas, recargas, impactos, granadas, bomba, menú y rondas salen del pack de sonidos aportado por el equipo (`game-client/assets/audio/pack`, convertido con `herramientas/convertir-sonidos_2_0_0v.sh` según `herramientas/sonidos-mapa_2_0_0v.txt`); cada archivo se usa una sola vez. Los pasos salen de «Csgo Walk sound effect.mp3» (`assets/audio/pasos`). La locución de la campaña (`assets/historia/audio`) solo marca la duración de cada plano y va silenciada.
 
 ## Mapas, armas, cuchillo, personajes, granadas y caja
 Archivos `.glb` aportados por el equipo en `game-client/assets` (ver README.md).
