@@ -4551,3 +4551,18 @@ window.fafiRecommendFullscreen=function(){
   box.querySelector('#fsYes').onclick=()=>{ try{ (document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen).call(document.documentElement); }catch(e){} close(); };
   box.querySelector('#fsNo').onclick=close;
 };
+
+// === ESC deshabilitado durante la partida ===
+// Se bloquea la tecla para el juego y, en pantalla completa, se pide al navegador que no la use para salir (Keyboard Lock API, Chrome/Edge).
+// El navegador igualmente libera el cursor con Esc si no hay pantalla completa: eso no se puede impedir desde la pagina.
+// Para abrir el menu de pausa durante la partida se usa F10.
+window.addEventListener('keydown',(e)=>{
+  if(e.code==='Escape' && gameActive && !buyMenuOpen && !resultOverlay.classList.contains('show')){ e.preventDefault(); e.stopImmediatePropagation(); }
+  else if(e.code==='F10' && gameActive && controls.isLocked){ e.preventDefault(); try{ controls.unlock(); }catch(_){} }
+}, true);
+document.addEventListener('fullscreenchange',()=>{
+  try{
+    if(document.fullscreenElement && navigator.keyboard && navigator.keyboard.lock) navigator.keyboard.lock(['Escape']);
+    else if(navigator.keyboard && navigator.keyboard.unlock) navigator.keyboard.unlock();
+  }catch(_){}
+});
