@@ -2099,7 +2099,7 @@ function startGame(mode='aim', team=null){
     updateWeaponVisibility();
     updateMoneyHUD();
     if(window.fafiDefuse){ playerFrozen=true; spectating=false; viewmodelHidden=false; [tSpawnRing,ctSpawnRing].forEach(r=>{ if(r) r.visible=false; }); defuse.startMatch(playerTeam); }
-    else { playerFrozen=false; spectating=false; viewmodelHidden=false; showFloating('¡' + teamName + '! Pulsa B para comprar ($3000)'); }
+    else { playerFrozen=false; spectating=false; viewmodelHidden=false; showFloating('¡' + teamName + '!'); }
   } else {
     camera.position.set(0,1.6,4);
     controls.getObject().position.copy(camera.position);
@@ -2471,7 +2471,7 @@ function switchWeapon(to){
   if(isReloading || isBoltCycling) return;
   // En Dust2 solo puedes sacar lo que tienes en el inventario (CS:GO)
   if(gameMode==='dust2' && !owned[to]){
-    showFloating('No tienes '+WEAPON_LABEL[to]+' • Pulsa B para comprar');
+    showFloating('No tienes '+WEAPON_LABEL[to]);
     return;
   }
   if(currentWeapon==='ak'){ akStoredAmmo=ammoInMag; akStoredReserve=reserveAmmo; }
@@ -3656,7 +3656,7 @@ window.addEventListener('keydown', (e)=>{
   // 1/2/3/4 y Q/Rueda para cambiar arma (en Dust2 solo si la posees)
   // Ranuras como en CS: 1 primaria · 2 secundaria · 3 cuchillo · 4 flash · 5 humo · 6 HE · 7 molotov
   { const m=gameMode==='aim' ? null : /^(?:Digit|Numpad)([1-7])$/.exec(e.code); if(m){ e.preventDefault(); const n=+m[1];
-    if(n===1){ const prim=PRIMARIES.filter(w=>gameMode!=='dust2'||owned[w]); if(prim.length){ const i=prim.indexOf(currentWeapon); switchWeapon(i>=0 ? prim[(i+1)%prim.length] : (prim.includes(lastPrimary)?lastPrimary:prim[0])); } else showFloating('No tienes primaria • Pulsa B para comprar'); }
+    if(n===1){ const prim=PRIMARIES.filter(w=>gameMode!=='dust2'||owned[w]); if(prim.length){ const i=prim.indexOf(currentWeapon); switchWeapon(i>=0 ? prim[(i+1)%prim.length] : (prim.includes(lastPrimary)?lastPrimary:prim[0])); } else showFloating('No tienes primaria'); }
     else if(n===2){ const sec=SECONDARIES.filter(w=>gameMode!=='dust2'||owned[w]); if(sec.length){ const i=sec.indexOf(currentWeapon); switchWeapon(i>=0?sec[(i+1)%sec.length]:sec[0]); } } else if(n===3){ if(currentWeapon==='knife') toggleKnife(); else switchWeapon('knife'); }
     else switchWeapon(['flash','smoke','he','molo'][n-4]);
     return; } }

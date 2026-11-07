@@ -305,3 +305,4 @@ body.df-on #weaponMode,body.df-on #weapon-info .icon{display:none}
 #wBar span.sel{background:rgba(255,255,255,.14);border-right-color:#fff;color:#fff;opacity:1}
 #weapon-info #ammoEl{font-size:46px;font-weight:700;color:#fff!important;text-shadow:0 2px 6px #000}
 #gBar{display:none}
+#weaponMode,#instructions,.fafi16-note{display:none!important}
