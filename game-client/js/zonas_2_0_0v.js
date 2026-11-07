@@ -25,6 +25,12 @@ export const ZONAS = {
     A:  { x:  -4.3, y: -4.1, z: -17.7, r: 4.5 },     // sitio A: casa de los rehenes (Hostage1/2 del overview)
     B:  { x:  12.7, y: -4.2, z:   9.9, r: 5.0 }      // sitio B: plaza del mercado (cruce central)
   },
+  mirage: {  // cs_mirage (optimizados/cs_mirage_opt.glb, normalizado a 84 m): zonas dentro de la malla caminable principal (las plazas rectangulares del borde oeste del modelo no se conectan al mapa)
+    t:  { x:   9.0, z:  36.0, r: 5.0 },     // T spawn (sur)
+    ct: { x:  27.0, z: -24.0, r: 5.0 },     // CT spawn (noreste)
+    A:  { x:  15.0, z:  -4.0, r: 5.0 },     // sitio A (centro-este)
+    B:  { x: -23.0, z:  -7.0, r: 5.0 }      // sitio B (lóbulo oeste)
+  },
   office: {  // cs_office: T dentro del edificio (noreste), CT fuera en el aparcamiento (suroeste)
     t:  { x:  20.4, y:  2.4, z: -16.7, r: 4.5 },     // T spawn (interior noreste)
     ct: { x: -18.0, y: -0.1, z:  22.2, r: 5.0 },     // CT spawn (patio / aparcamiento suroeste)

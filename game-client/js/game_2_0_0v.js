@@ -744,6 +744,11 @@ const MAPS = {
   office: {
     name:'OFFICE', files:{ low:MAP_DIR+'optimizados/cs_office_1k.glb', med:MAP_DIR+'optimizados/cs_office_2k.glb' }, size:72,
     logo:'assets/Logos mapas/office logo.jpg', baked:true, zones:ZONAS.office, nav:{ cell:0.5, headroom:0.95, step:0.6 }
+  },
+  // Mirage: 86 bloques con color por vértice; los detalles (revoque, piedra, baldosas, tejas, madera) los pinta js/mirage_2_0_0v.js
+  mirage: {
+    name:'MIRAGE', file:MAP_DIR+'optimizados/cs_mirage_opt.glb', size:84,
+    logo:'assets/Logos mapas/mirage logo.png', baked:false, look:'mirage', zones:ZONAS.mirage || null, nav:{ cell:0.9, step:1.0, headroom:1.2 }
   }
 };
 function mapFile(key){ const d=MAPS[key]; return d.files ? d.files[QUALITY[qualityLevel].tex] : d.file; }
@@ -834,7 +839,7 @@ function activateMap(key){
   dust2Group.userData.bounds=e.bounds.clone();
   dust2Colliders=e.colliders; colScale=Math.max(0.4, Math.min(1, (e.scale||1)*0.8)); stepMax = 0.68;
   currentMapKey=key;
-  SFX.surface = key==='office' ? 'step_metal' : key==='italy' ? 'step_stone' : 'step';
+  SFX.surface = key==='office' ? 'step_metal' : (key==='italy' || key==='mirage') ? 'step_stone' : 'step';
   try{ applyAtmosphere(); }catch(e){}
   wallLimit.xmin=e.bounds.min.x+1.0; wallLimit.xmax=e.bounds.max.x-1.0;
   wallLimit.zmin=e.bounds.min.z+1.0; wallLimit.zmax=e.bounds.max.z-1.0;
@@ -859,6 +864,7 @@ function loadMap(key, onDone){
   if(loadingEl){ loadingEl.style.display='block'; loadingEl.textContent='Cargando '+def.name+'... 0%'; }
   makeLoader().load(mapFile(key), async (gltf)=>{
     const model=gltf.scene;
+    if(def.look==='mirage'){ try{ (await import('./mirage_2_0_0v.js')).applyMirageLook(model); }catch(err){ console.warn('mirage look', err); } }
     if(def.rot) model.rotation.set(def.rot[0],def.rot[1],def.rot[2]);
     // Normalizar al tamaño del mapa y centrar
     const box=new THREE.Box3().setFromObject(model);
@@ -919,7 +925,8 @@ function loadDust2Map(onDone){ loadMap(selectedMap, onDone); }
 const MAP_INFO = {
   dust2:  { tag:'CLÁSICO', desc:'Dos sitios de bomba conectados por túneles largos y una plaza central abierta. Ideal para duelos de rifle y AWP.', stats:[['Sitios','A · B'],['Estilo','Abierto'],['Ritmo','Medio']] },
   italy:  { tag:'CIUDAD', desc:'Callejones, plazas y mercados mediterráneos con muchos ángulos y cobertura. Premia moverse en equipo.', stats:[['Sitios','A · B'],['Estilo','Urbano'],['Ritmo','Medio']] },
-  office: { tag:'INTERIORES', desc:'Pasillos estrechos, oficinas y puertas: combate cercano donde la pistola y el rifle corto mandan.', stats:[['Sitios','A · B'],['Estilo','Cerrado'],['Ritmo','Rápido']] }
+  office: { tag:'INTERIORES', desc:'Pasillos estrechos, oficinas y puertas: combate cercano donde la pistola y el rifle corto mandan.', stats:[['Sitios','A · B'],['Estilo','Cerrado'],['Ritmo','Rápido']] },
+  mirage: { tag:'COMPETITIVO', desc:'Ciudad de arena: plaza central, mid con ventana, rampa al sitio A y apartamentos al B. Mucho juego de utilidad y duelos a media distancia.', stats:[['Sitios','A · B'],['Estilo','Mixto'],['Ritmo','Táctico']] }
 };
 function refreshMapPicker(){
   const el=document.getElementById('mapPicker');
@@ -1353,9 +1360,12 @@ function tintMap(on){
   const model = dust2Group.children[0]; if(!model) return;      // el modelo del mapa es el primer hijo (después van bots, bomba...)
   model.traverse(o=>{ if(!o.isMesh || !o.material) return; (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{ if(!m.color) return; if(!m.userData.baseCol) m.userData.baseCol=m.color.clone(); m.color.copy(m.userData.baseCol); if(t) m.color.r*=t[0], m.color.g*=t[1], m.color.b*=t[2]; }); });
 }
+// Hora del día (ajustes gráficos): auto = Mirage de día y el resto de noche; también se puede forzar día o noche.
+function getTimeOfDay(){ try{ return localStorage.getItem('fafi_time')||'auto'; }catch(e){ return 'auto'; } }
+function isNightNow(){ const t=getTimeOfDay(); return t==='noche' || (t==='auto' && currentMapKey!=='mirage'); }
 function applyAtmosphere(){
   if(!scene || !hemiLight || !sunLight) return;
-  const night = gameMode==='dust2';
+  const night = gameMode==='dust2' && isNightNow();
   try{ tintMap(night); }catch(e){}
   const a = night ? ATMOS.night : ATMOS.day;
   setLights(a);
@@ -2187,7 +2197,7 @@ const EXTRA_W = {
   shorty:  { label:'SHORTY',          size:0.62, mag:2,   reserve:24,  fireMs:480, price:1100, auto:false, aim:false, snd:'shotgun', basePos:[0.30,-0.30,-0.76], aimDelta:[-0.28,0.12,0.26] },
   m4b:     { label:'M4 TÁCTICO',      size:1.02, mag:30,  reserve:90,  fireMs:90,  price:2900, auto:true,  aim:true, snd:'m4',      basePos:[0.38,-0.35,-0.74], aimDelta:[-0.36,0.135,0.26] },
   vandal:  { label:'VANDAL',          size:1.06, mag:25,  reserve:75,  fireMs:100, price:2900, auto:true,  aim:true, snd:'ak',      basePos:[0.38,-0.35,-0.74], aimDelta:[-0.36,0.135,0.26] },
-  vss:     { label:'VSS VINTOREZ',    size:1.16, mag:10,  reserve:40,  fireMs:320, price:2800, auto:false, aim:true, snd:'deagle',  basePos:[0.38,-0.33,-0.78], aimDelta:[-0.36,0.13,0.28] },
+  vss:     { label:'VSS VINTOREZ', scope:true,    size:1.16, mag:10,  reserve:40,  fireMs:320, price:2800, auto:false, aim:true, snd:'deagle',  basePos:[0.38,-0.33,-0.78], aimDelta:[-0.36,0.13,0.28] },
   negev:   { label:'NEGEV',           size:1.18, mag:150, reserve:300, fireMs:60,  price:1700, auto:true,  aim:true, snd:'ak',      basePos:[0.38,-0.34,-0.78], aimDelta:[-0.36,0.13,0.28] }
 };
 let extraOn=false;
@@ -2200,7 +2210,7 @@ async function enableExtraWeapons(on){
     if(!extraOn || !vmRoot) return;                                  // se salió del modo mientras cargaba
     for(const id of ids){
       const d=EXTRA_W[id];
-      ANIM_WEAPONS[id]={ label:d.label, node:id, size:d.size, mag:d.mag, reserve:d.reserve, fireMs:d.fireMs, price:d.price, aim:d.aim, auto:d.auto, pistol:d.pistol, snd:d.snd, basePos:d.basePos, aimDelta:d.aimDelta };
+      ANIM_WEAPONS[id]={ scope:d.scope, label:d.label, node:id, size:d.size, mag:d.mag, reserve:d.reserve, fireMs:d.fireMs, price:d.price, aim:d.aim, auto:d.auto, pistol:d.pistol, snd:d.snd, basePos:d.basePos, aimDelta:d.aimDelta };
       if(!animAmmo[id]) animAmmo[id]={ ammo:d.mag, reserve:d.reserve };
       WEAPON_LABEL[id]=d.label; WEAPON_PRICES[id]=d.price;
       if(!animW[id]){
@@ -2350,8 +2360,11 @@ function finishReload(){
   SFX.play('bolt', { vol:0.8 });
 }
 
+// Como en CS:GO, solo las armas con mira telescópica (AWP y francotiradores) tienen zoom; el resto dispara siempre "desde la cadera".
+const SCOPED_WEAPONS = new Set(['awp']);
+function canScope(w){ return SCOPED_WEAPONS.has(w) || !!(ANIM_WEAPONS[w] && ANIM_WEAPONS[w].scope); }
 function setAiming(v){
-  if(currentWeapon==='deagle' || (ANIM_WEAPONS[currentWeapon] && !ANIM_WEAPONS[currentWeapon].aim)) v=false;
+  if(!canScope(currentWeapon)) v=false;
   if(isReloading || isInspecting) v=false;
   isAiming=v;
   updateAmmoHUD();
@@ -3927,8 +3940,8 @@ function buildMinimapImage(key){
     px=new Uint8Array(W*H*4); renderer.readRenderTargetPixels(rt,0,0,W,H,px);
   }catch(e){ console.warn('minimapa', e); }
   renderer.setRenderTarget(oldRT); renderer.clippingPlanes=oldClip; renderer.setClearColor(oldCol,oldAlpha);
-  setLights(gameMode==='dust2' ? ATMOS.night : ATMOS.day);
-  if(gameMode==='dust2') tintMap(true);
+  setLights((gameMode==='dust2' && isNightNow()) ? ATMOS.night : ATMOS.day);
+  if(gameMode==='dust2' && isNightNow()) tintMap(true);
   scene.background=oldBg; scene.fog=oldFog; hid.forEach(o=>{ o.visible=true; }); chars.forEach(o=>{ o.visible=true; }); rt.dispose();
   if(!px) return null;
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d'); const id=g.createImageData(W,H);
@@ -4239,3 +4252,6 @@ try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }cat
 })();
 
 
+
+// Herramientas de desarrollo: con ?dev=1 en la URL se exponen objetos internos en window.__fafi (capturas, pruebas de mapas y zonas).
+if(/[?&]dev=1/.test(location.search)){ window.__fafi = { THREE, MAPS, ZONAS, defuse, buildMinimapImage, loadMap, wallLimit, get scene(){return scene;}, get camera(){return camera;}, get renderer(){return renderer;}, get controls(){return controls;}, get map(){return currentMapKey;}, get group(){return dust2Group;}, get colliders(){return dust2Colliders;} }; }

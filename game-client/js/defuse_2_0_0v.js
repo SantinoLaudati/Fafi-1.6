@@ -90,7 +90,8 @@ export function createDefuse(A) {
     if (!z) z = autoZones(nav);
     // acomoda los centros a la malla de navegación
     for (const k of ['t', 'ct', 'A', 'B']) {
-      const n = nav.nearest(z[k].x, z[k].y ?? null, z[k].z, 8);
+      let n = nav.nearest(z[k].x, z[k].y ?? null, z[k].z, 8);
+      if (n < 0) n = nav.nearest(z[k].x, null, z[k].z, 90);      // zona fuera de la malla principal: se corre al punto caminable más cercano
       if (n >= 0) { z[k].x = nav.nodes[n].x; z[k].z = nav.nodes[n].z; z[k].y = nav.nodes[n].y; }
     }
     z.key = key; D.zones = z; return z;
@@ -104,7 +105,7 @@ export function createDefuse(A) {
     let maxC = 0; const sc = new Map();
     for (const [k, c] of hist) { const cc = c + (hist.get(k - 1) || 0) + (hist.get(k + 1) || 0); sc.set(k, cc); maxC = Math.max(maxC, cc); }
     let lvl = null; for (const [k, cc] of sc) if (cc >= maxC * 0.3 && (lvl === null || k < lvl)) lvl = k;
-    const main = N.filter(n => Math.abs(n.y - lvl) <= 1.6 && n.wall < 2);
+    const main = N.filter((n, i) => nav.isMain(i) && Math.abs(n.y - lvl) <= 1.6 && n.wall < 2);   // solo la zona conectada principal: así nadie aparece en bolsillos aislados o fuera del mapa
     // los dos puntos más alejados
     let A1 = main[0], B1 = main[1], bd = -1;
     const step = Math.max(1, Math.floor(main.length / 220));

@@ -19,3 +19,6 @@ logs/
 game-client/assets/audio/csgo/*
 !game-client/assets/audio/csgo/LEEME.txt
 !game-client/assets/audio/csgo/manifest.json
+
+# mapa original de Mirage (62 MB, sin texturas): solo se versiona la version optimizada
+game-client/assets/Mapas para tt vs ct/mirage_cs2_fps.glb
