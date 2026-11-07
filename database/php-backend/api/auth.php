@@ -51,9 +51,17 @@ function handleRegister($input) {
         return;
     }
     
-    if (mb_strlen($username, 'UTF-8') < 3 || mb_strlen($username, 'UTF-8') > 20 || preg_match('/\p{Cc}/u', $username)) {
+    // longitud en caracteres (UTF-8) sin depender de la extension mbstring; el usuario admite letras, numeros y simbolos (solo se rechazan caracteres de control)
+    $ulen = preg_match_all('/./us', $username);
+    if ($ulen === false || $ulen < 3 || $ulen > 20 || preg_match('/[\x00-\x1F\x7F]/', $username)) {
         http_response_code(400);
         echo json_encode(['error' => 'El usuario debe tener entre 3 y 20 caracteres']);
+        return;
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 100) {
+        http_response_code(400);
+        echo json_encode(['error' => 'El email no es valido (ejemplo: nombre@correo.com)']);
         return;
     }
     
