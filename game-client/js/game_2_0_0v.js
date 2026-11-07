@@ -11,6 +11,7 @@ import { SKINS_DB, skinById, applyKnifeSkin, loadKnife } from './skins_2_0_0v.js
 import * as menu2 from './menu2_2_0_0v.js';
 import { SFX } from './sfx_2_0_0v.js';
 import './pass_2_0_0v.js';
+import './proteccion_2_0_0v.js';
 window.fafiShowFloating=(t)=>{ try{ showFloating(t); }catch(e){} };
 
 
