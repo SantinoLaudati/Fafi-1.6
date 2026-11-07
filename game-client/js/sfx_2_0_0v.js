@@ -66,6 +66,7 @@ function start(name, o = {}) {
     if (o.lowpass) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = o.lowpass; node.connect(f); node = f; }
   }
   g.gain.value = Math.min(1.6, vol);
+  if (o.dur) { const t = ctx.currentTime; g.gain.setValueAtTime(g.gain.value, t + Math.max(0, o.dur - 1)); g.gain.linearRampToValueAtTime(0, t + o.dur); src.stop(t + o.dur + 0.05); }   // jingles largos: se cortan con fundido
   node.connect(g); g.connect(master); src.start();
   return src;
 }

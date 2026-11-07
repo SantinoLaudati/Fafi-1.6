@@ -13,6 +13,9 @@ function handleSocial($method, $id, $action, $input, $user) {
                 case 'achievements':
                     handleGetAchievements($user);
                     break;
+                case 'profile':
+                    handleGetProfile($user, $_GET['u'] ?? '');
+                    break;
                 case 'search':
                     handleSearchUsers($user, $_GET['q'] ?? '');
                     break;
@@ -225,4 +228,34 @@ function handleSearchUsers($user, $query) {
     );
     
     echo json_encode(['users' => $result]);
+}
+
+// Perfil público: foto, descripción, logros destacados (guardados en configuraciones_jugador.preferencias_ui.perfil) y mira
+function handleGetProfile($user, $name) {
+    $name = trim((string)$name);
+    $u = $name === '' ? null : db()->fetchOne('SELECT id, username FROM usuarios WHERE username = ?', [$name]);
+    if (!$u) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Jugador no encontrado']);
+        return;
+    }
+    $cfg = db()->fetchOne('SELECT preferencias_ui, mira FROM configuraciones_jugador WHERE usuario_id = ?', [$u['id']]);
+    $ui = json_decode($cfg['preferencias_ui'] ?? 'null', true) ?: [];
+    $mira = json_decode($cfg['mira'] ?? 'null', true) ?: null;
+    $perfil = $ui['perfil'] ?? [];
+    $ach = db()->fetchAll(
+        'SELECT l.nombre FROM logros l JOIN logros_desbloqueados ld ON l.id = ld.logro_id WHERE ld.usuario_id = ?',
+        [$u['id']]
+    );
+    $achs = array_map(function ($a) { return ['id' => $a['nombre'], 'name' => $a['nombre']]; }, $ach);
+    echo json_encode(['profile' => [
+        'username' => $u['username'],
+        'perfil' => [
+            'bio' => substr((string)($perfil['bio'] ?? ''), 0, 160),
+            'avatar' => (is_string($perfil['avatar'] ?? null) && strpos($perfil['avatar'], 'data:image/') === 0 && strlen($perfil['avatar']) < 60000) ? $perfil['avatar'] : '',
+            'badges' => array_slice(is_array($perfil['badges'] ?? null) ? $perfil['badges'] : [], 0, 3)
+        ],
+        'mira' => $mira,
+        'achievements' => $achs
+    ]]);
 }

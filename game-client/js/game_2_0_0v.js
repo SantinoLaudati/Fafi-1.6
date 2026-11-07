@@ -7,7 +7,7 @@ import { createGrenades, GRENADES } from './grenades_2_0_0v.js';
 import { loadCharacterAssets, loadWeaponPack, makeViewWeapon, makeWorldWeapon, repaintWeapon, setWeaponSkin, loadExtraWeapon, extraWeaponReady } from './characters_2_0_0v.js';
 import { ZONAS } from './zonas_2_0_0v.js';
 import { openCrate, preloadCrate } from './cajas_2_0_0v.js';
-import { SKINS_DB, skinById, applyKnifeSkin } from './skins_2_0_0v.js';
+import { SKINS_DB, skinById, applyKnifeSkin, loadKnife } from './skins_2_0_0v.js';
 import * as menu2 from './menu2_2_0_0v.js';
 import { SFX } from './sfx_2_0_0v.js';
 
@@ -625,7 +625,7 @@ let bullets = [];
 let spamHeat = 0; // crece con cada disparo seguido, hace el recoil exponencial
 let consecutiveSpam = 0;
 // inspección estilo CS:GO / Valorant - más lenta y sutil
-let isInspecting=false, inspectProgress=0, inspectDuration=3.35;
+let isInspecting=false, inspectProgress=0, inspectDuration=4.2;
 // cuchillo
 let knifeModel=null, knifeBasePos=null, knifeBaseRot=null;
 let currentWeapon='ak'; // 'ak' | 'knife' | 'awp' | 'deagle'
@@ -1198,7 +1198,7 @@ function updateAnimWeapon(dt, wallPush){
     if(reloadProgress>=1) finishReload();
   }
   if(w.state==='inspect'){
-    inspectProgress += dt/3.2;
+    inspectProgress += dt/4.2;
     if(inspectProgress>=1){ isInspecting=false; inspectProgress=0; updateAmmoHUD(); }
   }
   // --- mira / FOV ---
@@ -1225,8 +1225,11 @@ function updateAnimWeapon(dt, wallPush){
     else { const q=(t-0.82)/0.18; y=-0.06*(1-q); }
     tp.y+=y; tp.z+=z; rx+=rr; ry+=rr2;
   } else if(w.state==='inspect'){
-    const t=Math.min(inspectProgress,1), s=Math.sin(t*Math.PI*2);
-    tp.x -= 0.14*Math.sin(t*Math.PI); tp.y += 0.05*Math.sin(t*Math.PI); ry += 0.55*s; rz += 0.28*Math.sin(t*Math.PI*2+1); rx -= 0.10*Math.sin(t*Math.PI);
+    const t=Math.min(inspectProgress,1), kf=richKfs(0.9); let a=kf[0], b=kf[1];
+    for(let i=0;i<kf.length-1;i++){ if(t>=kf[i].t && t<=kf[i+1].t){ a=kf[i]; b=kf[i+1]; break; } }
+    const sg=(t-a.t)/Math.max(0.0001,b.t-a.t), e=sg<0.5?4*sg*sg*sg:1-Math.pow(-2*sg+2,3)/2;
+    tp.x += THREE.MathUtils.lerp(a.pos.x,b.pos.x,e); tp.y += THREE.MathUtils.lerp(a.pos.y,b.pos.y,e); tp.z += THREE.MathUtils.lerp(a.pos.z,b.pos.z,e);
+    rx += THREE.MathUtils.lerp(a.rot.x,b.rot.x,e); ry += THREE.MathUtils.lerp(a.rot.y,b.rot.y,e); rz += THREE.MathUtils.lerp(a.rot.z,b.rot.z,e);
   } else {
     const moving=(keys['KeyW']||keys['KeyA']||keys['KeyS']||keys['KeyD']);
     const amp=(1-aimProgress*0.85)*(moving?1.35:1), t=now*0.001;
@@ -1243,39 +1246,39 @@ function updateAnimWeapon(dt, wallPush){
 }
 
 // --- cuchillo mariposa (fps_butterfly_knife.glb): brazos + navaja; su timeline de 33 s es un truco de balisong ---
-const KNIFE_FILE = 'assets/Cuchillos/cuchillo_de_combate.glb';
-const KNIFE_ANIM_ROT = [0.28,0.52,Math.PI+0.38];   // pose CS:GO: punta hacia delante-arriba y hacia dentro, filo hacia abajo-izquierda, como el revólver
-const KNIFE_LEN = 0.62;
-const KNIFE_ANIM_POS = [0.27,-0.30,-0.74];
-function loadKnifeAnim(){
-  makeLoader().load(KNIFE_FILE, (gltf)=>{
-    const model=gltf.scene;
-    model.traverse(o=>{ if(o.isMesh){ o.frustumCulled=false; o.castShadow=false; o.receiveShadow=false; } });
-    const inner=new THREE.Group(); inner.add(model);
-    inner.rotation.x=-Math.PI/2;                 // el modelo trae la hoja hacia +Y: pasa a apuntar a -Z
-    const holder=new THREE.Group(); holder.add(inner);
-    holder.updateMatrixWorld(true);
-    const box=new THREE.Box3().setFromObject(holder);
-    const size=box.getSize(new THREE.Vector3()), center=box.getCenter(new THREE.Vector3());
-    const s=KNIFE_LEN/Math.max(size.x,size.y,size.z);
-    inner.scale.setScalar(s);
-    inner.position.copy(center).multiplyScalar(-s);
-    holder.position.set(...KNIFE_ANIM_POS);
-    holder.rotation.set(...KNIFE_ANIM_ROT);
-    if(knifeModel){ vmRoot.remove(knifeModel); }
-    knifeModel=holder; knifeBasePos=holder.position.clone(); knifeBaseRot=holder.rotation.clone();
-    knifeModel.visible=(currentWeapon==='knife');
-    vmAdd(holder); scene.add(camera);
-    knifeAnim=null;                              // modelo estático: el ataque es procedural
-    updateWeaponVisibility();
-  }, undefined, (err)=>{
-    console.warn('No se pudo cargar '+KNIFE_FILE+' (cuchillo provisional)', err);
+const KNIFE_FILE = 'assets/Cuchillos/karambit.glb';
+const KNIFE_ANIM_ROT = [0.10,0.95,0.30];   // karambit: punta hacia delante, la hoja de costado hacia la cámara
+const KNIFE_LEN = 0.58;
+const KNIFE_ANIM_POS = [0.15,-0.20,-0.62];
+async function loadKnifeAnim(){
+  const g=await loadKnife();                    // karambit: ya viene fusionado en una sola malla (así las skins cubren todo el cuchillo)
+  if(!g){
     const gk=new THREE.Group();
     gk.add(new THREE.Mesh(new THREE.BoxGeometry(0.032,0.012,0.22), new THREE.MeshStandardMaterial({color:0xcdd6e6, metalness:0.7, roughness:0.2})));
     gk.position.set(0.16,-0.28,-0.52);
     knifeModel=gk; knifeBasePos=gk.position.clone(); knifeBaseRot=gk.rotation.clone();
     knifeModel.visible=(currentWeapon==='knife'); vmAdd(gk); scene.add(camera); updateWeaponVisibility();
-  });
+    return;
+  }
+  const model=g.scene.clone(true);
+  model.traverse(o=>{ if(o.isMesh){ o.material=o.material.clone(); if(o.material.color) o.material.color.multiplyScalar(2.2); o.material.metalness=0.35; o.material.roughness=0.4; o.material.emissive=new THREE.Color(0x15181c); o.frustumCulled=false; o.castShadow=false; o.receiveShadow=false; } });
+  const inner=new THREE.Group(); inner.add(model);      // el modelo trae la punta hacia -Z y el anillo hacia +Z/+Y
+  const holder=new THREE.Group(); holder.add(inner);
+  holder.updateMatrixWorld(true);
+  const box=new THREE.Box3().setFromObject(holder);
+  const size=box.getSize(new THREE.Vector3()), center=box.getCenter(new THREE.Vector3());
+  const s=KNIFE_LEN/Math.max(size.x,size.y,size.z);
+  inner.scale.setScalar(s);
+  inner.position.copy(center).multiplyScalar(-s);
+  holder.position.set(...KNIFE_ANIM_POS);
+  holder.rotation.set(...KNIFE_ANIM_ROT);
+  if(knifeModel){ vmRoot.remove(knifeModel); }
+  knifeModel=holder; knifeBasePos=holder.position.clone(); knifeBaseRot=holder.rotation.clone();
+  knifeModel.visible=(currentWeapon==='knife');
+  vmAdd(holder); scene.add(camera);
+  knifeAnim=null;                              // modelo estático: el ataque es procedural
+  updateWeaponVisibility();
+  try{ fafiApplyEquippedSkins(); }catch(e){}
 }
 
 // === DEFUSE: puente entre el motor y js/defuse_2_0_0v.js ===
@@ -2505,13 +2508,19 @@ function setAiming(v){
   isAiming=v;
   updateAmmoHUD();
 }
+// Inspección CS:GO: acerca el arma, muestra un lado, el otro, la parte de arriba y vuelve. `s` escala el movimiento según el tamaño del arma.
+function richKfs(s){
+  const K=(t,x,y,z,rx,ry,rz)=>({t, pos:new THREE.Vector3(x*s,y*s,z*s), rot:new THREE.Euler(rx,ry,rz)});
+  return [ K(0,0,0,0,0,0,0), K(0.12,-0.10,0.05,0.08,-0.10,0.25,-0.05), K(0.30,-0.16,0.08,0.10,-0.05,1.15,0.25), K(0.48,-0.14,0.07,0.09,0.10,-0.90,-0.35),
+           K(0.64,-0.12,0.10,0.08,-0.65,0.30,0.10), K(0.80,-0.10,0.07,0.06,-0.20,0.15,0.05), K(0.90,-0.06,0.03,0.03,-0.06,0.05,0.0), K(1,0,0,0,0,0,0) ];
+}
 function tryInspect(){
   if(GRENADES[currentWeapon]) return;
   if(spectating) return;
   if(!gameActive || isReloading || isInspecting || isBoltCycling) return;
   if(!controls.isLocked) return;
   if(currentWeapon==='ak' && (!akModel || !weaponBasePos)) return;
-  if(currentWeapon==='knife') return;   // el cuchillo no se inspecciona (solo animación de ataque)
+
   if(currentWeapon==='awp' && (!awpModel || !awpBasePos)) return;
   if(currentWeapon==='deagle' && (!deagleModel || !deagleBasePos)) return;
   if(ANIM_WEAPONS[currentWeapon] && !animW[currentWeapon]) return;
@@ -2609,16 +2618,9 @@ function updateWeaponAnim(dt){
     if(vign) vign.classList.remove('on');
     // inspección cuchillo - centrada en FOV, sin salirse (Valorant/CS:GO sutil)
     if(isInspecting){
-      inspectProgress += dt / 2.9;
+      inspectProgress += dt / 3.6;
       const t=Math.min(inspectProgress,1);
-      const kfsK = [
-        {t:0.00, pos:new THREE.Vector3(0,0,0), rot:new THREE.Euler(0,0,0)},
-        {t:0.20, pos:new THREE.Vector3(-0.07,0.05,0.03), rot:new THREE.Euler(-0.06,0.28,-0.05)},
-        {t:0.38, pos:new THREE.Vector3(-0.09,0.06,0.04), rot:new THREE.Euler(0.07,0.52,0.14)},
-        {t:0.58, pos:new THREE.Vector3(-0.07,0.04,0.03), rot:new THREE.Euler(-0.07,-0.32,-0.10)},
-        {t:0.78, pos:new THREE.Vector3(-0.08,0.05,0.03), rot:new THREE.Euler(-0.03,0.18,0.04)},
-        {t:1.00, pos:new THREE.Vector3(0,0,0), rot:new THREE.Euler(0,0,0)}
-      ];
+      const kfsK = richKfs(0.75);
       let a=kfsK[0], b=kfsK[1];
       for(let i=0;i<kfsK.length-1;i++){ if(t>=kfsK[i].t && t<=kfsK[i+1].t){ a=kfsK[i]; b=kfsK[i+1]; break; } }
       const segT=(t-a.t)/Math.max(0.0001,b.t-a.t);
@@ -2631,11 +2633,12 @@ function updateWeaponAnim(dt){
       );
       // suavizado Valorant
       if(wallPush>0.01){ ip.z+=wallPush*0.7; ip.y-=wallPush*0.2; }
+      { const q=Math.min(1,Math.max(0,(t-0.30)/0.45)); ir.x += (q<0.5?2*q*q:1-Math.pow(-2*q+2,2)/2)*Math.PI*4; ir.z += Math.sin(q*Math.PI)*0.5; }   // giro del karambit alrededor del anillo (flip)
       knifeModel.position.lerp(ip, 0.38);
       knifeModel.rotation.x = THREE.MathUtils.lerp(knifeModel.rotation.x, knifeBaseRot.x + ir.x, 0.38);
       knifeModel.rotation.y = THREE.MathUtils.lerp(knifeModel.rotation.y, knifeBaseRot.y + ir.y, 0.38);
       knifeModel.rotation.z = THREE.MathUtils.lerp(knifeModel.rotation.z, knifeBaseRot.z + ir.z, 0.38);
-      if(t>=1){ isInspecting=false; inspectProgress=0; updateAmmoHUD(); }
+      if(t>=1){ knifeModel.rotation.x=knifeBaseRot.x; isInspecting=false; inspectProgress=0; updateAmmoHUD(); }
       return;
     }
     // ataque cuchillo - cortada HORIZONTAL hacia los costados (alterna izq/der)
@@ -2726,16 +2729,9 @@ function updateWeaponAnim(dt){
     targetRot.x += recoilKick * 0.32;
     targetRot.z += recoilKick * 0.08;
     if(isInspecting){
-      inspectProgress += dt / 3.2;
+      inspectProgress += dt / 4.0;
       const t=Math.min(inspectProgress,1);
-      const kfsA = [
-        {t:0.00, pos:new THREE.Vector3(0,0,0), rot:new THREE.Euler(0,0,0)},
-        {t:0.18, pos:new THREE.Vector3(-0.20,0.08,0.06), rot:new THREE.Euler(-0.09,0.28,-0.05)},
-        {t:0.36, pos:new THREE.Vector3(-0.23,0.09,0.08), rot:new THREE.Euler(-0.05,0.58,0.12)},
-        {t:0.56, pos:new THREE.Vector3(-0.19,0.06,0.07), rot:new THREE.Euler(-0.13,-0.36,-0.09)},
-        {t:0.78, pos:new THREE.Vector3(-0.20,0.07,0.06), rot:new THREE.Euler(-0.07,0.24,0.04)},
-        {t:1.00, pos:new THREE.Vector3(0,0,0), rot:new THREE.Euler(0,0,0)}
-      ];
+      const kfsA = richKfs(1.25);
       let a=kfsA[0], b=kfsA[1];
       for(let i=0;i<kfsA.length-1;i++){ if(t>=kfsA[i].t && t<=kfsA[i+1].t){ a=kfsA[i]; b=kfsA[i+1]; break; } }
       const segT=(t-a.t)/Math.max(0.0001,b.t-a.t);
@@ -2834,16 +2830,9 @@ function updateWeaponAnim(dt){
     targetRot.x += recoilKick * 0.24;
     targetRot.y += recoilKick * 0.06;
     if(isInspecting){
-      inspectProgress += dt / 2.4;
+      inspectProgress += dt / 3.4;
       const t=Math.min(inspectProgress,1);
-      const kfsD = [
-        {t:0.00, pos:new THREE.Vector3(0,0,0), rot:new THREE.Euler(0,0,0)},
-        {t:0.22, pos:new THREE.Vector3(-0.10,0.05,0.04), rot:new THREE.Euler(-0.06,0.32,-0.08)},
-        {t:0.45, pos:new THREE.Vector3(-0.13,0.07,0.05), rot:new THREE.Euler(0.08,0.62,0.18)},
-        {t:0.68, pos:new THREE.Vector3(-0.09,0.04,0.04), rot:new THREE.Euler(-0.04,-0.28,-0.10)},
-        {t:0.86, pos:new THREE.Vector3(-0.10,0.05,0.04), rot:new THREE.Euler(-0.02,0.18,0.04)},
-        {t:1.00, pos:new THREE.Vector3(0,0,0), rot:new THREE.Euler(0,0,0)}
-      ];
+      const kfsD = richKfs(0.9);
       let a=kfsD[0], b=kfsD[1];
       for(let i=0;i<kfsD.length-1;i++){ if(t>=kfsD[i].t && t<=kfsD[i+1].t){ a=kfsD[i]; b=kfsD[i+1]; break; } }
       const segT=(t-a.t)/Math.max(0.0001,b.t-a.t);
@@ -2926,15 +2915,7 @@ function updateWeaponAnim(dt){
     inspectProgress += dt / inspectDuration;
     const t = Math.min(inspectProgress, 1);
     // keyframes al estilo CS:GO AK / Valorant Vandal (pos offset desde weaponBasePos, rot offset)
-    const kfs = [
-      {t:0.00, pos: new THREE.Vector3(0,0,0), rot: new THREE.Euler(0,0,0)},
-      {t:0.16, pos: new THREE.Vector3(-0.18,0.07,0.05), rot: new THREE.Euler(-0.08, 0.22, -0.04)},
-      {t:0.33, pos: new THREE.Vector3(-0.19,0.06,0.06), rot: new THREE.Euler(-0.04, 0.42, 0.08)},
-      {t:0.53, pos: new THREE.Vector3(-0.17,0.05,0.07), rot: new THREE.Euler(-0.11, -0.32, -0.07)},
-      {t:0.71, pos: new THREE.Vector3(-0.18,0.07,0.05), rot: new THREE.Euler(-0.06, 0.15, 0.04)},
-      {t:0.87, pos: new THREE.Vector3(-0.18,0.07,0.05), rot: new THREE.Euler(-0.07, 0.18, -0.02)},
-      {t:1.00, pos: new THREE.Vector3(0,0,0), rot: new THREE.Euler(0,0,0)}
-    ];
+      const kfs = richKfs(1.0);
     // encontrar segmento
     let a=kfs[0], b=kfs[1];
     for(let i=0;i<kfs.length-1;i++){ if(t >= kfs[i].t && t <= kfs[i+1].t){ a=kfs[i]; b=kfs[i+1]; break; } }
@@ -4400,6 +4381,7 @@ try{
   });
   window.fafiSaveGameData = fafiSaveGameData;
   import('./online_2_0_0v.js').then(m=>m.initOnlineLobby(()=>selectedMap)).catch(err=>console.warn('online', err));
+  import('./perfil_2_0_0v.js').then(m=>m.initPerfil()).catch(err=>console.warn('perfil', err));
   import('./amigos_2_0_0v.js').then(m=>m.initAmigos()).catch(err=>console.warn('amigos', err));
   import('./ajustes_2_0_0v.js').then(m=>m.initAjustes({ getQualityLevel:()=>qualityLevel })).catch(err=>console.warn('ajustes', err));
   document.getElementById('logoutBtn')?.addEventListener('click',()=>{ if(fafiDbOnline()) fafiDbSaveConfig(); fafiSaveGameData(); window.currentUserId=null; if(window.authService) try{ window.authService.logout(); window.authService.disableDevMode(); }catch(e){} document.getElementById('menus').style.display='none'; document.getElementById('login-overlay').style.display='flex'; try{ menu.style.display='none'; }catch(e){} });

@@ -103,3 +103,6 @@ ui|0.5|key_press1,key_press2,key_press3,key_press4
 buy|0.6|key_press5,key_press6
 round_start|0.7|ready
 land|0.5|movement2,movement3
+round_win_ct|0.6|ctwin
+round_win_t|0.6|twin
+bomb_planted|0.8|bombplanted

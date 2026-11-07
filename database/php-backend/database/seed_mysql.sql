@@ -650,3 +650,33 @@ INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
 SELECT `id`, 'negev', 'legendaria', 'skin:negev_oro' FROM `articulos_tienda` WHERE `nombre` = 'Negev | Oro Barroco'
 ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
 
+
+-- Karambit: 4 skins nuevas
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Karambit | Carbono Carmesí', 'Skin epica para cuchillo', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Karambit | Carbono Carmesí');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'knife', 'epica', 'skin:k_carbono' FROM `articulos_tienda` WHERE `nombre` = 'Karambit | Carbono Carmesí'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Karambit | Marea Profunda', 'Skin epica para cuchillo', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Karambit | Marea Profunda');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'knife', 'epica', 'skin:k_oceano' FROM `articulos_tienda` WHERE `nombre` = 'Karambit | Marea Profunda'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Karambit | Residuo Tóxico', 'Skin legendaria para cuchillo', 1000, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Karambit | Residuo Tóxico');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'knife', 'legendaria', 'skin:k_toxico' FROM `articulos_tienda` WHERE `nombre` = 'Karambit | Residuo Tóxico'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Karambit | Nebulosa del Vacío', 'Skin legendaria para cuchillo', 1000, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Karambit | Nebulosa del Vacío');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'knife', 'legendaria', 'skin:k_galaxia' FROM `articulos_tienda` WHERE `nombre` = 'Karambit | Nebulosa del Vacío'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);

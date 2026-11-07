@@ -1,6 +1,7 @@
 // Catálogo de skins con diseños (patrones en shader), modelos para vistas previas y miniaturas 3D.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadWeaponPack, makeWorldWeapon, setWeaponSkin, loadExtraWeapon, EXTRA_WEAPON_IDS } from './characters_2_0_0v.js';
 import { setPattern, patchMaterial } from './skinshader_2_0_0v.js';
 
@@ -63,7 +64,11 @@ const BASE_SKINS = [
   S('k_sangre', 'knife', 'Cuchillo | Hoja de Sangre', 'epica', null, P('flame', [0x7a0505, 0xff2a2a, 0xffb0a0], { freq: 3.0, tex: 0.6, emit: 0.5, zones: ['all'] })),
   S('k_zafiro', 'knife', 'Cuchillo | Degradado Zafiro', 'legendaria', null, P('fade', [0x0a1f6e, 0x2f7bff, 0xbfe0ff], { freq: 1.0, tex: 0.7, emit: 0.2, zones: ['all'] })),
   S('k_oro', 'knife', 'Cuchillo | Escamas Doradas', 'legendaria', null, P('scales', [0xc88f12, 0xffd860, 0x4a3402], { freq: 3.0, tex: 0.5, emit: 0.15, zones: ['all'] })),
-  S('k_neon', 'knife', 'Cuchillo | Filo Neón', 'legendaria', null, P('tech', [0x0b0716, 0xff2fd6, 0xffffff], { freq: 3.0, tex: 0.4, emit: 1.3, zones: ['all'] }))
+  S('k_neon', 'knife', 'Cuchillo | Filo Neón', 'legendaria', null, P('tech', [0x0b0716, 0xff2fd6, 0xffffff], { freq: 3.0, tex: 0.4, emit: 1.3, zones: ['all'] })),
+  S('k_carbono', 'knife', 'Karambit | Carbono Carmesí', 'epica', null, P('carbon', [0x14070a, 0x8e1118, 0xff4a56], { freq: 2.4, tex: 0.5, zones: ['all'] })),
+  S('k_oceano', 'knife', 'Karambit | Marea Profunda', 'epica', null, P('waves', [0x0a5f94, 0x16b6c9, 0xd8fbff], { freq: 2.4, tex: 0.5, emit: 0.3, zones: ['all'] })),
+  S('k_toxico', 'knife', 'Karambit | Residuo Tóxico', 'legendaria', null, P('splatter', [0x07140a, 0x1fb81a, 0xb6ff3a], { freq: 2.4, tex: 0.4, emit: 1.0, zones: ['all'] })),
+  S('k_galaxia', 'knife', 'Karambit | Nebulosa del Vacío', 'legendaria', null, P('galaxy', [0x0c0024, 0x6a1bff, 0xff4fd8], { freq: 2.4, tex: 0.4, emit: 1.0, zones: ['all'] }))
 ];
 
 // ---- Skins de las armas bloqueadas (modelos propios): 5 por arma (2 comunes, 2 épicas, 1 legendaria).
@@ -109,10 +114,18 @@ const DEFAULTS_LOCKED = LOCKED_WEAPONS.map(w => ({ id: 'default_' + w, weapon: w
 export const skinById = (id) => SKINS_ALL.find(s => s.id === id) || DEFAULTS.find(s => s.id === id) || DEFAULTS_LOCKED.find(s => s.id === id) || null;
 
 // ---------------------------------------------------------------- cuchillo
-const KNIFE_FILE = 'assets/Cuchillos/cuchillo_de_combate.glb';
+const KNIFE_FILE = 'assets/Cuchillos/karambit.glb';
 let knifeGLB = null, knifeLoading = null;
 export function loadKnife() {
-  if (!knifeLoading) knifeLoading = new GLTFLoader().loadAsync(KNIFE_FILE).then(g => { knifeGLB = g; return g; }).catch(() => null);
+  if (!knifeLoading) knifeLoading = new GLTFLoader().loadAsync(KNIFE_FILE).then(g => {
+    // el karambit trae ~50 piezas sueltas: se funden en una sola malla (en coordenadas del modelo) para dibujarla de una vez y aplicarle las skins completas
+    g.scene.updateMatrixWorld(true);
+    const geos = []; let mat = null;
+    g.scene.traverse(o => { if (!o.isMesh) return; const ge = o.geometry.clone(); ge.applyMatrix4(o.matrixWorld); for (const k of Object.keys(ge.attributes)) if (!['position', 'normal', 'uv'].includes(k)) ge.deleteAttribute(k); geos.push(ge); mat = mat || o.material; });
+    const merged = geos.length ? mergeGeometries(geos, false) : null;
+    if (!merged) { knifeGLB = g; return g; }
+    const grp = new THREE.Group(); grp.add(new THREE.Mesh(merged, mat)); knifeGLB = { scene: grp }; return knifeGLB;
+  }).catch(() => null);
   return knifeLoading;
 }
 // Aplica un diseño a un cuchillo ya cargado (cada material usa la caja de su malla para normalizar el patrón)

@@ -68,10 +68,10 @@ export function initAmigos() {
     const empty = { amigos: 'Todavía no tenés amigos. Buscá un jugador arriba y mandale una solicitud.', recibidas: 'No tenés solicitudes pendientes.', enviadas: 'No enviaste solicitudes.', bloqueados: 'No bloqueaste a nadie.' }[tab];
     $('frList').innerHTML = list.length ? list.map((f) => {
       const id = esc(f.amigo_id), name = esc(f.username);
-      const acts = tab === 'amigos' ? `<button class="fr-btn no" data-a="del" data-id="${id}" data-n="${name}">QUITAR</button>${local ? '' : `<button class="fr-btn" data-a="block" data-id="${id}" data-n="${name}">BLOQUEAR</button>`}`
+      const acts = (tab === 'amigos' ? `<button class="fr-btn" data-a="view" data-id="${id}" data-n="${name}">PERFIL</button>` : '') + (tab === 'amigos' ? `<button class="fr-btn no" data-a="del" data-id="${id}" data-n="${name}">QUITAR</button>${local ? '' : `<button class="fr-btn" data-a="block" data-id="${id}" data-n="${name}">BLOQUEAR</button>`}`
         : tab === 'recibidas' ? `<button class="fr-btn ok" data-a="accept" data-id="${id}" data-n="${name}">ACEPTAR</button><button class="fr-btn no" data-a="del" data-id="${id}" data-n="${name}">RECHAZAR</button>`
         : tab === 'enviadas' ? `<button class="fr-btn" data-a="del" data-id="${id}" data-n="${name}">CANCELAR</button>`
-        : `<button class="fr-btn" data-a="del" data-id="${id}" data-n="${name}">DESBLOQUEAR</button>`;
+        : `<button class="fr-btn" data-a="del" data-id="${id}" data-n="${name}">DESBLOQUEAR</button>`);
       const sub = tab === 'amigos' ? (local ? 'Lista local (sin conexión)' : 'Cuenta activa') : tab === 'recibidas' ? 'Quiere ser tu amigo' : tab === 'enviadas' ? 'Esperando respuesta' : 'Bloqueado';
       return `<div class="fr-row"><div class="fr-av">${name.charAt(0).toUpperCase()}</div><div class="fr-name">${name}<small>${sub}</small></div>${acts}</div>`;
     }).join('') : `<div class="fr-empty">${empty}</div>`;
@@ -81,6 +81,7 @@ export function initAmigos() {
   };
 
   const act = async (a, id, name) => {
+    if (a === 'view') { if (window.fafiVerPerfil) window.fafiVerPerfil(name); return; }
     try {
       if (local) { window.friendsList = (window.friendsList || []).filter((n) => n !== name); window.fafiSaveGameData && window.fafiSaveGameData(); msg('Amigo eliminado.', 'good'); return load(); }
       if (a === 'accept') { await window.apiService.acceptFriend(id); msg(`Ahora sos amigo de ${name}.`, 'good'); }

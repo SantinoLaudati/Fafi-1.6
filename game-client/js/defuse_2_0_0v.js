@@ -397,7 +397,7 @@ export function createDefuse(A) {
     const mine = D.team === winner;
     banner((winner === 'ct' ? 'ANTITERRORISTAS' : 'TERRORISTAS') + ' GANAN LA RONDA', reason, winner);
     $('dfBanner')?.classList.add(mine ? 'good' : 'bad');
-    if (mine) SFX.play("round_win");
+    SFX.play("round_win_" + winner, { dur: 5.5 });                    // jingle de la ronda (dura lo que el cartel de fin de ronda)
     D.hold.kind = null;
     refreshHud(true);
     if (D.score[winner] >= CFG.winRounds || D.round >= CFG.maxRounds) {
@@ -459,7 +459,7 @@ export function createDefuse(A) {
     const m = ensureBombMesh(); m.position.copy(D.bomb.pos); m.rotation.y = by.yaw;
     m.userData.light = A.acquireLight(0xff2020, 0, 3.5, new THREE.Vector3(D.bomb.pos.x, D.bomb.pos.y + 0.28, D.bomb.pos.z)) || { intensity: 0 };
     D.state = 'planted'; D.stateT = CFG.bombTime;
-    SFX.at("c4_plant", D.bomb.pos, { ref: 10 }); SFX.play("bomb_planted"); D.bomb.lastOn = false;
+    SFX.at("c4_plant", D.bomb.pos, { ref: 10 }); SFX.play("bomb_planted", { dur: 4 }); D.bomb.lastOn = false;
     if (by.isPlayer) { by.money = Math.min(CFG.maxMoney, by.money + CFG.plantReward); A.setMoney(by.money); }
     banner('BOMBA PLANTADA', 'Sitio ' + D.bomb.site + ' • ' + CFG.bombTime + ' s', 't');
     D.units.forEach(u => { if (u.alive && u.team === 'ct' && !u.isPlayer) { u.goal = null; u.path = null; } });
@@ -987,7 +987,20 @@ export function createDefuse(A) {
   // ---------------------------------------------------------------- HUD
   let hudAcc = 0, lastKey = '';
   function fmt(t) { t = Math.max(0, Math.ceil(t)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); }
+  // panel de compañeros con su foto de perfil (la tuya si subiste una; los bots tienen un avatar de color con su inicial)
+  let teamKey = '';
+  function renderTeamPanel() {
+    let el = $('dfTeam');
+    if (!el) { el = document.createElement('div'); el.id = 'dfTeam'; document.body.appendChild(el); const st = document.createElement('style'); st.textContent = '#dfTeam{position:fixed;left:14px;top:250px;z-index:20;display:none;flex-direction:column;gap:5px;pointer-events:none}body.df-on #dfTeam{display:flex}#dfTeam .tm{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;background:rgba(8,12,18,.62);border-left:3px solid #3aa0ff;border-radius:3px;color:#e8eef5;font-size:12px;min-width:150px}#dfTeam .tm.t{border-left-color:#e0802e}#dfTeam .tm.dead{opacity:.4;filter:grayscale(1)}#dfTeam .tm b{display:block;font-weight:700;letter-spacing:1px}#dfTeam .hp{display:block;height:3px;background:rgba(255,255,255,.18);margin-top:3px;width:84px}#dfTeam .hp i{display:block;height:100%;background:#4ade80}#dfTeam .pf-av{border-radius:50%;object-fit:cover;display:inline-flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.25);flex:0 0 auto}#dfTeam .pf-ini{color:#101218;font-weight:800}'; document.head.appendChild(st); }
+    const p = D.player; if (!p) return;
+    const mates = D.units.filter(u => u.team === p.team);
+    const key = mates.map(u => u.name + (u.alive ? Math.ceil(u.hp / 10) : 'x')).join('|');
+    if (key === teamKey) return; teamKey = key;
+    const perf = window.fafiPerfil ? window.fafiPerfil.get() : null;
+    el.innerHTML = mates.map(u => '<div class="tm ' + u.team + (u.alive ? '' : ' dead') + '">' + (window.fafiPerfil ? window.fafiPerfil.avatarHtml(u.name, u.isPlayer && perf ? perf.avatar : '', 30) : '') + '<div><b>' + u.name.replace(/[<>&]/g, '') + '</b><span class="hp"><i style="width:' + (u.alive ? Math.max(0, u.hp) : 0) + '%"></i></span></div></div>').join('');
+  }
   function refreshHud(force) {
+    try { renderTeamPanel(); } catch (e) {}
     const p = D.player; if (!p) return;
     const t = D.state === 'freeze' ? D.stateT : D.state === 'planted' ? D.bomb.timer : D.state === 'live' ? D.roundTime : 0;
     const key = [D.score.ct, D.score.t, Math.ceil(t), alive('ct').length, alive('t').length, Math.ceil(p.hp), p.armor | 0, p.helmet ? 1 : 0, D.state, D.bomb.planted, p.money, D.round].join('|');
