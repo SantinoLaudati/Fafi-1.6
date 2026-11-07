@@ -1,7 +1,6 @@
-Sonidos de disparo. Fuentes: "TODAS LAS ARMAS DE CSGO CON SUS SONIDOS.mp3" (Descargas), "CS GO AK-47 Sound Effect.mp3" y "Valorant gun sound Vandal.mp3" (Desktop/sonidos).
-Cada clip contiene UN solo disparo: se cortó desde el golpe y se terminó antes del siguiente golpe detectado (cola/eco u otro disparo), con un fundido corto.
-Hay 3 variantes por arma (arma_1.ogg ... arma_3.ogg); donde el disparo era muy corto o la grabación tenía ráfagas pegadas se repite la mejor variante.
-
-La asignación a cada arma de la grabación grande es aproximada (no se puede escuchar desde el código): se eligió por cadencia, volumen y duración de la cola.
-Si un arma suena mal, indica en qué segundo del mp3 está su sonido y se vuelve a cortar:
-  ffmpeg -ss <inicio> -t <duración> -i archivo.mp3 -ac 1 -c:a libvorbis arma_N.ogg
+Sonidos de disparo. Solo se usan las dos grabaciones de la carpeta Desktop/sonidos:
+  ak      <- "CS GO AK-47 Sound Effect.mp3"   (3 disparos sueltos: 4.66 s, 5.32 s y 7.18 s)
+  vandal  <- "Valorant gun sound Vandal.mp3"  (disparos sueltos: 0.58 s y 3.99 s)
+Las demás armas (m4, m4b, p90, smg, five, deagle, awp, shotgun, shorty, vss, negev) se generan a partir de esas dos grabaciones cambiando el tono,
+filtrando y agregando cuerpo/eco: bash herramientas/derivar-sonidos_2_0_0v.sh
+Cada archivo contiene UN solo disparo, empieza en el golpe (sin silencio previo) y termina con un fundido corto.
