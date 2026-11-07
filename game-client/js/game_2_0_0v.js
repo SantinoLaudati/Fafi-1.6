@@ -2394,7 +2394,6 @@ async function enableExtraWeapons(on){
       }
       if(!d.pistol && !PRIMARIES.includes(id)) PRIMARIES.push(id);
       if(d.pistol && !SECONDARIES.includes(id)) SECONDARIES.push(id);
-      if(!WBAR_SLOTS.some(s=>s[0]===id)) WBAR_SLOTS.push([id, d.pistol?'2':'1', d.label]);
       const it=BUY_ITEMS.find(i=>i.id===id); if(it){ it.kind='gun'; it.label=d.label.charAt(0)+d.label.slice(1).toLowerCase(); }
     }
     scene.add(camera);
@@ -2404,7 +2403,6 @@ async function enableExtraWeapons(on){
       owned[id]=false;
       const p=PRIMARIES.indexOf(id); if(p>=0) PRIMARIES.splice(p,1);
       const s=SECONDARIES.indexOf(id); if(s>=0) SECONDARIES.splice(s,1);
-      const w=WBAR_SLOTS.findIndex(x=>x[0]===id); if(w>=0) WBAR_SLOTS.splice(w,1);
       if(animW[id]) animW[id].holder.visible=false;
 
     }
