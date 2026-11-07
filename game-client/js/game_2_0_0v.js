@@ -1250,8 +1250,8 @@ function updateAnimWeapon(dt, wallPush){
 // --- cuchillo mariposa (fps_butterfly_knife.glb): brazos + navaja; su timeline de 33 s es un truco de balisong ---
 const KNIFE_FILE = 'assets/Cuchillos/karambit.glb';
 const KNIFE_ANIM_ROT = [0.10,0.95,0.30];   // karambit: punta hacia delante, la hoja de costado hacia la cámara
-const KNIFE_LEN = 0.58;
-const KNIFE_ANIM_POS = [0.15,-0.20,-0.62];
+const KNIFE_LEN = 0.30;
+const KNIFE_ANIM_POS = [0.16,-0.17,-0.55];
 async function loadKnifeAnim(){
   const g=await loadKnife();                    // karambit: ya viene fusionado en una sola malla (así las skins cubren todo el cuchillo)
   if(!g){
@@ -2239,12 +2239,14 @@ document.querySelectorAll('[data-util]').forEach(b=>b.addEventListener('click',(
 
 let lastTime=performance.now();
 // === FPS chiquito arriba-derecha + MINIMAPA circular Dust2 (sup-izq) ===
-let lastCapT=0, _mmT=0;
+let lastCapT=0, _mmT=0, _dtS=0;
 function animate(){
   rafId=requestAnimationFrame(animate);
   { const fc=QUALITY[qualityLevel].fpsCap; if(fc){ const n0=performance.now(); if(n0-lastCapT < 1000/fc-2) return; lastCapT=n0; } }   // tope de FPS en calidad mínima: menos CPU/GPU
   const now=performance.now();
-  const dt = Math.min((now-lastTime)/1000, 0.05); lastTime=now;
+  const rawDt = Math.min((now-lastTime)/1000, 0.05); lastTime=now;
+  _dtS = _dtS ? _dtS + (rawDt-_dtS)*0.35 : rawDt;          // dt suavizado: los picos sueltos de un cuadro no hacen saltar el movimiento ni el arma
+  const dt = Math.abs(rawDt-_dtS) > 0.03 ? rawDt : _dtS;
   try{ updateFPS(now); }catch(e){}
   try{ if(gameMode==='dust2' && gameActive && now-_mmT>=33){ _mmT=now; drawMinimap(); } }catch(e){}   // minimapa a ~30 Hz
 
