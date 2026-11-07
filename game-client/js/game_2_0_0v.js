@@ -475,6 +475,20 @@ let awpZoom=1, awpRescope=false;
 // Patrones de retroceso por disparo (radianes de cámara: [subida, deriva lateral]); tras el último se repiten los 8 finales
 const AK_PATTERN=(()=>{ const v=[.014,.020,.024,.026,.024,.022,.020,.017,.014,.011,.009,.008,.007,.006,.006,.005,.005,.005,.005,.005,.004,.004,.004,.004,.004,.004,.004,.004,.004,.004], y=[0,.001,.002,.003,.004,.001,-.004,-.007,-.009,-.006,-.001,.004,.008,.010,.009,.005,-.003,-.009,-.012,-.010,-.004,.003,.009,.012,.010,.004,-.004,-.010,-.012,-.008]; return v.map((a,i)=>[a,y[i]]); })();
 const M4_PATTERN=AK_PATTERN.map(([a,b])=>[a*0.78,-b*0.7]);
+// Retroceso y precisión por arma (estilo CS:GO). k/h = escala del patrón vertical/horizontal, rnd = temblor aleatorio, sp/max = cuánto se abre la mira al disparar,
+// base/move = imprecisión quieto/en movimiento, kick = golpe visual del arma, pellets/cone = escopetas.
+const WREC = {
+  ak:      { pat:'ak', k:1.00, h:1.00, rnd:1.0, sp:1.00, max:1.00, base:1.0, move:1.0, kick:1.00 },
+  vandal:  { pat:'ak', k:0.92, h:0.90, rnd:0.9, sp:0.92, max:0.95, base:0.9, move:0.9, kick:0.95 },
+  m4:      { pat:'m4', k:1.00, h:1.00, rnd:0.9, sp:0.90, max:0.95, base:0.9, move:1.0, kick:0.90 },
+  m4b:     { pat:'m4', k:0.95, h:0.90, rnd:0.9, sp:0.85, max:0.90, base:0.8, move:0.9, kick:0.88 },
+  p90:     { pat:'m4', k:0.55, h:0.80, rnd:1.4, sp:0.75, max:1.00, base:1.1, move:0.7, kick:0.60 },
+  smg:     { pat:'m4', k:0.60, h:0.80, rnd:1.3, sp:0.78, max:1.00, base:1.0, move:0.7, kick:0.65 },
+  negev:   { pat:'ak', k:1.25, h:1.60, rnd:2.4, sp:1.40, max:1.60, base:1.6, move:1.6, kick:1.20 },
+  vss:     { pat:'m4', k:1.30, h:0.60, rnd:0.5, sp:2.00, max:0.80, base:0.5, move:2.0, kick:1.40 },
+  shotgun: { pat:'m4', k:1.60, h:0.50, rnd:0.5, sp:1.00, max:0.80, base:1.5, move:1.2, kick:1.80, pellets:8, cone:0.050 },
+  shorty:  { pat:'m4', k:1.90, h:0.70, rnd:0.8, sp:1.00, max:0.80, base:1.5, move:1.2, kick:2.20, pellets:8, cone:0.075 }
+};
 function patternKick(pat, idx){ const n=pat.length; return pat[idx<n ? idx : n-8+((idx-n)%8)]; }
 // === VIEWMODEL: arma y manos se dibujan en un 2º pase con su propia cámara (capa 1) ===
 // Con el FOV del mundo (75° vertical = ~107° horizontal a 16:9) las armas salían deformadas y enormes.
@@ -2233,7 +2247,8 @@ window.__prof=()=>{ const o={on:PROF.on,n:PROF.n}; for(const k in PROF.acc) o[k]
 
 
 /* ===== (antes player.js) ===== */
-const WEAPON_MOVE_MULT = { knife:1.22, deagle:0.97, ak:0.84, m4:0.88, awp:0.73 }; // cuchillo más rápido pero reducido un poco (pedido)
+// velocidad de movimiento por arma, proporcional a la de CS:GO (AK 215, M4 225, AWP 200, Deagle 230, P90 230, MP7 220, Negev 150...)
+const WEAPON_MOVE_MULT = { knife:1.22, deagle:0.90, ak:0.84, m4:0.88, awp:0.78, five:0.94, p90:0.90, smg:0.86, shotgun:0.86, shorty:0.82, m4b:0.88, vandal:0.84, vss:0.94, negev:0.59 }; // cuchillo más rápido pero reducido un poco (pedido)
 function getWeaponMoveMult(){ return WEAPON_MOVE_MULT[currentWeapon]||1; }
 function applyPlayerScale(){
   playerRadius=basePlayerRadius*playerScale*playerRadiusScale;
@@ -2253,15 +2268,15 @@ function renderWeaponBar(){
 }
 // === ARMAS EXTRA (modelos propios): solo se pueden comprar y usar en el modo exploración; en Defuse siguen bloqueadas ===
 const EXTRA_W = {
-  five:    { label:'FIVE-SEVEN',      size:0.42, mag:20,  reserve:100, fireMs:130, price:500,  auto:false, aim:false, pistol:true, snd:'deagle', basePos:[0.24,-0.27,-0.74], aimDelta:[-0.2,0.1,0.3] },
-  p90:     { label:'P90',             size:0.78, mag:50,  reserve:100, fireMs:70,  price:2350, auto:true,  aim:true, snd:'m4',      basePos:[0.36,-0.32,-0.74], aimDelta:[-0.33,0.12,0.24] },
-  smg:     { label:'SMG SILENCIADA',  size:0.74, mag:30,  reserve:120, fireMs:80,  price:1500, auto:true,  aim:true, snd:'m4',      basePos:[0.36,-0.32,-0.74], aimDelta:[-0.33,0.12,0.24] },
+  five:    { label:'FIVE-SEVEN',      size:0.42, mag:20,  reserve:100, fireMs:130, price:500,  auto:false, aim:false, pistol:true, snd:'five', basePos:[0.24,-0.27,-0.74], aimDelta:[-0.2,0.1,0.3] },
+  p90:     { label:'P90',             size:0.78, mag:50,  reserve:100, fireMs:70,  price:2350, auto:true,  aim:true, snd:'p90',      basePos:[0.36,-0.32,-0.74], aimDelta:[-0.33,0.12,0.24] },
+  smg:     { label:'SMG SILENCIADA',  size:0.74, mag:30,  reserve:120, fireMs:80,  price:1500, auto:true,  aim:true, snd:'smg',      basePos:[0.36,-0.32,-0.74], aimDelta:[-0.33,0.12,0.24] },
   shotgun: { label:'ESCOPETA PUMP',   size:1.18, mag:8,   reserve:32,  fireMs:850, price:1050, auto:false, aim:true, snd:'shotgun', basePos:[0.38,-0.34,-0.80], aimDelta:[-0.36,0.135,0.28] },
-  shorty:  { label:'SHORTY',          size:0.62, mag:2,   reserve:24,  fireMs:480, price:1100, auto:false, aim:false, snd:'shotgun', basePos:[0.30,-0.30,-0.76], aimDelta:[-0.28,0.12,0.26] },
-  m4b:     { label:'M4 TÁCTICO',      size:1.02, mag:30,  reserve:90,  fireMs:90,  price:2900, auto:true,  aim:true, snd:'m4',      basePos:[0.38,-0.35,-0.74], aimDelta:[-0.36,0.135,0.26] },
-  vandal:  { label:'VANDAL',          size:1.06, mag:25,  reserve:75,  fireMs:100, price:2900, auto:true,  aim:true, snd:'ak',      basePos:[0.38,-0.35,-0.74], aimDelta:[-0.36,0.135,0.26] },
-  vss:     { label:'VSS VINTOREZ', scope:true,    size:1.16, mag:10,  reserve:40,  fireMs:320, price:2800, auto:false, aim:true, snd:'deagle',  basePos:[0.38,-0.33,-0.78], aimDelta:[-0.36,0.13,0.28] },
-  negev:   { label:'NEGEV',           size:1.18, mag:150, reserve:300, fireMs:60,  price:1700, auto:true,  aim:true, snd:'ak',      basePos:[0.38,-0.34,-0.78], aimDelta:[-0.36,0.13,0.28] }
+  shorty:  { label:'SHORTY',          size:0.62, mag:2,   reserve:24,  fireMs:480, price:1100, auto:false, aim:false, snd:'shorty', basePos:[0.30,-0.30,-0.76], aimDelta:[-0.28,0.12,0.26] },
+  m4b:     { label:'M4 TÁCTICO',      size:1.02, mag:30,  reserve:90,  fireMs:90,  price:2900, auto:true,  aim:true, snd:'m4b',      basePos:[0.38,-0.35,-0.74], aimDelta:[-0.36,0.135,0.26] },
+  vandal:  { label:'VANDAL',          size:1.06, mag:25,  reserve:75,  fireMs:100, price:2900, auto:true,  aim:true, snd:'vandal',      basePos:[0.38,-0.35,-0.74], aimDelta:[-0.36,0.135,0.26] },
+  vss:     { label:'VSS VINTOREZ', scope:true,    size:1.16, mag:10,  reserve:40,  fireMs:320, price:2800, auto:false, aim:true, snd:'vss',  basePos:[0.38,-0.33,-0.78], aimDelta:[-0.36,0.13,0.28] },
+  negev:   { label:'NEGEV',           size:1.18, mag:150, reserve:300, fireMs:60,  price:1700, auto:true,  aim:true, snd:'negev',      basePos:[0.38,-0.34,-0.78], aimDelta:[-0.36,0.13,0.28] }
 };
 let extraOn=false;
 async function enableExtraWeapons(on){
@@ -2971,7 +2986,7 @@ function spawnBullet(origin, dir, weapon='ak'){
   scene.add(mesh);
   const speed = isAWP ? 1500 : isDeagle ? 1150 : 1000;   // impacto casi instantáneo (hitscan): cada tramo recorrido por fotograma se testea completo
   const vel = dir.clone().multiplyScalar(speed);
-  bullets.push({mesh, trail, trailGeo, vel, life: isAWP?1.9:isDeagle?1.7:1.6, prev: origin.clone(), trailLen, isAWP, isDeagle, weapon});
+  bullets.push({o: origin.clone(), mesh, trail, trailGeo, vel, life: isAWP?1.9:isDeagle?1.7:1.6, prev: origin.clone(), trailLen, isAWP, isDeagle, weapon});
 }
 
 function updateBullets(dt){
@@ -3194,18 +3209,19 @@ function shoot(){
     const walkMult = isMovingNowPre ? (isCrouching?1.18:1.48) : 1.0;
     const aimMult = isAiming ? 0.48 : 1.0;
     const combinedSpamWalk = spamMult * walkMult;
-    const pk = patternKick(currentWeapon==='m4' ? M4_PATTERN : AK_PATTERN, consecutiveSpam-1);
+    const rs = WREC[currentWeapon] || WREC.ak;
+    const pk = patternKick(rs.pat==='m4' ? M4_PATTERN : AK_PATTERN, consecutiveSpam-1);
     const crouchMult = (isCrouching && !isMovingNowPre) ? 0.82 : 1.0;
-    const verticalKick = pk[0] * (aimMult<1?0.8:1) * walkMult * crouchMult * (0.92 + Math.random()*0.16);
-    const horizKick = pk[1] * (aimMult<1?0.8:1) * walkMult * crouchMult + (Math.random()-0.5)*0.0022*walkMult;
+    const verticalKick = pk[0] * rs.k * (aimMult<1?0.8:1) * walkMult * crouchMult * (0.92 + Math.random()*0.16);
+    const horizKick = pk[1] * rs.h * (aimMult<1?0.8:1) * walkMult * crouchMult + (Math.random()-0.5)*0.0022*walkMult*rs.rnd;
     viewRecoilX += verticalKick;
     viewRecoilY += horizKick;
     camera.rotateX(-verticalKick);
     camera.rotateY(-horizKick);
-    const addSpread = (isAiming?0.0028:0.0062) * (1 + spamHeat*0.55) * walkMult;
-    const maxSpread = isMovingNowPre ? 0.034 : 0.020;
+    const addSpread = (isAiming?0.0028:0.0062) * rs.sp * (1 + spamHeat*0.55) * walkMult;
+    const maxSpread = (isMovingNowPre ? 0.034 : 0.020) * rs.max;
     spreadAccum = Math.min(spreadAccum + addSpread, maxSpread);
-    recoilKick = (isAiming?0.85:1.35) * (1 + spamHeat*0.22);
+    recoilKick = (isAiming?0.85:1.35) * rs.kick * (1 + spamHeat*0.22);
   }
   // muzzle flash - AK vs AWP
   const flashPos = currentWeapon==='awp'
@@ -3254,19 +3270,27 @@ function shoot(){
     if(isCrouching) baseSpread *= isAiming?0.58:0.78;
     if(consecutiveSpam===1 && !isMovingNow) baseSpread *= 0.48;
   } else {
-    baseSpread = 0.0009;
-    if(isMovingNow) baseSpread += 0.0032;
+    const rs = WREC[currentWeapon] || WREC.ak;
+    baseSpread = 0.0009 * rs.base;
+    if(isMovingNow) baseSpread += 0.0032 * rs.move;
+    if(isCrouching && !isMovingNow) baseSpread *= 0.7;
   }
+  // como en CS:GO: en el aire la imprecisión se dispara (saltar y disparar casi nunca acierta)
+  if(!playerGrounded) baseSpread += currentWeapon==='awp' ? 0.07 : 0.028;
   const totalSpread = baseSpread + spreadAccum + (Math.abs(viewRecoilX)+Math.abs(viewRecoilY))*0.11;
-  if(totalSpread > 0.0009){
-    raycaster.ray.direction.x += (Math.random()-0.5)*totalSpread;
-    raycaster.ray.direction.y += (Math.random()-0.5)*totalSpread;
-    raycaster.ray.direction.normalize();
-  }
   // origen de bala alineada con retícula - AWP sale igual pero con más velocidad
   const camPos = camera.getWorldPosition(new THREE.Vector3());
-  const origin = camPos.clone().add(raycaster.ray.direction.clone().multiplyScalar(0.45));
-  spawnBullet(origin, raycaster.ray.direction.clone(), currentWeapon);
+  const baseDir = raycaster.ray.direction.clone();
+  const pellets = (WREC[currentWeapon] && WREC[currentWeapon].pellets) || 1;
+  for(let pi=0; pi<pellets; pi++){
+    const dir = baseDir.clone();
+    const sp = pellets>1 ? totalSpread + WREC[currentWeapon].cone : totalSpread;      // escopeta: cada perdigón sale dentro de un cono
+    if(sp > 0.0009){
+      dir.x += (Math.random()-0.5)*sp; dir.y += (Math.random()-0.5)*sp; dir.normalize();
+    }
+    const origin = camPos.clone().add(dir.clone().multiplyScalar(0.45));
+    spawnBullet(origin, dir, currentWeapon);
+  }
   if(ANIM_WEAPONS[currentWeapon]) animWeaponShoot(currentWeapon);
   updateHUD();
 }

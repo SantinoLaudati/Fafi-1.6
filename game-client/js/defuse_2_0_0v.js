@@ -20,9 +20,20 @@ export const WSTAT = {
   m4:     { dmg: 33,  rate: 0.09, burst: [3, 6], pause: [0.28, 0.55] },
   awp:    { dmg: 115, rate: 1.30, burst: [1, 1], pause: [0.15, 0.4] },
   deagle: { dmg: 53,  rate: 0.38, burst: [1, 2], pause: [0.30, 0.6] },
-  knife:  { dmg: 40,  rate: 0.5,  burst: [1, 1], pause: [0.3, 0.6] }
+  knife:  { dmg: 40,  rate: 0.5,  burst: [1, 1], pause: [0.3, 0.6] },
+  five:   { dmg: 32,  rate: 0.20, burst: [1, 3], pause: [0.30, 0.6] },
+  p90:    { dmg: 26,  rate: 0.07, burst: [4, 8], pause: [0.28, 0.55] },
+  smg:    { dmg: 29,  rate: 0.085, burst: [3, 6], pause: [0.28, 0.55] },
+  shotgun: { dmg: 22, rate: 0.85, burst: [1, 1], pause: [0.3, 0.7] },
+  shorty: { dmg: 24,  rate: 0.45, burst: [1, 2], pause: [0.3, 0.7] },
+  m4b:    { dmg: 33,  rate: 0.09, burst: [3, 6], pause: [0.28, 0.55] },
+  vandal: { dmg: 36,  rate: 0.10, burst: [3, 6], pause: [0.28, 0.55] },
+  vss:    { dmg: 60,  rate: 0.32, burst: [1, 2], pause: [0.3, 0.6] },
+  negev:  { dmg: 35,  rate: 0.06, burst: [8, 16], pause: [0.5, 0.9] }
 };
-export const HEAD_MULT = { knife: 1 };
+export const HEAD_MULT = { knife: 1, shotgun: 1.6, shorty: 1.6 };
+// alcance: fracción de daño que se pierde por metro (CS:GO: las SMG y escopetas pierden mucho más que los rifles)
+export const RANGE_LOSS = { ak: 0.003, m4: 0.003, vandal: 0.003, m4b: 0.003, awp: 0.0008, vss: 0.002, deagle: 0.003, five: 0.006, p90: 0.006, smg: 0.007, negev: 0.004, shotgun: 0.045, shorty: 0.055, knife: 0 };
 
 const CFG = {
   freeze: 10, roundTime: 105, bombTime: 40, endDelay: 6, winRounds: 4,
@@ -454,7 +465,7 @@ export function createDefuse(A) {
     while (el.children.length > 5) el.lastChild.remove();
   }
   // Penetración del chaleco por arma: fracción del daño que sigue llegando a la vida
-  const PEN = { ak: 0.775, m4: 0.7, awp: 0.95, deagle: 0.93, knife: 0.85, he: 0.5 };
+  const PEN = { ak: 0.775, m4: 0.7, awp: 0.95, deagle: 0.93, knife: 0.85, he: 0.5, five: 0.915, p90: 0.86, smg: 0.80, shotgun: 0.5, shorty: 0.5, m4b: 0.7, vandal: 0.775, vss: 0.9, negev: 0.75 };
   const BULLET = { ak: 1, m4: 1, awp: 1, deagle: 1, knife: 1 };
   function damageUnit(u, dmg, attacker, head, weapon, hitPos) {
     if (u.isPlayer && window.fafiGod) return false;      // modo vuelo (P): nada daña al jugador
@@ -1031,7 +1042,8 @@ export function createDefuse(A) {
     if (!losClear(prev, hp)) return false;
     const w = bullet.weapon || 'ak';
     const st = WSTAT[w] || WSTAT.ak;
-    const dmg = Math.round(st.dmg * (best.head ? (HEAD_MULT[w] || 4) : best.leg ? 0.75 : 1));
+    const dist = bullet.o ? bullet.o.distanceTo(hp) : 0, loss = RANGE_LOSS[w] ?? 0.003;
+    const dmg = Math.max(1, Math.round(st.dmg * (best.head ? (HEAD_MULT[w] || 4) : best.leg ? 0.75 : 1) * Math.max(0.35, 1 - loss * dist)));
     const helm = best.head && best.u.armor > 0 && best.u.helmet;
     A.hitFeedback(hp, best.head, helm, tmpV2.copy(pos).sub(prev).normalize());
     damageUnit(best.u, dmg, p, best.head, w, hp);
