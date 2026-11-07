@@ -3291,6 +3291,7 @@ function shoot(){
   const prevShot = lastShotTime;
   const isMovingNowPre = (keys['KeyW']||keys['KeyA']||keys['KeyS']||keys['KeyD']);
   const wasAiming = isAiming;     // el AWP sale de la mira al disparar: la dispersion debe usar el estado que tenia al apretar el gatillo
+  let burstMul=1;
   const gap = now - prevShot;
   if(gap > 420) { spamHeat = Math.max(0, spamHeat*0.28); consecutiveSpam=0; }
   if(gap > 900) { spamHeat = 0; consecutiveSpam=0; spreadAccum*=0.5; }
@@ -3337,18 +3338,20 @@ function shoot(){
     const aimMult = isAiming ? 0.48 : 1.0;
     const combinedSpamWalk = spamMult * walkMult;
     const rs = WREC[currentWeapon] || WREC.ak;
+    const bwk = ({p90:0.8,smg:0.8,negev:1.3,vss:0.6,shotgun:0,shorty:0})[currentWeapon] ?? 1;     // cuanto se desboca cada arma al mantener el gatillo
+    burstMul = consecutiveSpam>7 ? 1 + Math.min(3.5,(consecutiveSpam-7)*0.4*bwk) : 1;               // pasadas las 7 balas el retroceso y la dispersion crecen de forma exagerada
     const pk = patternKick(rs.pat==='m4' ? M4_PATTERN : AK_PATTERN, consecutiveSpam-1);
     const crouchMult = (isCrouching && !isMovingNowPre) ? 0.82 : 1.0;
-    const verticalKick = pk[0] * rs.k * 0.5 * (aimMult<1?0.8:1) * walkMult * crouchMult * (0.92 + Math.random()*0.16);
-    const horizKick = pk[1] * rs.h * 0.5 * (aimMult<1?0.8:1) * walkMult * crouchMult + (Math.random()-0.5)*0.0022*walkMult*rs.rnd;
+    const verticalKick = pk[0] * rs.k * 0.5 * (aimMult<1?0.8:1) * walkMult * crouchMult * (0.92 + Math.random()*0.16) * burstMul;
+    const horizKick = burstMul * pk[1] * rs.h * 0.5 * (aimMult<1?0.8:1) * walkMult * crouchMult + (Math.random()-0.5)*0.0022*walkMult*rs.rnd*burstMul
     viewRecoilX += verticalKick;
     viewRecoilY += horizKick;
     camera.rotateX(-verticalKick);
     camera.rotateY(-horizKick);
-    const addSpread = (isAiming?0.0028:0.0062) * rs.sp * 1.8 * (1 + spamHeat*0.55) * walkMult;
-    const maxSpread = (isMovingNowPre ? 0.034 : 0.020) * rs.max * 1.4;
+    const addSpread = (isAiming?0.0028:0.0062) * rs.sp * 1.8 * (1 + spamHeat*0.55) * walkMult * burstMul;
+    const maxSpread = (isMovingNowPre ? 0.034 : 0.020) * rs.max * 1.4 * Math.min(burstMul,3);
     spreadAccum = Math.min(spreadAccum + addSpread, maxSpread);
-    recoilKick = (isAiming?0.85:1.35) * rs.kick * (1 + spamHeat*0.22);
+    recoilKick = (isAiming?0.85:1.35) * rs.kick * (1 + spamHeat*0.22) * Math.sqrt(burstMul);
   }
   // muzzle flash - AK vs AWP
   const flashPos = currentWeapon==='awp'
@@ -3398,7 +3401,7 @@ function shoot(){
     if(consecutiveSpam===1 && !isMovingNow) baseSpread *= 0.4;
   } else {
     const rs = WREC[currentWeapon] || WREC.ak;
-    baseSpread = 0.0012 * rs.base;
+    baseSpread = 0.0012 * rs.base * burstMul;
     if(isMovingNow) baseSpread += 0.010 * rs.move;     // caminando y disparando el spray se abre muchísimo
     if(canScope(currentWeapon) && !isAiming) baseSpread += isMovingNow ? 0.11 : 0.06;   // francotirador sin mira: las balas van para cualquier lado
     if(isCrouching && !isMovingNow) baseSpread *= 0.7;
