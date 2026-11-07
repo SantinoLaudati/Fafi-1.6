@@ -3238,6 +3238,7 @@ function shoot(){
   }
   const prevShot = lastShotTime;
   const isMovingNowPre = (keys['KeyW']||keys['KeyA']||keys['KeyS']||keys['KeyD']);
+  const wasAiming = isAiming;     // el AWP sale de la mira al disparar: la dispersion debe usar el estado que tenia al apretar el gatillo
   const gap = now - prevShot;
   if(gap > 420) { spamHeat = Math.max(0, spamHeat*0.28); consecutiveSpam=0; }
   if(gap > 900) { spamHeat = 0; consecutiveSpam=0; spreadAccum*=0.5; }
@@ -3335,9 +3336,9 @@ function shoot(){
   const isMovingNow = (keys['KeyW']||keys['KeyA']||keys['KeyS']||keys['KeyD']);
   let baseSpread;
   if(currentWeapon==='awp'){
-    baseSpread = isAiming ? 0.00012 : 0.07;     // sin mira la AWP dispara a cualquier lado
-    if(isMovingNow) baseSpread += isAiming ? 0.02 : 0.10;
-    if(isCrouching && isAiming) baseSpread *= 0.38;
+    baseSpread = wasAiming ? 0.00012 : 0.07;     // sin mira la AWP dispara a cualquier lado
+    if(isMovingNow) baseSpread += wasAiming ? 0.02 : 0.10;
+    if(isCrouching && wasAiming) baseSpread *= 0.38;
   } else if(currentWeapon==='deagle'){
     baseSpread = (isAiming ? 0.0003 : 0.0010) + Math.max(0,spamHeat-0.6)*(isAiming?0.010:0.016);   // spamear la deagle abre muchisimo el spray
     if(isMovingNow) baseSpread += isAiming ? 0.03 : 0.09;     // solo es precisa totalmente quieta
