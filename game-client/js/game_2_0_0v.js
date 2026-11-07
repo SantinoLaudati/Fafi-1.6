@@ -1601,6 +1601,7 @@ function clearTargets(){
   targets=[];
 }
 function clearBullets(){
+  try{ sprays.forEach(o=>{ scene.remove(o); o.geometry.dispose(); o.material.dispose(); }); sprays.length=0; }catch(e){}
   holes.forEach(h=>{ scene.remove(h); h.geometry.dispose(); h.material.dispose(); }); holes.length=0;
   bullets.forEach(b=>{ scene.remove(b.mesh); scene.remove(b.trail); b.trailGeo.dispose(); });
   bullets=[];
@@ -4578,3 +4579,53 @@ document.addEventListener('fullscreenchange',()=>{
     else if(navigator.keyboard && navigator.keyboard.unlock) navigator.keyboard.unlock();
   }catch(_){}
 });
+
+// === GRAFITI: con la tecla | se pega la imagen en la pared o el piso que miras (hasta 4 m) ===
+const sprays=[]; let sprayTex=null, sprayLoading=false, lastSprayT=0;
+function sprayTexture(cb){
+  if(sprayTex) return cb(sprayTex);
+  if(sprayLoading) return; sprayLoading=true;
+  const img=new Image();
+  img.onload=()=>{
+    const S=512, c=document.createElement('canvas'); c.width=c.height=S; const g=c.getContext('2d');
+    const side=Math.min(img.width,img.height), sx=(img.width-side)/2, sy=(img.height-side)/2;     // recorte cuadrado centrado
+    g.fillStyle='#fff'; g.fillRect(0,0,S,S);                                                       // borde blanco tipo sticker
+    g.drawImage(img,sx,sy,side,side,14,14,S-28,S-28);
+    sprayTex=new THREE.CanvasTexture(c); sprayTex.colorSpace=THREE.SRGBColorSpace; sprayTex.anisotropy=4; sprayLoading=false; cb(sprayTex);
+  };
+  img.onerror=()=>{ sprayLoading=false; };
+  img.src='assets/grafiti/grafiti.webp';
+}
+function sprayHit(origin, dir){
+  if(gameMode==='dust2' && dust2Colliders.length){
+    const r=new THREE.Raycaster(origin, dir, 0, 4); r.firstHitOnly=true;
+    const h=r.intersectObjects(dust2Colliders,false)[0]; if(!h) return null;
+    const n=h.face ? h.face.normal.clone().transformDirection(h.object.matrixWorld) : new THREE.Vector3(0,1,0);
+    if(n.dot(dir)>0) n.negate(); return { p:h.point.clone(), n };
+  }
+  if(gameMode==='aim'){                                 // recinto de practica: cuatro paredes y el piso
+    const end=origin.clone().addScaledVector(dir,4); const p1=end; let bt=2, bn=null;
+    for(const [ax,pos,sg] of _AIM_PL){
+      const a=ax===0?origin.x:ax===1?origin.y:origin.z, b=ax===0?p1.x:ax===1?p1.y:p1.z;
+      if((a-pos)*(b-pos)<0){ const t=(pos-a)/(b-a); if(t>=0&&t<bt){ bt=t; bn=new THREE.Vector3(ax===0?sg:0, ax===1?sg:0, ax===2?sg:0); } }
+    }
+    return bn ? { p:new THREE.Vector3().lerpVectors(origin,end,bt), n:bn } : null;
+  }
+  return null;
+}
+function placeSpray(){
+  if(!gameActive || !controls.isLocked || buyMenuOpen || !camera) return;
+  const now=performance.now(); if(now-lastSprayT<900) return; lastSprayT=now;
+  const origin=camera.getWorldPosition(new THREE.Vector3()), dir=camera.getWorldDirection(new THREE.Vector3());
+  const hit=sprayHit(origin,dir); if(!hit){ try{ showFloating('Acércate a una pared o al piso'); }catch(e){} return; }
+  sprayTexture((tex)=>{
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(1.1,1.1), new THREE.MeshBasicMaterial({ map:tex, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-6, polygonOffsetUnits:-6 }));
+    m.position.copy(hit.p).addScaledVector(hit.n,0.02);
+    if(Math.abs(hit.n.y)>0.85) m.up.set(dir.x,0,dir.z).normalize().multiplyScalar(hit.n.y>0?1:-1); else m.up.set(0,1,0);   // en el piso la imagen queda derecha para quien la pinta
+    m.lookAt(hit.p.clone().add(hit.n));
+    scene.add(m); sprays.push(m);
+    if(sprays.length>12){ const o=sprays.shift(); scene.remove(o); o.geometry.dispose(); o.material.dispose(); }
+    try{ SFX.weapon='knife'; SFX.play('draw_knife',{vol:0.5}); }catch(e){}
+  });
+}
+window.addEventListener('keydown',(e)=>{ if(e.key==='|' && !e.repeat){ e.preventDefault(); placeSpray(); } }, true);
