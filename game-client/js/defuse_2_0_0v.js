@@ -846,6 +846,7 @@ export function createDefuse(A) {
       // nivel de detalle: la animación con huesos es lo más caro del bot; lejos o fuera de pantalla se actualiza cada 2-5 cuadros (con el dt acumulado)
       u._ad = (u._ad || 0) + dt; u._af = (u._af || 0) + 1; if (u._ph === undefined) u._ph = Math.floor(Math.random() * 6);
       const dCam = u.pos.distanceTo(A.camera.position), seen = _frustum.intersectsSphere(_sph.set(_tp.set(u.pos.x, u.pos.y + 0.6, u.pos.z), 1.1));
+      u.char.root.visible = seen || dCam < 2.5;           // fuera de pantalla no se dibuja (los personajes tienen ~10 000 triángulos y se dibujan dos veces: imagen y sombra)
       const every = !seen ? 5 : dCam < 9 ? 1 : dCam < 22 ? 2 : 3;
       if (every === 1 || (u._af + u._ph) % every === 0 || u.crouchAmt === undefined) {
         animateCharacter(u.char, u._ad, u.lvz, pitch, { vx: u.lvx, vz: u.lvz, crouch, engaged: !!(tgt && now - u.lastSeenT < 2500), plant: planting, yawRate: _cl(dyw / dtv, -9, 9) }); u._ad = 0;

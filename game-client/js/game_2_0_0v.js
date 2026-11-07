@@ -970,7 +970,7 @@ function loadMap(key, onDone, silent){
   if(loadingEl){ loadingEl.style.display='block'; loadingEl.textContent='Cargando '+def.name+'... 0%'; }
   makeLoader().load(mapFile(key), async (gltf)=>{
     const model=gltf.scene;
-    if(def.look==='mirage'){ try{ (await import('./mirage_2_0_0v.js')).applyMirageLook(model); }catch(err){ console.warn('mirage look', err); } }
+    if(def.look==='mirage'){ try{ const mm=await import('./mirage_2_0_0v.js'); mm.simplifyMirage(model, ({high:0.11, medium:0.16, low:0.22, min:0.28})[qualityLevel]||0.13); mm.applyMirageLook(model); }catch(err){ console.warn('mirage look', err); } }
     if(def.rot) model.rotation.set(def.rot[0],def.rot[1],def.rot[2]);
     // Normalizar al tamaño del mapa y centrar
     const box=new THREE.Box3().setFromObject(model);
