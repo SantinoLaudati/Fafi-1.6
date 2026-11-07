@@ -3227,7 +3227,7 @@ function shoot(){
   if(isReloading) return;
   if(isInspecting){ isInspecting=false; inspectProgress=0; updateAmmoHUD(); }
   const now = performance.now();
-  const curFireRate = currentWeapon==='awp' ? 1150 : currentWeapon==='deagle' ? 225 : ANIM_WEAPONS[currentWeapon] ? ANIM_WEAPONS[currentWeapon].fireMs : fireRate;
+  const curFireRate = currentWeapon==='awp' ? 1150 : currentWeapon==='deagle' ? 400 : ANIM_WEAPONS[currentWeapon] ? ANIM_WEAPONS[currentWeapon].fireMs : fireRate;
   if(now - lastShotTime < curFireRate) return;
   if(currentWeapon==='awp' && isBoltCycling) return;
   if(ammoInMag<=0){
@@ -3260,11 +3260,11 @@ function shoot(){
     if(isAiming){ awpRescope=true; setAiming(false); }      // al disparar se sale de la mira durante el cerrojo y se vuelve a entrar solo (como CS:GO)
   } else if(currentWeapon==='deagle' || (ANIM_WEAPONS[currentWeapon] && ANIM_WEAPONS[currentWeapon].pistol)){
     // Deagle CSGO: primer tiro láser, spameo muy castigado, mucho más preciso quieto y agachado
-    spamHeat = Math.min(spamHeat + (isMovingNowPre?0.48:0.36), 3.9);
+    spamHeat = Math.min(spamHeat + (isMovingNowPre?0.7:0.6), 4.5);
     consecutiveSpam++;
     const walkMultDeagle = isMovingNowPre ? (isCrouching?1.28:1.82) : 1.0;
     const aimMultDeagle = isAiming ? 0.38 : 1.0;
-    const firstShotBonus = (consecutiveSpam===1 && spreadAccum<0.006) ? 0.68 : 1.0;
+    const firstShotBonus = (consecutiveSpam===1 && spreadAccum<0.006 && !isMovingNowPre) ? 0.6 : 1.0;
     const verticalKick = (isAiming ? 0.020 : 0.036) * walkMultDeagle * aimMultDeagle * firstShotBonus * (1 + Math.min(consecutiveSpam-1,4)*0.12);
     const horizKick = ((Math.random()-0.5)*0.016 + Math.sin(consecutiveSpam*1.7)*0.005) * walkMultDeagle * aimMultDeagle * firstShotBonus;
     viewRecoilX += verticalKick;
@@ -3339,10 +3339,10 @@ function shoot(){
     if(isMovingNow) baseSpread += isAiming ? 0.02 : 0.10;
     if(isCrouching && isAiming) baseSpread *= 0.38;
   } else if(currentWeapon==='deagle'){
-    baseSpread = isAiming ? 0.00042 : 0.0018;
-    if(isMovingNow) baseSpread += isAiming ? 0.006 : 0.045;
+    baseSpread = (isAiming ? 0.0003 : 0.0010) + Math.max(0,spamHeat-0.6)*(isAiming?0.010:0.016);   // spamear la deagle abre muchisimo el spray
+    if(isMovingNow) baseSpread += isAiming ? 0.03 : 0.09;     // solo es precisa totalmente quieta
     if(isCrouching) baseSpread *= isAiming?0.58:0.78;
-    if(consecutiveSpam===1 && !isMovingNow) baseSpread *= 0.48;
+    if(consecutiveSpam===1 && !isMovingNow) baseSpread *= 0.4;
   } else {
     const rs = WREC[currentWeapon] || WREC.ak;
     baseSpread = 0.0012 * rs.base;
