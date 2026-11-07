@@ -27,7 +27,7 @@ set_error_handler(function($severity, $message, $file, $line) {
 
 // Route request
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$path = str_replace('/api', '', $requestUri);
+$path = preg_replace('#^/api(/index.php)?#', '', $requestUri);   // admite /api/... y /api/index.php/...
 $path = trim($path, '/');
 $method = $_SERVER['REQUEST_METHOD'];
 

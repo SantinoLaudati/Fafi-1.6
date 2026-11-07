@@ -26,12 +26,19 @@ class AuthService {
         }
 
         try {
-            const response = await fetch(`${FAFI_CONFIG.apiBaseUrl}${endpoint}`, {
-                ...options,
-                headers
-            });
-
-            const data = await response.json();
+            // La API debe responder JSON. Si el servidor devuelve una pagina HTML (ruta /api mal enrutada, proxy, pagina de error...)
+            // se reintenta por /api/index.php (ruta directa al PHP) y, si tampoco, se muestra un error claro en vez de "Unexpected token '<'".
+            const bases = [FAFI_CONFIG.apiBaseUrl, `${FAFI_CONFIG.apiBaseUrl}/index.php`];
+            let response = null, data = null, lastStatus = 0;
+            for (const base of bases) {
+                response = await fetch(`${base}${endpoint}`, { ...options, headers });
+                lastStatus = response.status;
+                const raw = await response.text();
+                try { data = raw ? JSON.parse(raw) : {}; break; } catch (e) { data = null; }
+            }
+            if (data === null) {
+                throw new Error(`El servidor no devolvió una respuesta válida (HTTP ${lastStatus}): la API no está disponible en ${FAFI_CONFIG.apiBaseUrl}. Avisá al administrador del servidor.`);
+            }
 
             if (!response.ok) {
                 if (response.status === 401 && !options._retry) {
