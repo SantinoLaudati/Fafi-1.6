@@ -1338,12 +1338,12 @@ function giveDefaultLoadout(full){
   akStoredAmmo=30; akStoredReserve=90; awpAmmo=3; awpReserve=9; deagleAmmo=7; deagleReserve=35;
   for(const k in animAmmo){ animAmmo[k].ammo=ANIM_WEAPONS[k].mag; animAmmo[k].reserve=ANIM_WEAPONS[k].reserve; }
   if(full){
-    owned={ knife:true, deagle:true, ak:false, awp:false, m4:false };
+    owned={ knife:true, deagle:false, ak:false, awp:false, m4:false, five:true };     // pistola inicial: Five-SeveN (gratis)
     for(const g in grenadeStock) grenadeStock[g]=0;
     defuse.setHasKit(false);
   }
   // arma en mano: la mejor primaria que tengas, si no la pistola
-  const pref = ['awp','ak','m4','deagle','knife'].find(w=>owned[w]) || 'knife';
+  const pref = ['awp','ak','m4','five','deagle','knife'].find(w=>owned[w] && (!EXTRA_W[w] || ANIM_WEAPONS[w])) || 'knife';
   currentWeapon = null;           // fuerza el cambio aunque sea la misma
   isReloading=false; isBoltCycling=false;
   switchWeaponForce(pref);
@@ -1640,7 +1640,7 @@ function spend(price){
 // Para habilitar una: cambiar kind a 'gun', añadir su precio a WEAPON_PRICES y su lógica de arma.
 const BUY_ITEMS = [
   { id:'deagle', kind:'gun', cat:'side', col:0, label:'Desert Eagle', thumb:'deagle' },
-  { id:'five',   kind:'gun', cat:'side', col:0, label:'Five-SeveN', price:500, thumb:'five' },
+  { id:'five',   kind:'gun', cat:'side', col:0, label:'Five-SeveN', price:0, thumb:'five' },
   { id:'p90',    kind:'gun', cat:'smg', col:1, label:'P90', price:2350, thumb:'p90' },
   { id:'smg',    kind:'gun', cat:'smg', col:1, label:'SMG Silenciada', price:1500, thumb:'smg' },
   { id:'shotgun', kind:'gun', cat:'shotgun', col:1, label:'Escopeta Pump', price:1050, thumb:'shotgun' },
@@ -1686,6 +1686,7 @@ function buyState(it){
   } else if(grenadeStock[it.id]>=GRENADES[it.id].max){
     return { txt:'COMPLETO '+grenadeStock[it.id]+'/'+GRENADES[it.id].max, cls:'eq' };
   }
+  if(price===0) return { txt:'GRATIS', cls:'' };
   if(!free && money<price) return { txt:'$'+price, cls:'cant' };
   return { txt:'$'+price, cls:'' };
 }
@@ -2062,7 +2063,7 @@ function startGame(mode='aim', team=null){
   // === Reset economía/inventario ===
   if(isDust2){
     money=3000;
-    owned={ knife:true, deagle:false, ak:false, awp:false, m4:false };
+    owned={ knife:true, deagle:false, ak:false, awp:false, m4:false, five:true };
     akStoredAmmo=30; akStoredReserve=90; awpAmmo=3; awpReserve=9; deagleAmmo=7; deagleReserve=35;
     currentWeapon='knife';
     buyMenuOpen=false;
@@ -2397,7 +2398,7 @@ function renderWeaponBar(){
 }
 // === ARMAS EXTRA (modelos propios): solo se pueden comprar y usar en el modo exploración; en Defuse siguen bloqueadas ===
 const EXTRA_W = {
-  five:    { label:'FIVE-SEVEN',      size:0.42, mag:20,  reserve:100, fireMs:130, price:500,  auto:false, aim:false, pistol:true, snd:'five', basePos:[0.24,-0.27,-0.74], aimDelta:[-0.2,0.1,0.3] },
+  five:    { label:'FIVE-SEVEN',      size:0.42, mag:20,  reserve:100, fireMs:130, price:0,    auto:false, aim:false, pistol:true, snd:'five', basePos:[0.24,-0.27,-0.74], aimDelta:[-0.2,0.1,0.3] },
   p90:     { label:'P90',             size:0.78, mag:50,  reserve:100, fireMs:70,  price:2350, auto:true,  aim:true, snd:'p90',      basePos:[0.36,-0.32,-0.74], aimDelta:[-0.33,0.12,0.24] },
   smg:     { label:'SMG SILENCIADA',  size:0.74, mag:30,  reserve:120, fireMs:80,  price:1500, auto:true,  aim:true, snd:'smg',      basePos:[0.36,-0.32,-0.74], aimDelta:[-0.33,0.12,0.24] },
   shotgun: { label:'ESCOPETA PUMP',   size:1.18, mag:8,   reserve:32,  fireMs:850, price:1050, auto:false, aim:true, snd:'shotgun', basePos:[0.38,-0.34,-0.80], aimDelta:[-0.36,0.135,0.28] },
