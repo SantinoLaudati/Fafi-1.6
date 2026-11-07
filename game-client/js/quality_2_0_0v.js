@@ -58,14 +58,14 @@ export function saveQualityLevel(level) {
 // Aplica el preset al renderer y a la luz del sol (el mapa de sombras se recrea si cambia el tamaño).
 export function applyQuality(renderer, sun, level) {
   const q = QUALITY[level] || QUALITY.high;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.maxPixelRatio));
+  renderer.setPixelRatio(pixelRatioFor(level));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = q.shadows;
   renderer.shadowMap.type = q.shadowType;
   renderer.shadowMap.needsUpdate = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = q.tone ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
-  renderer.toneMappingExposure = q.tone ? 1.05 : 1;
+  renderer.toneMappingExposure = q.tone ? (q.exposure || 1.05) : 1;
   if (sun) {
     sun.castShadow = q.shadows;
     if (q.shadows) {
@@ -142,4 +142,46 @@ export function makeBlobShadow(radius = 0.42) {
   m.position.y = 0.03;
   m.renderOrder = 2;
   return m;
+}
+
+// ===== Ajustes gráficos detallados (se guardan en localStorage 'fafi_gfx'; ver js/ajustes_2_0_0v.js) =====
+// Cada opción pisa el valor del preset elegido. Elegir un preset borra los ajustes manuales.
+const BASE = {};
+for (const k of QUALITY_LEVELS) BASE[k] = { ...QUALITY[k] };
+const GFX_KEY = 'fafi_gfx';
+const SHADOW_TYPES = { hard: THREE.BasicShadowMap, pcf: THREE.PCFShadowMap, soft: THREE.PCFSoftShadowMap };
+export function loadOverrides() { try { return JSON.parse(localStorage.getItem(GFX_KEY) || '{}') || {}; } catch (e) { return {}; } }
+export function saveOverrides(o) { try { localStorage.setItem(GFX_KEY, JSON.stringify(o)); } catch (e) {} }
+// reconstruye QUALITY[nivel] = preset + ajustes manuales (el resto del juego lee QUALITY[nivel] en cada uso)
+export function rebuildQuality() {
+  const o = loadOverrides();
+  for (const k of QUALITY_LEVELS) {
+    const q = { ...BASE[k] };
+    if (o.resScale != null) q.resScale = o.resScale;
+    if (o.shadows != null) q.shadows = !!o.shadows;
+    if (o.shadowSize) q.shadowMapSize = o.shadowSize;
+    if (o.shadowRange) q.shadowRange = o.shadowRange;
+    if (o.shadowType && SHADOW_TYPES[o.shadowType]) q.shadowType = SHADOW_TYPES[o.shadowType];
+    if (q.shadows && !q.shadowRange) q.shadowRange = 30;
+    if (o.tone != null) q.tone = !!o.tone;
+    if (o.exposure) q.exposure = o.exposure;
+    if (o.fogMul != null) q.fogMul = o.fogMul;
+    if (o.fpsCap != null) q.fpsCap = o.fpsCap || 0;
+    if (o.maxBots) q.maxBots = o.maxBots;
+    if (o.aa != null) q.aa = !!o.aa;
+    if (o.tex) q.tex = o.tex;
+    if (o.fx != null) q.fx = o.fx;                 // cantidad de partículas (0.2 - 1.5)
+    QUALITY[k] = q;
+  }
+}
+rebuildQuality();
+
+// escala dinámica de resolución (la ajusta el juego para sostener los FPS objetivo)
+let dynScale = 1;
+export function setDynScale(v) { dynScale = Math.max(0.4, Math.min(1, v)); }
+export function getDynScale() { return dynScale; }
+export function pixelRatioFor(level) {
+  const q = QUALITY[level] || QUALITY.high, dpr = window.devicePixelRatio || 1;
+  const r = q.resScale != null ? dpr * q.resScale : Math.min(dpr, q.maxPixelRatio);
+  return Math.max(0.3, Math.min(2.5, r)) * dynScale;
 }

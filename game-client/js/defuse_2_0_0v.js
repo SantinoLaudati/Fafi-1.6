@@ -989,10 +989,10 @@ export function createDefuse(A) {
     const ch = CROUCH_H * (u.crouchAmt || 0), x = u.pos.x, y = u.pos.y, z = u.pos.z;
     let best = null;
     const test = (name, y0, y1, r) => { _za.set(x, y0, z); _zb.set(x, y1, z); const h = segSeg(prev, pos, _za, _zb); if (h.d < r && (!best || h.s < best.s)) best = { zone: name, s: h.s }; };
-    test('head', y + 0.99 - ch, y + 0.99 - ch, 0.18);
+    test('head', y + 0.99 - ch, y + 0.99 - ch, 0.19);
     const head = best; best = null;
-    test('torso', y + 0.42, y + 0.90 - ch, 0.28);
-    test('legs', y + 0.0, y + 0.46 - ch * 0.5, 0.22);
+    test('torso', y + 0.36, y + 0.92 - ch, 0.29);          // torso + brazos; sube hasta el cuello para no dejar huecos
+    test('legs', y + 0.0, y + 0.42 - ch * 0.5, 0.23);
     if (head && (!best || head.s <= best.s + 0.08)) return head;      // la cabeza tiene prioridad si la bala la atraviesa casi a la vez
     return best;
   }

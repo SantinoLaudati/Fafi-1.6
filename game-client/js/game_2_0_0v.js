@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { makeLoader } from './loaders_2_0_0v.js';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import { QUALITY, SUN_DIR, loadQualityLevel, saveQualityLevel, applyQuality, updateSun, makeBlobShadow } from './quality_2_0_0v.js';
+import { QUALITY, SUN_DIR, loadQualityLevel, saveQualityLevel, applyQuality, updateSun, makeBlobShadow, rebuildQuality, saveOverrides, loadOverrides, pixelRatioFor, setDynScale, getDynScale } from './quality_2_0_0v.js';
 import { createDefuse, TEAM_BADGE } from './defuse_2_0_0v.js';
 import { createGrenades, GRENADES } from './grenades_2_0_0v.js';
 import { loadWeaponPack, makeViewWeapon, makeWorldWeapon, repaintWeapon, setWeaponSkin, loadExtraWeapon, extraWeaponReady } from './characters_2_0_0v.js';
@@ -468,7 +468,7 @@ let akStoredAmmo=30, akStoredReserve=90;
 let weaponBasePos=null, weaponAimPos=null;
 let weaponBaseRot=null, weaponAimRot=null;
 let recoilKick=0;
-const baseFov=75, aimFov=52;
+let baseFov=(loadOverrides().fov||75); const aimFov=52;
 const awpAimFov=11;               // zoom 2 del AWP (como CS:GO: dos niveles)
 const awpAimFov1=33;              // zoom 1
 let awpZoom=1, awpRescope=false;
@@ -622,7 +622,7 @@ function initThree(){
   scene.background = new THREE.Color(0x0d1424);
   scene.fog = new THREE.Fog(0x0d1424, 18, 55); scene.userData.fogBase=[18,55];
 
-  camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 100);
+  camera = new THREE.PerspectiveCamera(baseFov, innerWidth/innerHeight, 0.1, loadOverrides().viewDist||160);
   camera.position.set(0,1.6,4);
   viewCamera = new THREE.PerspectiveCamera(vmVFov(), innerWidth/innerHeight, 0.02, 12);
   viewCamera.layers.set(1);
@@ -630,7 +630,7 @@ function initThree(){
 
   renderer = new THREE.WebGLRenderer({ antialias: QUALITY[qualityLevel].aa!==false, powerPreference:'high-performance', precision: QUALITY[qualityLevel].fpsCap?'mediump':'highp' });
   renderer.setSize(innerWidth,innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setPixelRatio(pixelRatioFor(qualityLevel));
   // attach canvas once
   if(!document.getElementById('c')) {
     renderer.domElement.id='c';
@@ -2906,7 +2906,7 @@ function spawnBullet(origin, dir, weapon='ak'){
   const trail = new THREE.Line(trailGeo, trailMat);
   scene.add(trail);
   scene.add(mesh);
-  const speed = isAWP ? 138 : isDeagle ? 122 : (isAiming ? 115 : 110);
+  const speed = isAWP ? 1500 : isDeagle ? 1150 : 1000;   // impacto casi instantáneo (hitscan): cada tramo recorrido por fotograma se testea completo
   const vel = dir.clone().multiplyScalar(speed);
   bullets.push({mesh, trail, trailGeo, vel, life: isAWP?1.9:isDeagle?1.7:1.6, prev: origin.clone(), trailLen, isAWP, isDeagle, weapon});
 }
@@ -2922,12 +2922,10 @@ function updateBullets(dt){
     b.life -= dt;
     // actualizar estela
     const pos = b.trailGeo.attributes.position;
-    for(let k=b.trailLen-1;k>0;k--){
-      pos.array[k*3]=pos.array[(k-1)*3];
-      pos.array[k*3+1]=pos.array[(k-1)*3+1];
-      pos.array[k*3+2]=pos.array[(k-1)*3+2];
-    }
-    pos.array[0]=b.mesh.position.x; pos.array[1]=b.mesh.position.y; pos.array[2]=b.mesh.position.z;
+    { const vl=b.vel.length()||1, sp=0.9; // estela corta de largo fijo detrás de la bala
+      for(let k=0;k<b.trailLen;k++){
+        pos.array[k*3]=b.mesh.position.x-b.vel.x/vl*sp*k; pos.array[k*3+1]=b.mesh.position.y-b.vel.y/vl*sp*k; pos.array[k*3+2]=b.mesh.position.z-b.vel.z/vl*sp*k;
+      } }
     pos.needsUpdate=true;
     b.trail.material.opacity = Math.max(0, b.life/1.5 * 0.85);
 
@@ -2974,7 +2972,7 @@ function updateBullets(dt){
     let outOfBounds = false;
     if(gameMode==='dust2'){
       // Dust2: límites amplios + chequeo suelo
-      if(b.mesh.position.y < 0.02 || b.life<=0 || b.mesh.position.length() > 70) outOfBounds = true;
+      if(b.mesh.position.y < 0.02 || b.life<=0 || b.mesh.position.length() > 200) outOfBounds = true;
       // colisión con geometría Dust2 via raycast corto prev->pos
       if(!outOfBounds && dust2Group && dust2Group.visible){
         const dustMeshes = dust2Colliders;
@@ -3039,7 +3037,8 @@ function updateAwpAndCrosshair(dt){
   if(isCrouching) b*=0.85;
   const tot=b+spreadAccum+(Math.abs(viewRecoilX)+Math.abs(viewRecoilY))*0.11;
   const pxPerRad=innerHeight/(2*Math.tan(camera.fov*Math.PI/360));
-  const target=Math.max(2, Math.min(80, 2+tot*0.5*pxPerRad*3.2 + (playerGrounded?0:7)));
+  const xs=window.fafiXh||{}, minGap=xs.gap!=null?xs.gap:2;
+  const target = xs.dynamic===false ? minGap : Math.max(minGap, Math.min(80, 2+tot*0.5*pxPerRad*3.2 + (playerGrounded?0:7)));
   xhGap += (target-xhGap)*Math.min(1, dt*(target>xhGap?30:12));
   cross.style.setProperty('--g', xhGap.toFixed(1)+'px');
 }
@@ -3218,8 +3217,11 @@ const deb = (() => {
   return { geo, pos, col, pts, vel: new Float32Array(DEB_MAX * 3), life: new Float32Array(DEB_MAX), floor: new Float32Array(DEB_MAX), n: 0, head: 0, added: false };
 })();
 const _dc = new THREE.Color();
+let debrisFx=1;
+function applyDebrisFx(){ debrisFx = QUALITY[qualityLevel].fx ?? 1; }
 function emitDebris(p, nrm, hex, count, speed, floorY){
   if(!deb.added && scene){ scene.add(deb.pts); deb.added=true; }
+  count = Math.max(1, Math.round(count*debrisFx));
   _dc.set(hex);
   for(let k=0;k<count;k++){
     const i = deb.head; deb.head = (deb.head+1)%DEB_MAX; deb.n = Math.min(DEB_MAX, deb.n+1);
@@ -3613,19 +3615,12 @@ function handleMovement(dt){
       if(sinceLastJump > 1800) consecutiveJumps = 0;
       consecutiveJumps++;
       lastJumpTime = nowJump;
-      let jumpMult = 1;
-      if(consecutiveJumps===2) jumpMult = 0.78;
-      else if(consecutiveJumps===3) jumpMult = 0.58;
-      else if(consecutiveJumps>=4) jumpMult = 0.42;
-      // fatiga de velocidad: a más saltos seguidos, más lento te mueves un rato
-      if(consecutiveJumps===2) jumpFatigueMult = Math.min(jumpFatigueMult, 0.78);
-      else if(consecutiveJumps===3) jumpFatigueMult = Math.min(jumpFatigueMult, 0.62);
-      else if(consecutiveJumps>=4) jumpFatigueMult = Math.min(jumpFatigueMult, 0.48);
-      if(consecutiveJumps>=2){
-        landShake = Math.min(0.18, landShake + 0.035*consecutiveJumps);
-        if(consecutiveJumps>=3) showFloating('¡Cansado! -'+Math.round((1-jumpFatigueMult)*100)+'% vel');
-      }
-      playerVelY = playerJumpForce * jumpMult;
+      // como en CS:GO: el salto siempre llega a la misma altura y, al saltar seguido, la velocidad horizontal
+      // se limita a 1.1x la de correr (así el bunny hop no acelera sin fin)
+      jumpFatigueMult = 1;
+      { const runMax = baseMoveSpeed * getWeaponMoveMult() * 1.08, cap = runMax * 1.1, hs = Math.hypot(pVel.x, pVel.z);
+        if(hs > cap){ pVel.x *= cap/hs; pVel.z *= cap/hs; } }
+      playerVelY = playerJumpForce;
       playerGrounded = false;
     }
     // alturas de rayos: bajo por encima de contrahuellas (escaleras), alto cubre ojos/cuerpo
@@ -3712,9 +3707,22 @@ function handleMovement(dt){
       // sincronizar compat vars (sin contar fatiga para no afectar base)
       moveSpeed = baseMoveSpeed * wMult; crouchSpeed = baseCrouchSpeed * wMult;
       // inercia: acelera hacia la velocidad deseada, frena con fricción en suelo y casi no se controla en el aire
-      { const rate = playerGrounded ? ((forward!==0||right!==0) ? 13 : 10) : 1.5, k = 1 - Math.exp(-rate*dt);
-        pVel.x += (wish.x*speed - pVel.x)*k; pVel.z += (wish.z*speed - pVel.z)*k;
-        if(pVel.lengthSq()<0.0009 && forward===0 && right===0) pVel.set(0,0,0); }
+      // movimiento estilo Source/CS:GO: fricción en suelo + aceleración (sv_accelerate 5.5, sv_friction 5.2, sv_airaccelerate 12)
+      { const hasIn = (forward!==0||right!==0), sp0 = Math.hypot(pVel.x, pVel.z);
+        if(playerGrounded && sp0 > 0){
+          const control = Math.max(sp0, 0.32*speed), ns = Math.max(0, sp0 - control*5.2*dt);
+          pVel.x *= ns/sp0; pVel.z *= ns/sp0;
+        }
+        if(hasIn){
+          const cur = pVel.x*wish.x + pVel.z*wish.z;
+          if(playerGrounded){
+            const add = speed - cur; if(add > 0){ const a = Math.min(add, 5.5*dt*speed); pVel.x += wish.x*a; pVel.z += wish.z*a; }
+          } else {
+            const add = Math.min(speed, 0.3) - cur;       // control aéreo limitado (air strafe)
+            if(add > 0){ const a = Math.min(add, 12*dt*speed); pVel.x += wish.x*a; pVel.z += wish.z*a; }
+          }
+        }
+        if(pVel.lengthSq()<0.0009 && !hasIn && playerGrounded) pVel.set(0,0,0); }
       wish.copy(pVel).multiplyScalar(dt);
       const preX = camera.position.x, preZ = camera.position.z;
       // colisiones con deslizamiento + asistencia para colarse por puertas
@@ -3906,6 +3914,16 @@ function handleMovement(dt){
   controls.getObject().position.copy(camera.position);
 }
 let fpsFrames=0, fpsLastT=performance.now(), fpsVal=60;
+let dynGood=0, dynBadStreak=0;
+// resolución dinámica: si los FPS caen bajo el objetivo baja la escala de render; si sobra rendimiento la sube de a poco
+function adaptResolution(fps){
+  const o=loadOverrides();
+  if(!o.dynRes || !gameActive || document.hidden || !renderer) { if(getDynScale()!==1){ setDynScale(1); applyDynRes(); } return; }
+  const target=o.targetFps||60, cur=getDynScale();
+  if(fps < target*0.92){ dynGood=0; if(++dynBadStreak>=2 && cur>0.5){ setDynScale(cur-0.1); applyDynRes(); dynBadStreak=0; } }
+  else { dynBadStreak=0; if(fps >= target*0.985 && cur<1){ if(++dynGood>=6){ setDynScale(cur+0.05); applyDynRes(); dynGood=0; } } else dynGood=0; }
+}
+function applyDynRes(){ renderer.setPixelRatio(pixelRatioFor(qualityLevel)); renderer.setSize(innerWidth,innerHeight); }
 function updateFPS(now){
   fpsFrames++;
   const el=now-fpsLastT;
@@ -3913,7 +3931,8 @@ function updateFPS(now){
     fpsVal=Math.round(fpsFrames*1000/el);
     fpsFrames=0; fpsLastT=now;
     const c=document.getElementById('fpsCounter');
-    if(c) c.textContent=fpsVal+' FPS';
+    if(c){ c.textContent=fpsVal+' FPS'+(getDynScale()<1?' · '+Math.round(getDynScale()*100)+'%':''); }
+    try{ adaptResolution(fpsVal); }catch(e){}
   }
 }
 // === MINIMAPA: vista cenital de TODO el mapa cargado (se renderiza una vez por mapa y se guarda) ===
@@ -4182,7 +4201,18 @@ try{
     if(v && !window.friendsList.includes(v)){ window.friendsList.push(v); document.getElementById('new-friend-id').value=''; fafiSaveGameData(); fafiUpdateProfileUI(); }
   });
   document.getElementById('sens-slider')?.addEventListener('input',(e)=>{ window.fafiSensVal=parseInt(e.target.value)||5; document.getElementById('sens-val').textContent=window.fafiSensVal; fafiApplySensitivity(); fafiSaveGameData(); fafiDbSaveConfig(); });
-  document.querySelectorAll('.q-btn').forEach(b=>b.addEventListener('click',()=>{ setQualityLevel(b.dataset.q); fafiSaveGameData(); }));
+  document.querySelectorAll('.q-btn').forEach(b=>b.addEventListener('click',()=>{ const o=loadOverrides(); ['resScale','shadows','shadowSize','shadowRange','shadowType','tone','exposure','fogMul','fpsCap','maxBots','aa','tex','fx'].forEach(k=>delete o[k]); saveOverrides(o); rebuildQuality(); setQualityLevel(b.dataset.q); window.dispatchEvent(new Event('fafi-gfx-refresh')); fafiSaveGameData(); }));
+  // ajustes gráficos detallados (js/ajustes_2_0_0v.js): se reaplican al cambiar cualquier opción
+  window.addEventListener('fafi-gfx-change', ()=>{
+    try{
+      rebuildQuality(); const o=loadOverrides();
+      baseFov=o.fov||75; if(camera){ camera.fov=baseFov; camera.far=o.viewDist||160; camera.updateProjectionMatrix(); }
+      setDynScale(1); applyGraphicsQuality(); applyDebrisFx();
+      const fc=document.getElementById('fpsCounter'); if(fc) fc.style.visibility = o.showFps===false ? 'hidden' : '';
+      if(gameMode==='dust2') applyAtmosphere();
+    }catch(err){ console.warn('gfx', err); }
+  });
+  import('./ajustes_2_0_0v.js').then(m=>m.initAjustes({ getQualityLevel:()=>qualityLevel })).catch(err=>console.warn('ajustes', err));
   document.getElementById('logoutBtn')?.addEventListener('click',()=>{ if(fafiDbOnline()) fafiDbSaveConfig(); fafiSaveGameData(); window.currentUserId=null; if(window.authService) try{ window.authService.logout(); window.authService.disableDevMode(); }catch(e){} document.getElementById('menus').style.display='none'; document.getElementById('login-overlay').style.display='flex'; try{ menu.style.display='none'; }catch(e){} });
   document.getElementById('againBtn')?.addEventListener('click',()=>{ setTimeout(()=>{ try{ fafiHideShell(); }catch(e){} },50); });
   // exponer para compatibilidad con HTML legacy del segundo juego
