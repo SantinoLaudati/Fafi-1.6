@@ -1,6 +1,6 @@
 # nombre|volumen|archivos del pack (sin .wav, separados por coma). Cada archivo se usa una sola vez en todo el juego.
 # --- disparos (un solo disparo por reproducción, se elige una variante al azar sin repetir la anterior)
-ak|1.0|ak47-1,ak47-2
+ak|1.0|ak47-2
 vandal|1.0|galil-1,galil-2
 m4|1.0|m4a1_unsil-1,m4a1_unsil-2
 m4b|0.9|m4a1-1,m4a1-2
