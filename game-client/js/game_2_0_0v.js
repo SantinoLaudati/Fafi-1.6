@@ -4625,7 +4625,21 @@ function placeSpray(){
     m.lookAt(hit.p.clone().add(hit.n));
     scene.add(m); sprays.push(m);
     if(sprays.length>12){ const o=sprays.shift(); scene.remove(o); o.geometry.dispose(); o.material.dispose(); }
-    try{ SFX.weapon='knife'; SFX.play('draw_knife',{vol:0.5}); }catch(e){}
+    try{ SFX.spray(); }catch(e){}
+    // animacion: la pintura sale en nubes de colores, la imagen aparece de a poco y "se asienta" con un pequeño rebote
+    m.material.opacity=0; m.scale.setScalar(0.55);
+    const cols=[0xff3d8b,0x35e0ff,0xffe135,0x7dff3d,0xffffff], t0=performance.now(), floorY=hit.n.y>0.7?hit.p.y:hit.p.y-0.6;
+    const sprayAt=new THREE.Vector3(); let puffs=0;
+    const tick=()=>{
+      const t=(performance.now()-t0)/1000;
+      if(!m.parent) return;                                           // el grafiti se borro (nueva ronda)
+      if(t>0.28 && t<1.0 && puffs<14){ puffs++; sprayAt.copy(hit.p).add(new THREE.Vector3((Math.random()-0.5)*0.7,(Math.random()-0.5)*0.7,(Math.random()-0.5)*0.7).sub(hit.n.clone().multiplyScalar(0.0)));
+        try{ emitDebris(sprayAt, hit.n, cols[puffs%cols.length], 8, 1.6, floorY); }catch(e){} }
+      const k=Math.max(0,Math.min(1,(t-0.3)/0.7)), e=1-Math.pow(1-k,3);
+      m.material.opacity=e; m.scale.setScalar(0.55+0.45*e+(k>0.85&&k<1?Math.sin((k-0.85)/0.15*Math.PI)*0.06:0));
+      if(t<1.1) requestAnimationFrame(tick); else { m.material.opacity=1; m.scale.setScalar(1); }
+    };
+    requestAnimationFrame(tick);
   });
 }
 window.addEventListener('keydown',(e)=>{ if(e.code==='Backquote' && !e.repeat){ e.preventDefault(); placeSpray(); } }, true);

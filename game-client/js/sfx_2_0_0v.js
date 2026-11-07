@@ -94,6 +94,20 @@ export const SFX = {
   categories: CATS,
   setConfig(c) { Object.assign(CFG, c); try { localStorage.setItem('fafi_audio', JSON.stringify(CFG)); } catch (e) {} if (master) master.gain.value = CFG.mute ? 0 : CFG.master; },
   duck() {},
+  // grafiti: sonido sintetizado (el bote se agita y luego el siseo de la pintura)
+  spray() {
+    if (!ctx || !master) return;
+    const t0 = ctx.currentTime, mk = (dur) => { const b = ctx.createBuffer(1, Math.max(1, Math.floor(ctx.sampleRate * dur)), ctx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
+    const burst = (buf, start, dur, type, freq, q, peak) => {
+      const s = ctx.createBufferSource(); s.buffer = buf;
+      const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t0 + start); g.gain.linearRampToValueAtTime(peak, t0 + start + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + start + dur);
+      s.connect(f); f.connect(g); g.connect(master); s.start(t0 + start); s.stop(t0 + start + dur + 0.05);
+    };
+    const nb = mk(1.2);
+    for (let i = 0; i < 4; i++) burst(nb, i * 0.06, 0.05, 'bandpass', 3200 + i * 500, 4, 0.35);       // traqueteo de la bolita del bote
+    burst(nb, 0.3, 0.8, 'highpass', 3000, 0.7, 0.4);                                                   // siseo
+  },
   get ctx() { return null; },                            // la cinemática no usa este contexto (va silenciada)
   get ready() { return !!ctx; },
   surface: 'step',
