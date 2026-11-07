@@ -68,7 +68,7 @@ export async function showProfile(name) {
     const feat = (p.badges || []).map((id) => ach.find((a) => a.id === id || a.nombre === id)).filter(Boolean);
     m.innerHTML = `<div class="pf-card"><div style="display:flex;gap:16px;align-items:center">${avatarHtml(data.username, p.avatar, 84)}<div><h2>${esc(data.username)}</h2><div class="pf-sub">PERFIL DE JUGADOR</div></div></div>
       <p style="margin:14px 0;line-height:1.5">${esc(p.bio || 'Este jugador todavía no escribió una descripción.')}</p>
-      <div class="pf-sub">LOGROS DESTACADOS</div><div class="pf-badges">${feat.length ? feat.map((a) => `<span class="pf-badge on" title="${esc(a.desc || '')}">🏆 ${esc(a.name || a.nombre)}</span>`).join('') : '<span class="pf-badge">sin destacados</span>'}</div>
+      <div class="pf-sub">LOGROS DESTACADOS</div><div class="pf-badges">${feat.length ? feat.map((a) => `<span class="pf-badge on" title="${esc(a.desc || '')}">${esc(a.name || a.nombre)}</span>`).join('') : '<span class="pf-badge">sin destacados</span>'}</div>
       <div class="pf-sub" style="margin-top:14px">LOGROS DESBLOQUEADOS: ${ach.length}</div>
       ${mira ? `<div class="pf-sub" style="margin-top:14px">MIRA</div><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">${crossPreview(mira)}<div style="display:flex;flex-direction:column;gap:8px"><button class="pf-btn pri" data-copy>COPIAR ESTA MIRA</button><span class="pf-sub" id="pfCopyMsg"></span></div></div>` : ''}
       <div style="margin-top:16px;text-align:right"><button class="pf-btn" data-x>CERRAR</button></div></div>`;
@@ -100,7 +100,7 @@ export function initPerfil() {
       <div class="pf-mid"><b style="letter-spacing:3px">${esc(user())}</b>
         <textarea id="pfBio" maxlength="160" placeholder="Escribí una descripción tuya (máx. 160 caracteres)">${esc(p.bio)}</textarea>
         <div class="pf-sub" style="color:#8e98a5;font-size:11px;letter-spacing:2px">LOGROS DESTACADOS (hasta 3)</div>
-        <div class="pf-badges" id="pfBadges">${ach.length ? ach.map((a) => `<span class="pf-badge ${(p.badges || []).includes(a.id) ? 'on' : ''}" data-b="${esc(a.id)}" title="${esc(a.desc)}" style="${a.unlocked ? '' : 'opacity:.4'}">${a.unlocked ? '🏆' : '🔒'} ${esc(a.name)}</span>`).join('') : '<span class="pf-badge">sin logros todavía</span>'}</div>
+        <div class="pf-badges" id="pfBadges">${ach.length ? ach.map((a) => `<span class="pf-badge ${(p.badges || []).includes(a.id) ? 'on' : ''}" data-b="${esc(a.id)}" title="${esc(a.desc)}" style="${a.unlocked ? '' : 'opacity:.4'}">${a.unlocked ? '' : ''} ${esc(a.name)}</span>`).join('') : '<span class="pf-badge">sin logros todavía</span>'}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="pf-btn pri" id="pfSave">GUARDAR PERFIL</button><button class="pf-btn" id="pfView">VER MI PERFIL</button><button class="pf-btn" id="pfShare">COPIAR CÓDIGO DE MI MIRA</button><button class="pf-btn" id="pfImport">IMPORTAR MIRA</button></div>
         <div class="pf-sub" id="pfMsg" style="font-size:11px;letter-spacing:1px;color:#8e98a5"></div></div>`;
     const msg = (t) => { const e = box.querySelector('#pfMsg'); if (e) e.textContent = t; };

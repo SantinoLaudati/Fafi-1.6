@@ -1017,7 +1017,7 @@ export function createDefuse(A) {
     const hb = $('dfHealthBar'); if (hb) { hb.style.width = Math.max(0, p.hp) + '%'; hb.className = p.hp < 30 ? 'low' : ''; }
     set('dfArmorNum', Math.max(0, Math.ceil(p.armor || 0))); const am = $('dfArmor'); if (am) am.className = (p.armor > 0 ? 'on' : '') + (p.helmet ? ' helm' : '');
     set('dfMoney', '$' + p.money);
-    const bs = $('dfBombInfo'); if (bs) bs.textContent = p.hasBomb ? '💣 Llevas la bomba' : (D.bomb.dropped ? '💣 Bomba en el suelo' : '');
+    const bs = $('dfBombInfo'); if (bs) bs.textContent = p.hasBomb ? 'Llevas la bomba' : (D.bomb.dropped ? 'Bomba en el suelo' : '');
   }
   function renderScoreboard() {
     const el = $('dfScoreboard'); if (!el) return;
@@ -1026,7 +1026,7 @@ export function createDefuse(A) {
     const row = u => {
       const hsPct = u.kills ? Math.round((u.hs || 0) / u.kills * 100) + '%' : '–';
       const adr = Math.round((u.dmg || 0) / rounds);
-      return '<tr class="' + (u.alive ? '' : 'dead') + (u.isPlayer ? ' me' : '') + '"><td>' + u.name + (u.hasBomb ? ' 💣' : '') + '</td><td>' + u.kills + '</td><td>' + u.deaths + '</td><td>' + hsPct + '</td><td>' + adr + '</td><td>' + (u.team === D.team ? '$' + u.money : '') + '</td></tr>';
+      return '<tr class="' + (u.alive ? '' : 'dead') + (u.isPlayer ? ' me' : '') + '"><td>' + u.name + (u.hasBomb ? ' ' : '') + '</td><td>' + u.kills + '</td><td>' + u.deaths + '</td><td>' + hsPct + '</td><td>' + adr + '</td><td>' + (u.team === D.team ? '$' + u.money : '') + '</td></tr>';
     };
     const tbl = team => '<div class="team ' + team + '"><h3>' + TEAM_BADGE[team] + (team === 'ct' ? 'ANTITERRORISTAS' : 'TERRORISTAS') + '<em>' + D.score[team] + '</em></h3><table><tr><th>Jugador</th><th>K</th><th>M</th><th>HS</th><th>ADR</th><th>$</th></tr>' + D.units.filter(u => u.team === team).sort((a, b) => b.kills - a.kills).map(row).join('') + '</table></div>';
     const me = D.player || {};

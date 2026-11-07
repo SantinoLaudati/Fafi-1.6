@@ -31,14 +31,14 @@ export function renderStoryMap(root, chapters, level, onPlay) {
     const ch = chapters.find(c => c.id === sel), un = unlocked(sel);
     panel.innerHTML = un
       ? '<div class="sm-n">HECHO ' + ch.id + ' · ' + ch.date + '</div><h2>' + ch.title + '</h2><div class="sm-place">' + ch.place + '</div><p>' + ch.summary + '</p><button class="fafi16-btn-standard sm-play">' + (level > 1 ? '↻ VER DE NUEVO' : '▶ VER HECHO') + '</button>'
-      : '<div class="sm-n">HECHO ' + ch.id + '</div><h2>🔒 Bloqueado</h2><p>Este hecho estará disponible próximamente.</p>';
+      : '<div class="sm-n">HECHO ' + ch.id + '</div><h2>Bloqueado</h2><p>Este hecho estará disponible próximamente.</p>';
     const pb = panel.querySelector('.sm-play'); if (pb) pb.addEventListener('click', () => onPlay(ch.id));
   };
   chapters.forEach((ch) => {
     const [x, y] = proj(ch.map[0], ch.map[1]), un = unlocked(ch.id), ok = ch.playable && level > 1;
     const b = document.createElement('button'); b.className = 'sm-node' + (un ? ' open' : ' locked') + (ok ? ' done' : '');
     b.style.left = x * 100 + '%'; b.style.top = y * 100 + '%'; b.dataset.id = ch.id; b.title = un ? ch.title : 'Bloqueado';
-    b.innerHTML = '<span>' + (un ? (ok ? '✓' : ch.id) : '🔒') + '</span><em>' + (un ? ch.date : '???') + '</em>';
+    b.innerHTML = '<span>' + (un ? (ok ? '✓' : ch.id) : '') + '</span><em>' + (un ? ch.date : '???') + '</em>';
     b.addEventListener('click', () => { sel = ch.id; show(); });
     nodesEl.appendChild(b);
   });

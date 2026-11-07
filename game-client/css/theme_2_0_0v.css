@@ -296,3 +296,12 @@ body.df-on #weaponMode,body.df-on #weapon-info .icon{display:none}
 
 /* aviso de solicitudes de amistad pendientes sobre la pestaña Perfil */
 .fafi16-tab-btn[data-badge]:not([data-badge=""])::after{content:attr(data-badge);display:inline-block;margin-left:6px;min-width:16px;padding:0 4px;border-radius:8px;background:#e23b3b;color:#fff;font-size:10px;line-height:16px;text-align:center;vertical-align:middle}
+
+/* inventario de armas a la derecha y municion grande (estilo CS:GO) */
+#wBar{left:auto;right:18px;bottom:auto;top:50%;transform:translateY(-50%);flex-direction:column;align-items:flex-end;gap:3px}
+#wBar span{flex-direction:row;gap:10px;padding:5px 12px;border-bottom:none;border-right:3px solid transparent;background:rgba(8,12,18,.45);font-size:13px;opacity:.75;min-width:150px;justify-content:flex-end}
+#wBar span em{font-style:normal;flex:1;text-align:right}
+#wBar span svg{width:46px;height:15px;flex:none}
+#wBar span.sel{background:rgba(255,255,255,.14);border-right-color:#fff;color:#fff;opacity:1}
+#weapon-info #ammoEl{font-size:46px;font-weight:700;color:#fff!important;text-shadow:0 2px 6px #000}
+#gBar{display:none}

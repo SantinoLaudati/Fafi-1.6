@@ -43,7 +43,7 @@ export function openInventory() {
     const list = items(); grid.innerHTML = '';
     for (const s of list) {
       const own = ownsSkin(s), rc = RARITY[s.rarity];
-      const c = $('<div class="iv-card r-' + s.rarity + (own ? '' : ' locked') + (isEquipped(s) ? ' eq' : '') + (st.sel && st.sel.id === s.id ? ' sel' : '') + '"><div class="iv-th"><img alt=""><i>🔒</i></div><div class="iv-nm">' + s.name.split('|').pop().trim() + '</div><div class="iv-mt">' + WEAPON_LABEL[s.weapon] + ' · ' + rc.label + '</div><span class="iv-badge">EQUIPADO</span></div>');
+      const c = $('<div class="iv-card r-' + s.rarity + (own ? '' : ' locked') + (isEquipped(s) ? ' eq' : '') + (st.sel && st.sel.id === s.id ? ' sel' : '') + '"><div class="iv-th"><img alt=""><i></i></div><div class="iv-nm">' + s.name.split('|').pop().trim() + '</div><div class="iv-mt">' + WEAPON_LABEL[s.weapon] + ' · ' + rc.label + '</div><span class="iv-badge">EQUIPADO</span></div>');
       c.onclick = () => select(s); c.ondblclick = () => { if (own) equip(s); };
       grid.appendChild(c); queueThumb(c.querySelector('img'), s);
     }
@@ -56,7 +56,7 @@ export function openInventory() {
     root.querySelector('#iv-rbar').style.background = 'linear-gradient(90deg,transparent,' + rc.color + ',transparent)';
     el.innerHTML = '<div class="iv-rar" style="color:' + rc.color + '">' + rc.label + ' · ' + WEAPON_LABEL[s.weapon] + '</div><h2>' + s.name.split('|').pop().trim() + '</h2>'
       + '<div class="iv-pat">' + (s.pattern ? 'Diseño: ' + (PATTERN_NAME[s.pattern.type] || s.pattern.type) : 'Acabado de fábrica') + '</div>'
-      + '<div class="iv-actions">' + (own ? '<button class="m2-btn pri" id="iv-eq">' + (eq ? '✓ EQUIPADO' : '▶ EQUIPAR') + '</button>' : '<button class="m2-btn" disabled>🔒 NO LA TIENES · ábrela en las cajas</button>') + '<button class="m2-btn" id="iv-insp">⟳ INSPECCIONAR</button></div>';
+      + '<div class="iv-actions">' + (own ? '<button class="m2-btn pri" id="iv-eq">' + (eq ? '✓ EQUIPADO' : '▶ EQUIPAR') + '</button>' : '<button class="m2-btn" disabled>NO LA TIENES · ábrela en las cajas</button>') + '<button class="m2-btn" id="iv-insp">⟳ INSPECCIONAR</button></div>';
     const be = el.querySelector('#iv-eq'); if (be) be.onclick = () => equip(s);
     el.querySelector('#iv-insp').onclick = () => st.viewer && st.viewer.inspect();
   };

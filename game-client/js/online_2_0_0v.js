@@ -167,7 +167,7 @@ export function initInvites() {
   const toast = (html, ms) => { const d = document.createElement('div'); d.className = 'inv'; d.innerHTML = html; box.appendChild(d); if (ms) setTimeout(() => d.remove(), ms); return d; };
   const esc = (s) => String(s).replace(/[<>&"']/g, '');
   online.on('invite', (m) => {
-    const d = toast(`<b>⚔ DESAFÍO 1v1</b><div style="margin-top:6px">${esc(m.from.username)} te desafía a un 1v1</div><div class="row"><button class="ok" data-y>ACEPTAR</button><button data-n>RECHAZAR</button></div>`, 60000);
+    const d = toast(`<b>DESAFÍO 1v1</b><div style="margin-top:6px">${esc(m.from.username)} te desafía a un 1v1</div><div class="row"><button class="ok" data-y>ACEPTAR</button><button data-n>RECHAZAR</button></div>`, 60000);
     d.querySelector('[data-y]').onclick = () => { online.send('invite_reply', { inviteId: m.inviteId, accept: true }); d.remove(); };
     d.querySelector('[data-n]').onclick = () => { online.send('invite_reply', { inviteId: m.inviteId, accept: false }); d.remove(); };
     try { window.SFX && window.SFX.play('ui'); } catch (e) {}

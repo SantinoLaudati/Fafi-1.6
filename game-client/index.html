@@ -30,7 +30,7 @@
     <input type="text" id="login-user" class="fafi16-input" placeholder="Nombre de usuario">
     <input type="password" id="login-pass" class="fafi16-input" placeholder="Contraseña">
     <button class="fafi16-btn-standard fafi16-btn-success" style="margin-top:10px;" id="loginBtn">ENTRAR AL JUEGO</button>
-    <button class="fafi16-btn-standard" style="margin-top:8px;" id="offlineBtn">🎮 JUGAR SIN CONEXIÓN</button>
+    <button class="fafi16-btn-standard" style="margin-top:8px;" id="offlineBtn">JUGAR SIN CONEXIÓN</button>
     <div style="margin-top:15px;font-size:12px;color:#aaa;cursor:pointer;" id="showRegLink">¿No tienes cuenta? <span style="color:#d69f0f;">Regístrate aquí</span></div>
   </div>
   <div id="register-box" class="auth-box" style="display:none;">
@@ -70,13 +70,12 @@
         </div>
       </div>
       <div class="mm-modes">
-        <button class="mm-card mm-aim" id="fafiPlayAim"><i>🎯</i><em>ENTRENAMIENTO</em><b>Campo de tiro</b><span>30 s de blancos móviles. Todas las armas libres.</span></button>
-        <button class="mm-card mm-def" id="fafiPlayDefuse"><i>💣</i><em>5 vs 5 · BOTS</em><b>Defuse</b><span>Terroristas contra antiterroristas: planta o desactiva la bomba.</span></button>
-        <button class="mm-card mm-free" id="fafiPlayDust2"><i>🗺️</i><em>EXPLORACIÓN</em><b>Mapa libre</b><span>Dust II, Italy y Office sin reglas, para practicar.</span></button>
-        <button class="mm-card mm-story" id="fafiOpenCampaign"><i>★</i><em>CAMPAÑA</em><b>Modo historia</b><span>Los hechos de la Segunda Guerra Mundial hasta el Día D.</span></button>
+        <button class="mm-card mm-aim" id="fafiPlayAim"><i></i><em>ENTRENAMIENTO</em><b>Campo de tiro</b><span>30 s de blancos móviles. Todas las armas libres.</span></button>
+        <button class="mm-card mm-def" id="fafiPlayDefuse"><i></i><em>5 vs 5 · BOTS</em><b>Defuse</b><span>Terroristas contra antiterroristas: planta o desactiva la bomba.</span></button>
+        <button class="mm-card mm-free" id="fafiPlayDust2"><i></i><em>EXPLORACIÓN</em><b>Mapa libre</b><span>Dust II, Italy y Office sin reglas, para practicar.</span></button>
+        <button class="mm-card mm-story" id="fafiOpenCampaign"><i></i><em>CAMPAÑA</em><b>Modo historia</b><span>Los hechos de la Segunda Guerra Mundial hasta el Día D.</span></button>
       </div>
       <div class="mm-sec"><div class="mm-h">TU EQUIPO</div><div id="fafi-current-loadout" class="lo-grid"></div></div>
-      <div class="mm-keys">Controles: <b>WASD</b> mover · <b>SHIFT</b> agacharse · <b>ESPACIO</b> saltar · <b>1</b> AK · <b>2</b> cuchillo · <b>3</b> AWP · <b>4</b> Deagle · <b>5</b> M4A4 · <b>7-0</b> granadas · <b>B</b> comprar · <b>E</b> plantar/desactivar · <b>TAB</b> marcador · <b>R</b> recargar · <b>F</b> inspeccionar.</div>
     </div>
     <div id="fafi16-tab-perfil" class="fafi16-panel">
       <div class="fafi16-panel-title">Tu Perfil Fafi</div>
@@ -140,7 +139,7 @@
   <div class="menu-card">
       <h2>MODO DE JUEGO</h2>
       <button class="btn btn-primary" id="playBtn">▶ AIM PRACTICE</button>
-      <button class="btn btn-primary" id="dust2Btn" style="margin-top:10px; background: linear-gradient(180deg,#ff8c2a,#ff3b18); box-shadow: 0 6px 18px rgba(255,60,20,0.5);">🗺️ DUST II — EXPLORACIÓN</button>
+      <button class="btn btn-primary" id="dust2Btn" style="margin-top:10px; background: linear-gradient(180deg,#ff8c2a,#ff3b18); box-shadow: 0 6px 18px rgba(255,60,20,0.5);">DUST II — EXPLORACIÓN</button>
       <div id="dust2Loading" style="display:none; margin-top:12px; font-size:12px; letter-spacing:1px; color:#ff8c2a; font-weight:700;">Cargando Dust2... 0%</div>
     <div class="info">
       <b>AIM:</b> 30s - blancos móviles en galería (todas las armas libres)<br>
@@ -192,7 +191,7 @@
     <div id="dfHealth">
       <div class="hp"><span class="cross">✚</span><b id="dfHealthNum">100</b></div>
       <div class="bar"><div id="dfHealthBar"></div></div>
-      <div id="dfArmor"><span class="ico">🛡</span><b id="dfArmorNum">0</b><em>CASCO</em></div>
+      <div id="dfArmor"><span class="ico"></span><b id="dfArmorNum">0</b><em>CASCO</em></div>
       <div class="money" id="dfMoney">$800</div>
       <div id="dfBombInfo"></div>
     </div>
@@ -207,7 +206,7 @@
   <div id="gBar"></div>
   <div id="wBar"></div>
   <div id="weapon-info">
-    <div class="icon">🔫</div>
+    <div class="icon"></div>
     <div id="teamTag"><b>AK-47</b><br><span id="weaponMode">Cadera • Click disparar</span></div>
     <div style="margin-left:12px;text-align:right"><b id="ammoEl" style="color:#3aa0ff">30 / 90</b><br><span>MUNICIÓN</span></div>
   </div>
@@ -223,7 +222,7 @@
       <div class="buy-inv" id="buyInvEl"></div>
       <div id="buyCols"></div>
       <div class="buy-footer">
-        <span>Haz clic en un arma · o pulsa <b>1</b> pistola, <b>2</b> primaria, <b>3</b> escudos y kit, <b>4</b> granadas y luego el <b>número</b> · <b>B</b> / ESC cierran · 🔒 = próximamente</span>
+        <span>Haz clic en un arma · o pulsa <b>1</b> pistola, <b>2</b> primaria, <b>3</b> escudos y kit, <b>4</b> granadas y luego el <b>número</b> · <b>B</b> / ESC cierran · = próximamente</span>
         <button class="buy-close" id="buyCloseBtn">CERRAR [B]</button>
       </div>
     </div>

@@ -245,7 +245,7 @@ function fafiUpdateProfileUI(){
   const fr=document.getElementById('friends-list');
   if(fr) fr.innerHTML = window.friendsList.length===0 ? "<div class='fafi-list-item'>Sin amigos.</div>" : window.friendsList.map(f=>"<div class='fafi-list-item'><span>"+f+"</span><span style='color:#4ade80;'>Online</span></div>").join('');
   const ach=document.getElementById('achievements-list');
-  if(ach) ach.innerHTML = window.achievements.map(a=>"<div class='fafi-list-item "+(a.unlocked?'achievement-unlocked':'achievement-locked')+"'><div><b>"+a.name+"</b><br><small style='color:#777;'>"+a.desc+"</small></div><span>"+(a.unlocked?'✅':'🔒')+"</span></div>").join('');
+  if(ach) ach.innerHTML = window.achievements.map(a=>"<div class='fafi-list-item "+(a.unlocked?'achievement-unlocked':'achievement-locked')+"'><div><b>"+a.name+"</b><br><small style='color:#777;'>"+a.desc+"</small></div><span>"+(a.unlocked?'':'')+"</span></div>").join('');
   fafiUpdateCoinsDisplay();
 }
 function fafiUnlock(id){
@@ -1055,7 +1055,7 @@ function refreshMapPicker(){
       el.appendChild(b);
     }
     const rnd=document.createElement('button');
-    rnd.className='map-pick map-rand'; rnd.innerHTML='<div class="mp-art" style="display:flex;align-items:center;justify-content:center;font-size:54px;background:linear-gradient(135deg,#1a2230,#0e1218)">🎲</div><div class="mp-body"><em>SORPRESA</em><strong>ALEATORIO</strong><p>Elige un mapa al azar entre todos los disponibles.</p></div>';
+    rnd.className='map-pick map-rand'; rnd.innerHTML='<div class="mp-art" style="display:flex;align-items:center;justify-content:center;font-size:54px;background:linear-gradient(135deg,#1a2230,#0e1218)"></div><div class="mp-body"><em>SORPRESA</em><strong>ALEATORIO</strong><p>Elige un mapa al azar entre todos los disponibles.</p></div>';
     rnd.addEventListener('click', ()=>{ const ks=Object.keys(MAPS).filter(k=>!MAPS[k].surf); selectMap(ks[Math.floor(Math.random()*ks.length)]); });
     el.appendChild(rnd);
   }
@@ -1582,7 +1582,7 @@ function updateMoneyHUD(){
   const bm=document.getElementById('buyMoneyEl');
   if(bm) bm.textContent=infiniteMoney()?'$ ∞':'$'+money;
   const box=document.getElementById('moneyBox');
-  if(box) box.style.display = (gameMode==='dust2' && gameActive) ? 'block' : 'none';
+  if(box) box.style.display = (gameActive) ? 'block' : 'none';
 }
 function nextOwnedWeapon(){
   // Para Q/rueda: cicla solo entre las que posees en Dust2
@@ -1593,7 +1593,7 @@ function nextOwnedWeapon(){
 // === TIENDA estilo CS:GO (tecla B) ===
 // Columnas: Pistolas · Rifles · Equipo (chaleco, casco, kit) · Granadas. Pulsa 1-4 para abrir una columna y luego el número del objeto.
 // En el modo exploración (sin Defuse) el dinero es infinito.
-function infiniteMoney(){ return gameMode==='dust2' && !defuse.active; }
+function infiniteMoney(){ return !defuse.active; }
 let expArmor=0, expHelmet=false, buyCol=null;
 function getArmor(){ return defuse.active ? { a:defuse.armor||0, h:!!defuse.helmet } : { a:expArmor, h:expHelmet }; }
 function setArmorState(a,h){ if(defuse.active) defuse.setArmor(a,h); else { expArmor=a; expHelmet=h; } }
@@ -1620,13 +1620,13 @@ const BUY_ITEMS = [
   { id:'awp', kind:'gun', cat:'sniper', col:1, label:'AWP', thumb:'awp' },
   { id:'vss', kind:'locked', cat:'sniper', col:1, label:'VSS Vintorez', price:2800, thumb:'vss' },
   { id:'negev', kind:'locked', cat:'heavy', col:1, label:'Negev', price:1700, thumb:'negev' },
-  { id:'vest', kind:'armor', cat:'shield', col:2, label:'Chaleco ligero',   icon:'🛡' },
-  { id:'helm', kind:'armor', cat:'shield', col:2, label:'Chaleco + casco',  icon:'⛑' },
-  { id:'kit',   kind:'util', cat:'util', col:2, label:'Kit de defusa', icon:'🛠' },
-  { id:'flash', kind:'util', cat:'util', col:3, label:'Flashbang',  icon:'⚡' },
-  { id:'smoke', kind:'util', cat:'util', col:3, label:'Humo',       icon:'☁' },
-  { id:'he',    kind:'util', cat:'util', col:3, label:'Granada HE', icon:'💥' },
-  { id:'molo',  kind:'util', cat:'util', col:3, label:'Molotov',    icon:'🔥' }
+  { id:'vest', kind:'armor', cat:'shield', col:2, label:'Chaleco ligero',   icon:'' },
+  { id:'helm', kind:'armor', cat:'shield', col:2, label:'Chaleco + casco',  icon:'' },
+  { id:'kit',   kind:'util', cat:'util', col:2, label:'Kit de defusa', icon:'' },
+  { id:'flash', kind:'util', cat:'util', col:3, label:'Flashbang',  icon:'' },
+  { id:'smoke', kind:'util', cat:'util', col:3, label:'Humo',       icon:'' },
+  { id:'he',    kind:'util', cat:'util', col:3, label:'Granada HE', icon:'' },
+  { id:'molo',  kind:'util', cat:'util', col:3, label:'Molotov',    icon:'' }
 ];
 const WEAPON_TEAM = { ak:'t', m4:'ct' };
 function buyVisible(it){
@@ -1692,7 +1692,7 @@ function buyHotkeys(){
 function buyCard(it, hk){
   const locked=it.kind==='locked', st=buyState(it), img=it.thumb?weaponThumb(it.thumb):'';
   const label = it.id==='helm' ? ((()=>{ const {a,h}=getArmor(); return a>0&&!h ? 'Casco' : it.label; })()) : it.label;
-  const icon = it.icon || (it.kind==='gun' ? '🔫' : '');
+  const icon = it.icon || (it.kind==='gun' ? '' : '');
   return '<button class="vc '+st.cls+(locked?' locked':'')+'" data-id="'+it.id+'" data-col="'+it.col+'">'
     +(hk[it.id]?'<span class="vk">'+hk[it.id]+'</span>':'')
     +'<div class="vimg">'+(img?'<img src="'+img+'" alt="">':'<b>'+icon+'</b>')+'</div>'
@@ -1726,7 +1726,7 @@ function updateBuyMenu(){
   }
 }
 function buyItem(it){
-  if(!gameActive || gameMode!=='dust2') return;
+  if(!gameActive || false) return;
   if(it.kind==='locked'){ showFloating(it.label+': próximamente'); return; }
   if(buyTeamBlocked(it)){ showFloating(WEAPON_LABEL[it.id]+' es solo para '+(WEAPON_TEAM[it.id]==='t'?'terroristas':'antiterroristas')); return; }
   if(defuse.active && !defuse.canBuy()){ showFloating(defuse.buyReason()); return; }
@@ -1746,7 +1746,7 @@ function buyArmor(id){
 }
 function tryBuy(w){
   if(defuse.active && !defuse.canBuy()){ showFloating(defuse.buyReason()); return; }
-  if(gameMode!=='dust2'||!gameActive) return;
+  if(!gameActive) return;
   if(owned[w]){ switchWeapon(w); updateBuyMenu(); return; }
   const price=WEAPON_PRICES[w];
   if(!spend(price)) return;
@@ -1778,7 +1778,7 @@ function tryBuy(w){
 }
 function buyUtil(k){
   if(defuse.active && !defuse.canBuy()){ showFloating(defuse.buyReason()); return; }
-  if(gameMode!=='dust2'||!gameActive) return;
+  if(!gameActive) return;
   const price=WEAPON_PRICES[k];
   if(k==='kit'){
     if(defuse.team!=='ct' || defuse.hasKit) return;
@@ -1805,7 +1805,7 @@ function buyKey(e){
 }
 function setBuyMenu(open){
   if(open && defuse.active && !defuse.canBuy()){ showFloating(defuse.buyReason()); return; }
-  if(gameMode!=='dust2'||!gameActive) open=false;
+  if(!gameActive) open=false;
   buyMenuOpen=open; buyCol=null;
   const el=document.getElementById('buyMenu');
   if(el) el.classList.toggle('show', open);
@@ -2119,7 +2119,7 @@ function startDust2Mode(){
   if(!scene) initThree();
   if(mapReady()){
     if(btn) btn.disabled = false;
-    if(shellBtn){ shellBtn.disabled=false; shellBtn.textContent=shellBtn.dataset.orig||'🗺️ DUST II — EXPLORACIÓN POR BANDOS'; }
+    if(shellBtn){ shellBtn.disabled=false; shellBtn.textContent=shellBtn.dataset.orig||'DUST II — EXPLORACIÓN POR BANDOS'; }
     try{ if(typeof fafiHideShell==='function') fafiHideShell(); }catch(e){}
     showTeamSelect('menu');
     return;
@@ -2134,13 +2134,13 @@ function startDust2Mode(){
     try{
       const le=document.getElementById('dust2Loading');
       if(shellBtn && le && le.textContent) shellBtn.textContent='⏳ '+le.textContent;
-      if(mapReady()){ clearInterval(mirror); if(shellBtn){ shellBtn.disabled=false; shellBtn.textContent=shellBtn.dataset.orig||'🗺️ DUST II — EXPLORACIÓN POR BANDOS'; } }
+      if(mapReady()){ clearInterval(mirror); if(shellBtn){ shellBtn.disabled=false; shellBtn.textContent=shellBtn.dataset.orig||'DUST II — EXPLORACIÓN POR BANDOS'; } }
     }catch(e){}
   }, 200);
   loadDust2Map(()=>{
     clearInterval(mirror);
     if(btn) btn.disabled = false;
-    if(shellBtn){ shellBtn.disabled=false; shellBtn.textContent=shellBtn.dataset.orig||'🗺️ DUST II — EXPLORACIÓN POR BANDOS'; }
+    if(shellBtn){ shellBtn.disabled=false; shellBtn.textContent=shellBtn.dataset.orig||'DUST II — EXPLORACIÓN POR BANDOS'; }
     try{ if(typeof fafiHideShell==='function') fafiHideShell(); }catch(e){}
     showTeamSelect('menu');
   });
@@ -2341,11 +2341,21 @@ function applyPlayerScale(){
 // escala del HUD según la ventana (1.0 a ~1500x820); se aplica con zoom CSS a los paneles de partida
 function applyHudScale(){ const s=Math.max(0.7, Math.min(1.15, Math.min(innerWidth/1500, innerHeight/820))); document.documentElement.style.setProperty('--hs', s.toFixed(3)); }
 applyHudScale(); window.addEventListener('resize', applyHudScale);
-const WBAR_SLOTS=[['ak','1','AK-47'],['m4','1','M4A4'],['awp','1','AWP'],['deagle','2','DEAGLE'],['knife','3','CUCHILLO']];
+// iconos simples (siluetas) por tipo de arma para la lista de inventario
+const WI_SVG={
+  rifle:'<svg viewBox="0 0 48 16"><path d="M1 7h9l2-2h12l2 2h8l3-2h9v3h-6l-2 2h-6l-1 4h-3l-1-4H12l-2 3H6l1-4H1z" fill="currentColor"/></svg>',
+  sniper:'<svg viewBox="0 0 48 16"><path d="M0 8h10l2-2h6l1-2h5v2h12l2-1h10v3H33l-2 2h-5l-1 4h-3l-1-4H11l-2 3H5l1-4H0z" fill="currentColor"/></svg>',
+  pistol:'<svg viewBox="0 0 48 16"><path d="M10 4h26v4H24l-2 2v4h-5v-4l-3-2h-4z" fill="currentColor"/></svg>',
+  knife:'<svg viewBox="0 0 48 16"><path d="M3 12 30 3l12 1-9 5-24 5z M30 10h12v3H30z" fill="currentColor"/></svg>',
+  nade:'<svg viewBox="0 0 48 16"><circle cx="24" cy="9" r="5.5" fill="currentColor"/><rect x="22" y="1" width="4" height="4" fill="currentColor"/></svg>'
+};
+function wiKind(k){ return GRENADES[k] ? 'nade' : k==='knife' ? 'knife' : (k==='awp'||k==='vss') ? 'sniper' : (k==='deagle'||k==='five'||k==='shorty') ? 'pistol' : 'rifle'; }
 function renderWeaponBar(){
   const el=document.getElementById('wBar'); if(!el) return;
-  const list=WBAR_SLOTS.filter(([k])=> gameMode!=='dust2' || owned[k]);
-  const html=list.map(([k,key,name])=>'<span class="'+(currentWeapon===k?'sel':'')+'"><i>'+key+'</i>'+name+'</span>').join('');
+  const base=['ak','m4','awp','deagle'].concat(extraOn ? Object.keys(EXTRA_W) : []);
+  const list=base.filter(k=> gameMode==='aim' || owned[k]).concat(['knife']);
+  for(const g in GRENADES) if(grenadeStock[g]>0) list.push(g);
+  const html=list.map(k=>'<span class="'+(currentWeapon===k?'sel':'')+'"><em>'+(WEAPON_LABEL[k]||(EXTRA_W[k]&&EXTRA_W[k].label)||String(k).toUpperCase())+(GRENADES[k]&&grenadeStock[k]>1?' x'+grenadeStock[k]:'')+'</em>'+WI_SVG[wiKind(k)]+'</span>').join('');
   if(el.dataset.h!==html){ el.dataset.h=html; el.innerHTML=html; }
 }
 // === ARMAS EXTRA (modelos propios): solo se pueden comprar y usar en el modo exploración; en Defuse siguen bloqueadas ===
@@ -2405,7 +2415,7 @@ function updateAmmoHUD(){
   const el=document.getElementById('ammoEl');
   const mode=document.getElementById('weaponMode');
   const icon=document.querySelector('#weapon-info .icon');
-  if(icon) icon.textContent = GRENADES[currentWeapon] ? GRENADES[currentWeapon].icon : currentWeapon==='knife' ? '🔪' : currentWeapon==='awp' ? '🎯' : currentWeapon==='deagle' ? '🔫' : '🔫';
+  if(icon) icon.textContent = GRENADES[currentWeapon] ? GRENADES[currentWeapon].icon : currentWeapon==='knife' ? '' : currentWeapon==='awp' ? '' : currentWeapon==='deagle' ? '' : '';
   if(GRENADES[currentWeapon]){ if(el){ el.textContent='×'+grenadeStock[currentWeapon]; el.style.color='#ffcb5c'; } if(mode) mode.textContent=WEAPON_LABEL[currentWeapon]+' • Click para lanzar'; renderGrenadeBar(); return; }
   renderGrenadeBar();
   if(!el) return;
@@ -2580,7 +2590,7 @@ function knifeAttack(){
     if(hit){
       spawnParticles(pt, 0xff3b3b);
       hitMarker.classList.add('show'); setTimeout(()=>hitMarker.classList.remove('show'),120);
-      hits++; score+=150; showFloating('+150 🔪'); updateHUD();
+      hits++; score+=150; showFloating('+150 '); updateHUD();
       scene.remove(hit); targets = targets.filter(x=>x!==hit); if(gameActive) setTimeout(spawnTarget, 180);
     } else {
       // aire
@@ -3626,10 +3636,10 @@ window.addEventListener('keydown', (e)=>{
       return;
     }
   }
-  if(e.code==='KeyB' && !e.repeat && gameActive && gameMode==='dust2' && !resultOverlay.classList.contains('show')){ e.preventDefault(); toggleBuyMenu(); return; }
+  if(e.code==='KeyB' && !e.repeat && gameActive && !resultOverlay.classList.contains('show')){ e.preventDefault(); toggleBuyMenu(); return; }
   // 1/2/3/4 y Q/Rueda para cambiar arma (en Dust2 solo si la posees)
   // Ranuras como en CS: 1 primaria · 2 secundaria · 3 cuchillo · 4 flash · 5 humo · 6 HE · 7 molotov
-  { const m=/^(?:Digit|Numpad)([1-7])$/.exec(e.code); if(m){ e.preventDefault(); const n=+m[1];
+  { const m=gameMode==='aim' ? null : /^(?:Digit|Numpad)([1-7])$/.exec(e.code); if(m){ e.preventDefault(); const n=+m[1];
     if(n===1){ const prim=PRIMARIES.filter(w=>gameMode!=='dust2'||owned[w]); if(prim.length){ const i=prim.indexOf(currentWeapon); switchWeapon(i>=0 ? prim[(i+1)%prim.length] : (prim.includes(lastPrimary)?lastPrimary:prim[0])); } else showFloating('No tienes primaria • Pulsa B para comprar'); }
     else if(n===2){ const sec=SECONDARIES.filter(w=>gameMode!=='dust2'||owned[w]); if(sec.length){ const i=sec.indexOf(currentWeapon); switchWeapon(i>=0?sec[(i+1)%sec.length]:sec[0]); } } else if(n===3){ if(currentWeapon==='knife') toggleKnife(); else switchWeapon('knife'); }
     else switchWeapon(['flash','smoke','he','molo'][n-4]);

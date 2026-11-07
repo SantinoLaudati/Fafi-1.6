@@ -117,6 +117,7 @@ function rowHtml(it, v) {
 }
 
 export function initAjustes(opts = {}) {
+  initKeymap();
   applyCrosshair();
   { const o = loadOverrides(); const fc = document.getElementById('fpsCounter'); if (fc && o.showFps === false) fc.style.visibility = 'hidden'; }
   const panel = document.getElementById('fafi16-tab-ajustes');
@@ -206,6 +207,22 @@ export function initAjustes(opts = {}) {
     applyCrosshair(c);
   };
 
+  // ----- controles (remapeables) -----
+  const renderKeys = () => {
+    const km = loadKeymap(), box = root.querySelector('#axKeys');
+    const nice = (c) => String(c).replace(/^Key/, '').replace(/^Digit/, '').replace('ShiftLeft', 'Shift').replace('ControlLeft', 'Ctrl').replace('Space', 'Espacio').replace('ArrowUp', 'Flecha arriba').replace('ArrowDown', 'Flecha abajo');
+    box.innerHTML = `<div class="ax-h" style="margin-top:8px">Controles</div><div class="ax-note">Tocá una tecla y apretá la nueva. Esc cancela. Fijos: clic izquierdo dispara, clic derecho apunta, rueda cambia de arma, 1 a 7 eligen arma o granada, Q cambia rápido.</div>` +
+      KEY_ACTIONS.map(([id, label]) => `<div class="ax-row" data-k="${id}"><label>${label}</label><button class="ax-btn" style="grid-column:2/4;text-align:left" data-key="${id}">${nice(km[id] || KEY_DEFAULTS[id])}</button></div>`).join('') +
+      '<div class="ax-btns"><button class="ax-btn" id="axkReset">RESTABLECER CONTROLES</button></div>';
+    box.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => {
+      b.textContent = 'Apretá una tecla...';
+      const on = (e) => { e.preventDefault(); e.stopImmediatePropagation(); window.removeEventListener('keydown', on, true);
+        if (e.code !== 'Escape') { const m = loadKeymap(); m[b.dataset.key] = e.code; for (const k in m) if (k !== b.dataset.key && m[k] === e.code) delete m[k]; saveKeymap(m); }
+        renderKeys(); };
+      window.addEventListener('keydown', on, true);
+    }));
+    box.querySelector('#axkReset').addEventListener('click', () => { saveKeymap({}); renderKeys(); });
+  };
   // ----- idioma -----
   const renderLang = () => {
     const cur = (window.fafiGetLang && window.fafiGetLang()) || (localStorage.getItem('fafi_lang') || 'es');
@@ -233,7 +250,32 @@ export function initAjustes(opts = {}) {
     box.querySelector('#axaTest').addEventListener('click', () => { S.init(); S.weapon = 'ak'; S.play('ak'); });
     box.querySelector('#axaReset').addEventListener('click', () => { S.setConfig({ master: 0.35, mute: false, armas: 1, recarga: 1, pasos: 1, impactos: 1, granadas: 1, bomba: 1, menu: 1 }); renderAudio(); });
   };
-  root.innerHTML = '<div id="axLang"></div><div id="axAudio"></div><div id="axGfx"></div><div id="axXhBox"></div>';
-  renderLang(); renderAudio(); renderGfx(); renderXh();
+  root.innerHTML = '<div id="axKeys"></div><div id="axLang"></div><div id="axAudio"></div><div id="axGfx"></div><div id="axXhBox"></div>';
+  renderKeys(); renderLang(); renderAudio(); renderGfx(); renderXh();
   window.addEventListener('fafi-gfx-refresh', renderGfx);
+}
+
+// ===== controles remapeables =====
+// El juego lee las teclas por su código original (KeyW, Space...). Aquí se traduce lo que aprietes a ese código: si cambiás "Recargar" de R a T,
+// apretar T genera una R para el juego y la R original deja de hacer algo.
+export const KEY_DEFAULTS = { forward: 'KeyW', back: 'KeyS', left: 'KeyA', right: 'KeyD', jump: 'Space', crouch: 'ShiftLeft', reload: 'KeyR', inspect: 'KeyF', buy: 'KeyB', plant: 'KeyE', score: 'Tab', knife: 'Digit3' };
+export const KEY_ACTIONS = [['forward', 'Avanzar'], ['back', 'Retroceder'], ['left', 'Izquierda'], ['right', 'Derecha'], ['jump', 'Saltar'], ['crouch', 'Agacharse'], ['reload', 'Recargar'], ['inspect', 'Inspeccionar arma'], ['buy', 'Comprar'], ['plant', 'Plantar / desactivar'], ['score', 'Marcador'], ['knife', 'Cuchillo']];
+export function loadKeymap() { try { return JSON.parse(localStorage.getItem('fafi_keys') || '{}') || {}; } catch (e) { return {}; } }
+export function saveKeymap(m) { try { localStorage.setItem('fafi_keys', JSON.stringify(m)); } catch (e) {} buildRemap(); }
+let REMAP = {}, BLOCK = new Set();
+function buildRemap() {
+  const km = loadKeymap(); REMAP = {}; BLOCK = new Set();
+  for (const id in km) { const d = KEY_DEFAULTS[id], c = km[id]; if (!d || c === d) continue; REMAP[c] = d; }
+  for (const id in km) { const d = KEY_DEFAULTS[id]; if (d && km[id] !== d && !REMAP[d]) BLOCK.add(d); }   // la tecla original queda libre (sin función) salvo que otra acción la use
+}
+export function initKeymap() {
+  buildRemap();
+  const handle = (type) => (e) => {
+    if (e.__remapped) return;
+    const to = REMAP[e.code];
+    if (to) { e.stopImmediatePropagation(); e.preventDefault(); const ne = new KeyboardEvent(type, { code: to, key: to.replace(/^Key/, '').toLowerCase(), ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, repeat: e.repeat, bubbles: true, cancelable: true }); ne.__remapped = true; window.dispatchEvent(ne); }
+    else if (BLOCK.has(e.code) && !e.__remapped) { e.stopImmediatePropagation(); e.preventDefault(); }
+  };
+  window.addEventListener('keydown', handle('keydown'), true);
+  window.addEventListener('keyup', handle('keyup'), true);
 }

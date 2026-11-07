@@ -5,10 +5,10 @@ import { SFX } from './sfx_2_0_0v.js';
 
 const DIR = 'assets/granadas/';
 export const GRENADES = {
-  flash: { label: 'FLASHBANG',  file: DIR + 'optimizados/flash_granade_1k.glb', size: 0.13, price: 200, max: 2, fuse: 1.45, icon: '⚡' },
-  smoke: { label: 'HUMO',       file: DIR + 'smoke_granade.glb',                 size: 0.15, price: 300, max: 1, fuse: 1.3,  icon: '☁' },
-  he:    { label: 'GRANADA HE', file: DIR + 'granade_-_low_poly.glb',             size: 0.11, price: 300, max: 1, fuse: 1.7,  icon: '💥' },
-  molo:  { label: 'MOLOTOV',    file: DIR + 'chicken_gun_molotov_cocktail.glb',  size: 0.20, price: 400, max: 1, fuse: 2.2,  icon: '🔥' }
+  flash: { label: 'FLASHBANG',  file: DIR + 'optimizados/flash_granade_1k.glb', size: 0.13, price: 200, max: 2, fuse: 1.45, icon: 'FL' },
+  smoke: { label: 'HUMO',       file: DIR + 'smoke_granade.glb',                 size: 0.15, price: 300, max: 1, fuse: 1.3,  icon: 'HU' },
+  he:    { label: 'GRANADA HE', file: DIR + 'granade_-_low_poly.glb',             size: 0.11, price: 300, max: 1, fuse: 1.7,  icon: 'HE' },
+  molo:  { label: 'MOLOTOV',    file: DIR + 'chicken_gun_molotov_cocktail.glb',  size: 0.20, price: 400, max: 1, fuse: 2.2,  icon: 'MO' }
 };
 
 export function createGrenades(A) {
