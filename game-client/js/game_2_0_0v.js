@@ -313,13 +313,20 @@ async function fafiPreloadAll(){
   }]));
   tasks.push(['Bomba y gallinas', ()=>defuse.warmAssets()]);
   tasks.push(['Modelos', async()=>{ try{ const m=await import('./modelos_2_0_0v.js'); if(m.loadModels) await withTimeout(m.loadModels(),60000); }catch(e){} }]);
-  let done=0; const msg=document.getElementById('pl-msg'), bar=document.getElementById('pl-bar'), pct=document.getElementById('pl-pct');
-  const upd=(label)=>{ const p=Math.round(done/tasks.length*100); if(bar) bar.style.width=p+'%'; if(pct) pct.textContent=p+'%'; if(msg&&label) msg.textContent=label; };
+  tasks.push(['Sonidos', async()=>{ SFX.init(); if(SFX.loadAll) await SFX.loadAll(); }]);
+  // 1) descarga TODOS los archivos del juego (assets/precarga.json: modelos, imágenes, audio, historia); 2) prepara en memoria lo que lo necesita
+  let files=[]; try{ files=await (await fetch('assets/precarga.json',{cache:'no-cache'})).json(); }catch(e){ console.warn('precarga.json', e); }
+  const finalTasks=[['Shaders', async()=>{ try{ for(const k in mapCache){ const e=mapCache[k]; if(e&&e.model&&renderer&&camera) renderer.compile(e.model, camera); } }catch(err){} }]];
+  let done=0; const total=files.length+tasks.length+finalTasks.length;
+  const msg=document.getElementById('pl-msg'), bar=document.getElementById('pl-bar'), pct=document.getElementById('pl-pct');
+  const upd=(label)=>{ const p=Math.min(99,Math.round(done/total*100)); if(bar) bar.style.width=p+'%'; if(pct) pct.textContent=p+'%'; if(msg&&label) msg.textContent=label; };
+  upd('Descargando archivos...');
+  { let idx=0; const worker=async()=>{ while(idx<files.length){ const f=files[idx++]; try{ const r=await fetch(encodeURI(f)); await r.arrayBuffer(); }catch(e){ console.warn('precarga', f, e); } done++; if(idx%4===0) upd('Descargando: '+f.split('/').pop()); } }; await Promise.all([worker(),worker(),worker(),worker()]); }
   // los mapas se cargan de a uno (RAM y CPU); lo demás en paralelo
   const mapTasks=tasks.filter(t=>t[0].startsWith('Mapa ')), other=tasks.filter(t=>!t[0].startsWith('Mapa '));
-  upd('Descargando...');
-  const run=async(t)=>{ upd('Cargando: '+t[0]); try{ await t[1](); }catch(e){ console.warn('precarga', t[0], e); } done++; upd(); };
+  const run=async(t)=>{ upd('Preparando: '+t[0]); try{ await t[1](); }catch(e){ console.warn('precarga', t[0], e); } done++; upd(); };
   await Promise.all([ Promise.all(other.map(run)), (async()=>{ for(const t of mapTasks) await run(t); })() ]);
+  for(const t of finalTasks) await run(t);
   upd('Listo'); if(bar) bar.style.width='100%'; if(pct) pct.textContent='100%';
   await new Promise(r=>setTimeout(r,250));
   ov.style.display='none';

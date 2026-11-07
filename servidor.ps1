@@ -34,7 +34,7 @@ while ($listener.IsListening) {
       $bytes = [IO.File]::ReadAllBytes($file)
       $ext = [IO.Path]::GetExtension($file).ToLower()
       $ctx.Response.ContentType = if ($mime.ContainsKey($ext)) { $mime[$ext] } else { 'application/octet-stream' }
-      $ctx.Response.Headers.Add('Cache-Control', 'no-cache')
+      $ctx.Response.Headers.Add('Cache-Control', $(if ($ext -match '.(glb|png|jpg|jpeg|webp|ogg|wav|mp3|svg)$') { 'public, max-age=1800' } else { 'no-cache' }))
       $ctx.Response.ContentLength64 = $bytes.Length
       $ctx.Response.OutputStream.Write($bytes, 0, $bytes.Length)
     } else {
