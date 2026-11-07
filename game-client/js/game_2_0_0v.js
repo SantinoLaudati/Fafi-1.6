@@ -812,10 +812,10 @@ const MAPS = {
     name:'OFFICE', files:{ low:MAP_DIR+'optimizados/cs_office_1k.glb', med:MAP_DIR+'optimizados/cs_office_2k.glb' }, size:72,
     logo:'assets/Logos mapas/office logo.jpg', baked:true, zones:ZONAS.office, nav:{ cell:0.5, headroom:0.95, step:0.6 }
   },
-  // Mirage: 86 bloques con color por vértice; los detalles (revoque, piedra, baldosas, tejas, madera) los pinta js/mirage_2_0_0v.js
+  // Mirage (versión liviana): 18 mallas de color plano, ~26 000 triángulos
   mirage: {
-    name:'MIRAGE', file:MAP_DIR+'optimizados/cs_mirage_opt.glb', size:84,
-    logo:'assets/Logos mapas/mirage logo.png', baked:false, look:'mirage', zones:ZONAS.mirage || null, nav:{ cell:0.9, step:1.0, headroom:1.2 }
+    name:'MIRAGE', file:MAP_DIR+'optimizados/cs_mirage_lite.glb', size:84,
+    logo:'assets/Logos mapas/mirage logo.png', baked:false, zones:ZONAS.mirage || null, nav:{ cell:0.9, step:1.0, headroom:1.2 }
   }
 };
 function mapFile(key){ const d=MAPS[key]; return d.files ? d.files[QUALITY[qualityLevel].tex] : d.file; }
@@ -970,7 +970,6 @@ function loadMap(key, onDone, silent){
   if(loadingEl){ loadingEl.style.display='block'; loadingEl.textContent='Cargando '+def.name+'... 0%'; }
   makeLoader().load(mapFile(key), async (gltf)=>{
     const model=gltf.scene;
-    if(def.look==='mirage'){ try{ const mm=await import('./mirage_2_0_0v.js'); mm.simplifyMirage(model, ({high:0.11, medium:0.16, low:0.22, min:0.28})[qualityLevel]||0.13); mm.applyMirageLook(model); }catch(err){ console.warn('mirage look', err); } }
     if(def.rot) model.rotation.set(def.rot[0],def.rot[1],def.rot[2]);
     // Normalizar al tamaño del mapa y centrar
     const box=new THREE.Box3().setFromObject(model);

@@ -25,7 +25,7 @@ export const ZONAS = {
     A:  { x:  -4.3, y: -4.1, z: -17.7, r: 4.5 },     // sitio A: casa de los rehenes (Hostage1/2 del overview)
     B:  { x:  12.7, y: -4.2, z:   9.9, r: 5.0 }      // sitio B: plaza del mercado (cruce central)
   },
-  mirage: {  // cs_mirage (optimizados/cs_mirage_opt.glb, normalizado a 84 m): zonas dentro de la malla caminable principal (las plazas rectangulares del borde oeste del modelo no se conectan al mapa)
+  mirage: {  // cs_mirage (optimizados/cs_mirage_lite.glb, normalizado a 84 m): spawns y sites marcados a mano sobre el mapa anterior; si caen fuera de zona caminable se ajustan al punto más cercano
     t:  { x: -13.5, y: -6.36, z:  -7.04, r: 5.0 },     // T spawn (marcado a mano en el juego)
     ct: { x:  11.54, y: -4.94, z:  33.97, r: 5.0 },    // CT spawn
     A:  { x:  16.72, y: -4.83, z: -13.31, r: 5.0 },    // sitio A

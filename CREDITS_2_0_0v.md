@@ -24,4 +24,4 @@ Las posiciones de spawn T/CT, los sitios A/B de Dust II y las zonas de rehenes d
 Counter-Strike (`CTSpawn`, `TSpawn`, `bombA`, `bombB`, `Hostage*`) y de los radares de [MurkyYT/cs2-map-icons](https://github.com/MurkyYT/cs2-map-icons).
 Cada modelo `.glb` se ajustó sobre su radar (escala y desplazamiento) para convertir esas coordenadas al mundo del juego. Los radares no se incluyen en el repositorio.
 
-- Mirage (cs_mirage_opt.glb, game-client/js/mirage_2_0_0v.js): modelo original del usuario (mirage_cs2_fps.glb, sin texturas), fusionado en 86 bloques con herramientas/preparar-mirage_2_0_0v.html; los detalles de revoque, piedra, baldosas, tejas y madera los genera el shader del juego.
+
