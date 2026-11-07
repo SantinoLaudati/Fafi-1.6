@@ -129,6 +129,10 @@ export function initAmigos() {
   // refresco periódico mientras la pestaña de perfil está abierta (para ver solicitudes nuevas)
   pollTimer = setInterval(() => { if (document.getElementById('fafi16-tab-perfil')?.classList.contains('active') && !document.hidden) load(); }, 20000);
   window.fafiRefreshFriends = load;
-  document.getElementById('fsToggle')?.addEventListener('click', () => { const m = document.getElementById('menus'); m.classList.toggle('side-closed'); document.getElementById('fsToggle').textContent = m.classList.contains('side-closed') ? '«' : '»'; });
+  const sideToggle = () => { const m = document.getElementById('menus'); m.classList.toggle('side-closed'); try { localStorage.setItem('fafi_side', m.classList.contains('side-closed') ? 'closed' : 'open'); } catch (e) {} };
+  document.getElementById('fsToggle')?.addEventListener('click', sideToggle); document.getElementById('fsTab')?.addEventListener('click', sideToggle);
+  try { if (localStorage.getItem('fafi_side') === 'closed') document.getElementById('menus').classList.add('side-closed'); } catch (e) {}
+  const setHdr = () => { const h = document.querySelector('#menus .fafi16-header'); if (h) document.getElementById('menus').style.setProperty('--hdr', h.offsetHeight + 'px'); };
+  setHdr(); window.addEventListener('resize', setHdr); try { new ResizeObserver(setHdr).observe(document.querySelector('#menus .fafi16-header')); } catch (e) {}
   load();
 }

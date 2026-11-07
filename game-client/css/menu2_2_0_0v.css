@@ -197,3 +197,14 @@
 .pf-sec h3{margin:0 0 10px;font-size:12px;letter-spacing:4px;color:#e0a82e;text-transform:uppercase;font-weight:700}
 .pf-sec .fafi-list-container{margin-bottom:0}
 #pf-box{margin-bottom:0!important;border:0!important;background:none!important;padding:0!important}
+
+/* barra de amigos: debajo del encabezado (no tapa nada), con animación al ocultar/mostrar y una pestaña para reabrirla */
+#friendsSide{top:var(--hdr,70px)!important;padding-top:12px!important;transition:transform .32s cubic-bezier(.3,.8,.3,1),opacity .25s;box-shadow:-8px 0 24px rgba(0,0,0,.4)}
+#menus.has-side.side-closed #friendsSide{transform:translateX(105%)!important;opacity:0;pointer-events:none}
+#menus.has-side .fafi16-content-area{transition:padding-right .32s cubic-bezier(.3,.8,.3,1)}
+#menus.has-side.side-closed .fafi16-content-area{padding-right:30px!important}
+#friendsSide .fs-head{margin-bottom:8px}
+#fsTab{position:fixed;right:0;top:calc(var(--hdr,70px) + 12px);z-index:31;display:none;width:34px;height:46px;border:1px solid rgba(255,255,255,.18);border-right:0;border-radius:8px 0 0 8px;background:rgba(14,18,25,.95);color:#e0a82e;font-weight:800;cursor:pointer;align-items:center;justify-content:center;box-shadow:-4px 0 14px rgba(0,0,0,.4);transition:transform .2s,background .2s}
+#fsTab:hover{background:rgba(214,159,15,.25);transform:translateX(-3px)}
+#menus.has-side.side-closed #fsTab{display:flex;animation:fsTabIn .35s .1s both}
+@keyframes fsTabIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
