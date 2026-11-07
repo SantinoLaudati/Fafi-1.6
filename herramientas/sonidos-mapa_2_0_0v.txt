@@ -96,13 +96,10 @@ molotov|1.0|explode3
 # --- bomba
 c4_beep|0.8|c4_beep1,c4_beep2
 c4_plant|0.9|c4_plant,c4_initiate
-bomb_planted|0.9|bombplanted
 c4_defuse|0.9|c4_disarm,difuse
 c4_blast|1.2|c4_explode1
 # --- menú y rondas
 ui|0.5|key_press1,key_press2,key_press3,key_press4
 buy|0.6|key_press5,key_press6
-team|0.7|selectteam
 round_start|0.7|ready
-round_win|0.8|ctwin,twin
 land|0.5|movement2,movement3
