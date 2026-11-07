@@ -19,7 +19,7 @@ function overlay(id, cls) {
   let el = document.getElementById(id); if (el) el.remove();
   el = document.createElement('div'); el.id = id; el.className = 'm2-overlay ' + cls; document.body.appendChild(el); return el;
 }
-function coinsHtml() { return '<span class="m2-coin">◉</span> ' + (window.fafiCoins || 0).toLocaleString('es'); }
+function coinsHtml() { return '<i class="fcoin"></i>' + (window.fafiCoins || 0).toLocaleString('es'); }
 
 // =============================================================== INVENTARIO
 let invState = null;
@@ -89,7 +89,7 @@ export function openStore() {
   const st = shopState = { tier: 'advanced', viewer: null, timer: 0, busy: false };
   const crateList = root.querySelector('#sh-crates');
   const cards = Object.values(CRATES).map(c => {
-    const el = $('<button class="sh-crate" data-t="' + c.id + '" style="--c:#' + c.color.toString(16).padStart(6, '0') + '"><img alt=""><div class="sc-nm">' + c.name + '</div><div class="sc-tag">' + c.tag + '</div><div class="sc-pr">◉ ' + c.price + '</div></button>');
+    const el = $('<button class="sh-crate" data-t="' + c.id + '" style="--c:#' + c.color.toString(16).padStart(6, '0') + '"><img alt=""><div class="sc-nm">' + c.name + '</div><div class="sc-tag">' + c.tag + '</div><div class="sc-pr"><i class="fcoin"></i>' + c.price + '</div></button>');
     el.onclick = () => selectTier(c.id); crateList.appendChild(el); crateThumb(c.id).then(u => { el.querySelector('img').src = u; }); return el;
   });
   const grid = root.querySelector('#sh-grid');
@@ -98,7 +98,7 @@ export function openStore() {
     cards.forEach(el => el.classList.toggle('on', el.dataset.t === t)); st.viewer && st.viewer.setTier(t);
     const bars = ['legendaria', 'epica', 'comun'].filter(r => c.odds[r] > 0).map(r => '<div class="sh-odd"><span style="color:' + RARITY[r].color + '">' + RARITY[r].label + '</span><div><i style="width:' + c.odds[r] + '%;background:' + RARITY[r].color + '"></i></div><b>' + c.odds[r] + '%</b></div>').join('');
     root.querySelector('#sh-info').innerHTML = '<div class="sh-n">' + c.tag.toUpperCase() + '</div><h2>' + c.name + '</h2><div class="sh-odds">' + bars + '</div>'
-      + '<button class="m2-btn pri big" id="sh-open">ABRIR CAJA · ◉ ' + c.price + '</button><div class="sh-dup">Si te toca una repetida recibes coins de vuelta (50 / 150 / 400).</div>';
+      + '<button class="m2-btn pri big" id="sh-open">ABRIR CAJA · <i class="fcoin"></i>' + c.price + '</button><div class="sh-dup">Si te toca una repetida recibes coins de vuelta (50 / 150 / 400).</div>';
     root.querySelector('#sh-open').onclick = () => buy(t); refreshBtn();
     // contenido: todas las skins de las rarezas que da la caja, con su probabilidad
     const rs = Object.keys(c.odds).filter(r => c.odds[r] > 0).sort((a, b) => rarityRank[a] - rarityRank[b]);
@@ -111,7 +111,7 @@ export function openStore() {
   };
   const refreshBtn = () => {
     const b = root.querySelector('#sh-open'); if (!b) return; const c = CRATES[st.tier], need = c.price - (window.fafiCoins || 0);
-    b.disabled = st.busy || need > 0; b.textContent = need > 0 ? 'FALTAN ◉ ' + need + ' · RECLAMALAS EN EL FAFI PASS' : 'ABRIR CAJA · ◉ ' + c.price;
+    b.disabled = st.busy || need > 0; b.innerHTML = need > 0 ? 'FALTAN <i class="fcoin"></i>' + need + ' · RECLAMALAS EN EL FAFI PASS' : 'ABRIR CAJA · <i class="fcoin"></i>' + c.price;
   };
   const buy = async (t) => {
     if (st.busy) return; st.busy = true; refreshBtn();

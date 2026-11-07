@@ -1,8 +1,8 @@
-// FAFI PASS (estilo pase de batalla): 100 niveles, pase gratis y pase premium (se compra con Fafi Coins).
+// FAFI PASS (estilo pase de batalla): 100 niveles, pase gratis y pase premium (de pago con dinero real: aun no habilitado, solo se muestra).
 // La experiencia se gana jugando partidas de Defuse. El modo Aim no da experiencia ni coins: es solo practica.
 // El progreso se guarda por usuario en localStorage con una firma; si se edita a mano, el pase se reinicia (disuasion, no seguridad real:
 // para que sea a prueba de trampas el progreso tiene que validarse en el servidor).
-import { SKINS_DB, RARITY } from './skins_2_0_0v.js';
+import { SKINS_DB, RARITY, thumb } from './skins_2_0_0v.js';
 
 export const PASS_LEVELS = 100;
 export const XP_PER_LEVEL = 300;
@@ -52,13 +52,6 @@ function claim(lv, track) {
   try { window.fafiSave && window.fafiSave(); window.fafiRefreshCoins && window.fafiRefreshCoins(); } catch (e) {}
   return r;
 }
-function buyPremium() {
-  const s = load(); if (s.premium) return;
-  if ((window.fafiCoins || 0) < PREMIUM_PRICE) { try { window.fafiShowFloating('Necesitas ' + PREMIUM_PRICE + ' Fafi Coins'); } catch (e) {} return; }
-  window.fafiCoins -= PREMIUM_PRICE; s.premium = true; save(s);
-  try { window.fafiSave && window.fafiSave(); window.fafiRefreshCoins && window.fafiRefreshCoins(); } catch (e) {}
-}
-
 // experiencia al terminar una partida de Defuse
 window.fafiPassMatch = (m) => {
   const won = m && m.winner && m.winner === m.team;
@@ -67,42 +60,60 @@ window.fafiPassMatch = (m) => {
   try { window.fafiShowFloating('+' + xp + ' XP Fafi Pass'); } catch (e) {}
 };
 
-let page = 0, sel = null;
+
+export const PREMIUM_USD = '4,99';
+const COIN = '<i class="fcoin"></i>';
+const LOCK = '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M7 10V8a5 5 0 0 1 10 0v2h1.5A1.5 1.5 0 0 1 20 11.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5v-8A1.5 1.5 0 0 1 5.5 10H7zm2 0h6V8a3 3 0 0 0-6 0v2z" fill="currentColor"/></svg>';
+const skinOf = (id) => SKINS_DB.find((x) => x.id === id);
+
+let sel = null;
+function art(r, big) {
+  if (r.type === 'skin') return '<img class="fp-img' + (big ? ' big' : '') + '" data-skin="' + r.id + '" alt="">';
+  return '<div class="fp-coin' + (big ? ' big' : '') + '">' + COIN + '<b>' + r.amount + '</b></div>';
+}
 function cell(lv, track, s) {
   const r = rewardFor(lv, track), list = track === 'free' ? s.claimed : s.claimedP, got = list.includes(lv);
   const open = lv <= levelOf(s.xp) && (track === 'free' || s.premium), can = open && !got;
-  const col = (RARITY[r.rarity] || RARITY.comun).color;
-  return '<div class="fp-c ' + (got ? 'got ' : can ? 'can ' : '') + (track === 'prem' && !s.premium ? 'plock ' : '') + (sel && sel.lv === lv && sel.track === track ? 'sel' : '') + '" data-lv="' + lv + '" data-tr="' + track + '" style="--c:' + col + '">'
-    + '<div class="fp-ico">' + (r.type === 'skin' ? 'SKIN' : '+' + r.amount) + '</div><div class="fp-nm">' + r.name + '</div>'
-    + (got ? '<div class="fp-st">RECLAMADO</div>' : can ? '<div class="fp-st go">RECLAMAR</div>' : '<div class="fp-st">' + (track === 'prem' && !s.premium ? 'PREMIUM' : 'BLOQUEADO') + '</div>') + '</div>';
+  const col = (RARITY[r.rarity] || RARITY.comun).color, prem = track === 'prem';
+  return '<div class="fp-c ' + (prem ? 'prem ' : '') + (got ? 'got ' : can ? 'can ' : '') + (sel && sel.lv === lv && sel.track === track ? 'sel' : '') + '" data-lv="' + lv + '" data-tr="' + track + '" style="--c:' + col + '">'
+    + (prem && !s.premium ? '<span class="fp-lk">' + LOCK + '</span>' : '')
+    + '<div class="fp-art">' + art(r, false) + '</div><div class="fp-nm">' + r.name + '</div>'
+    + (got ? '<div class="fp-st ok">RECLAMADO</div>' : can ? '<div class="fp-st go">RECLAMAR</div>' : '<div class="fp-st">' + (prem && !s.premium ? 'PREMIUM' : 'NIVEL ' + lv) + '</div>') + '</div>';
 }
-function render() {
+async function fillThumbs(root) {
+  for (const img of root.querySelectorAll('img[data-skin]')) {
+    const sk = skinOf(img.dataset.skin); if (!sk) continue;
+    try { img.src = await thumb(sk, img.classList.contains('big') ? 520 : 320, img.classList.contains('big') ? 300 : 190); img.classList.add('ok'); } catch (e) {}
+  }
+}
+function render(scrollTo) {
   const root = document.getElementById('fafi16-tab-pass'); if (!root) return;
-  const s = load(), lv = levelOf(s.xp), into = lv >= PASS_LEVELS ? XP_PER_LEVEL : s.xp % XP_PER_LEVEL, pages = PASS_LEVELS / PAGE;
-  page = Math.max(0, Math.min(pages - 1, page));
-  const from = page * PAGE + 1;
+  const old = root.querySelector('.fp-scroll'), keep = old ? old.scrollLeft : 0;
+  const s = load(), lv = levelOf(s.xp), into = lv >= PASS_LEVELS ? XP_PER_LEVEL : s.xp % XP_PER_LEVEL;
   if (!sel) sel = { lv: Math.min(PASS_LEVELS, Math.max(1, lv)), track: 'free' };
   let heads = '', fr = '', pr = '';
-  for (let i = from; i < from + PAGE; i++) { heads += '<div class="fp-n' + (i <= lv ? ' on' : '') + '">' + i + '</div>'; fr += cell(i, 'free', s); pr += cell(i, 'prem', s); }
-  const r = rewardFor(sel.lv, sel.track), rc = (RARITY[r.rarity] || RARITY.comun);
+  for (let i = 1; i <= PASS_LEVELS; i++) { heads += '<div class="fp-n' + (i <= lv ? ' on' : '') + '">' + i + '</div>'; fr += cell(i, 'free', s); pr += cell(i, 'prem', s); }
+  const r = rewardFor(sel.lv, sel.track), rc = RARITY[r.rarity] || RARITY.comun, sk = r.type === 'skin' ? skinOf(r.id) : null;
   root.innerHTML =
-    '<div class="fp-top"><div class="fp-season"><em>' + SEASON + '</em><b>FAFI PASS</b></div>'
+    '<div class="fp-top"><div class="fp-season"><em>TEMPORADA 1</em><b>FAFI PASS</b></div>'
     + '<div class="fp-lvbox"><span>NIVEL</span><b>' + lv + '</b></div>'
     + '<div class="fp-prog"><div class="fp-bar"><i style="width:' + Math.round(into / XP_PER_LEVEL * 100) + '%"></i></div><small>' + (lv >= PASS_LEVELS ? 'NIVEL MAXIMO' : into + ' / ' + XP_PER_LEVEL + ' XP') + '</small></div>'
-    + '<div class="fp-buy">' + (s.premium ? '<span class="fp-own">PASE PREMIUM ACTIVO</span>' : '<button id="fpBuy">OBTENER PREMIUM · ' + PREMIUM_PRICE + ' COINS</button>') + '</div></div>'
-    + '<div class="fp-main"><div class="fp-tbl"><div class="fp-rows"><div class="fp-lab"></div><div class="fp-lab t">PREMIUM</div><div class="fp-lab t">GRATIS</div></div>'
-    + '<div class="fp-cols"><div class="fp-nums">' + heads + '</div><div class="fp-row">' + pr + '</div><div class="fp-row">' + fr + '</div></div></div>'
-    + '<div class="fp-side"><div class="fp-pv" style="--c:' + rc.color + '"><em>' + (sel.track === 'free' ? 'PASE GRATIS' : 'PASE PREMIUM') + ' · NIVEL ' + sel.lv + '</em><b>' + r.name + '</b><span>' + rc.label + '</span><p>' + (r.type === 'skin' ? 'Skin para tu arma. Si ya la tienes recibes ' + r.dup + ' coins.' : 'Fafi Coins para la tienda de cajas.') + '</p></div></div></div>'
-    + '<div class="fp-nav"><button id="fpPrev"' + (page === 0 ? ' disabled' : '') + '>&lsaquo;</button><span>PAGINA ' + (page + 1) + ' / ' + pages + '</span><button id="fpNext"' + (page >= pages - 1 ? ' disabled' : '') + '>&rsaquo;</button>'
-    + '<button id="fpAll">RECLAMAR TODO</button></div>';
+    + '<div class="fp-buy"><div class="fp-pbox"><b>PASE PREMIUM</b><span>$' + PREMIUM_USD + ' USD</span></div><button class="fp-soon" disabled>PROXIMAMENTE</button></div></div>'
+    + '<div class="fp-body"><div class="fp-tbl"><div class="fp-rows"><div class="fp-rl">NIVEL</div><div class="fp-rl t prem">PREMIUM</div><div class="fp-rl t">GRATIS</div></div>'
+    + '<button class="fp-arr l" id="fpPrev">&lsaquo;</button><div class="fp-scroll"><div class="fp-grid"><div class="fp-line nums">' + heads + '</div><div class="fp-line">' + pr + '</div><div class="fp-line">' + fr + '</div></div></div><button class="fp-arr r" id="fpNext">&rsaquo;</button></div>'
+    + '<div class="fp-side"><div class="fp-pv" style="--c:' + rc.color + '"><em>' + (sel.track === 'free' ? 'PASE GRATIS' : 'PASE PREMIUM') + ' / NIVEL ' + sel.lv + '</em>'
+    + '<div class="fp-show">' + art(r, true) + '</div><b>' + r.name + '</b><span>' + rc.label + '</span><p>' + (r.type === 'skin' ? (sk ? 'Para: ' + sk.weapon.toUpperCase() + '. ' : '') + 'Si ya la tienes recibes ' + r.dup + ' coins.' : 'Fafi Coins para la tienda de cajas.') + '</p></div>'
+    + '<button id="fpAll">RECLAMAR TODO</button></div></div>';
+  const sc = root.querySelector('.fp-scroll');
+  sc.scrollLeft = scrollTo != null ? Math.max(0, (scrollTo - 1) * 158 - 160) : keep;
   root.querySelectorAll('.fp-c').forEach((c) => c.addEventListener('click', () => {
     const l = +c.dataset.lv, t = c.dataset.tr;
     if (c.classList.contains('can')) claim(l, t);
     sel = { lv: l, track: t }; render();
   }));
-  const b = root.querySelector('#fpBuy'); if (b) b.addEventListener('click', () => { buyPremium(); render(); });
-  root.querySelector('#fpPrev').addEventListener('click', () => { page--; render(); });
-  root.querySelector('#fpNext').addEventListener('click', () => { page++; render(); });
+  root.querySelector('#fpPrev').addEventListener('click', () => sc.scrollBy({ left: -790, behavior: 'smooth' }));
+  root.querySelector('#fpNext').addEventListener('click', () => sc.scrollBy({ left: 790, behavior: 'smooth' }));
   root.querySelector('#fpAll').addEventListener('click', () => { for (let i = 1; i <= lv; i++) { claim(i, 'free'); claim(i, 'prem'); } render(); });
+  fillThumbs(root);
 }
-window.fafiPassOpen = () => { sel = null; page = Math.floor((Math.max(1, levelOf(load().xp)) - 1) / PAGE); render(); };
+window.fafiPassOpen = () => { sel = null; render(Math.max(1, levelOf(load().xp))); };

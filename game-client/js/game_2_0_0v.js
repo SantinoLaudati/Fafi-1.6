@@ -234,8 +234,8 @@ function fafiSetSkin(weapon, id){
 }
 window.fafiSetSkin=fafiSetSkin; window.fafiRefreshLoadout=()=>{ try{ menu2.renderLoadout(document.getElementById('fafi-current-loadout')); }catch(e){} };
 function fafiUpdateCoinsDisplay(){
-  const a=document.getElementById('coins-display-menu'); if(a) a.textContent='FAFI COINS: '+window.fafiCoins;
-  const b=document.getElementById('coins-display-store'); if(b) b.textContent='FAFI COINS: '+window.fafiCoins;
+  const a=document.getElementById('coins-display-menu'); if(a) a.innerHTML='<i class="fcoin"></i>'+window.fafiCoins;
+  const b=document.getElementById('coins-display-store'); if(b) b.innerHTML='<i class="fcoin"></i>'+window.fafiCoins;
   const mc=document.getElementById('mm-coins'); if(mc) mc.textContent=(window.fafiCoins||0).toLocaleString('es');
   const ms=document.getElementById('mm-skins'); if(ms) ms.textContent=(window.userInventory||[]).length+'/'+fafiSkinsDB.length;
   const mh=document.getElementById('mm-story'); if(mh) mh.textContent=((window.campaignLevel||1)>1?1:0)+"/1";
