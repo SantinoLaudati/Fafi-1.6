@@ -2354,6 +2354,7 @@ const WI_SVG={
 function wiKind(k){ return GRENADES[k] ? 'nade' : k==='knife' ? 'knife' : (k==='awp'||k==='vss') ? 'sniper' : (k==='deagle'||k==='five'||k==='shorty') ? 'pistol' : 'rifle'; }
 function renderWeaponBar(){
   const el=document.getElementById('wBar'); if(!el) return;
+  if(gameMode==='aim'){ if(el.dataset.h!==''){ el.dataset.h=''; el.innerHTML=''; } return; }   // en AIM no se muestra el inventario
   const base=['ak','m4','awp','deagle'].concat(extraOn ? Object.keys(EXTRA_W) : []);
   const list=base.filter(k=> gameMode==='aim' || owned[k]).concat(['knife']);
   for(const g in GRENADES) if(grenadeStock[g]>0) list.push(g);
