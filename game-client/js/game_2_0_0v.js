@@ -1235,9 +1235,9 @@ function updateAnimWeapon(dt, wallPush){
     else { const q=(t-0.82)/0.18; y=-0.06*(1-q); }
     tp.y+=y; tp.z+=z; rx+=rr; ry+=rr2;
   } else if(w.state==='inspect'){
-    const t=Math.min(inspectProgress,1), kf=richKfs(0.9); let a=kf[0], b=kf[1];
+    const t=Math.min(inspectProgress,1), kf=gunKfs(0.9); let a=kf[0], b=kf[1];
     for(let i=0;i<kf.length-1;i++){ if(t>=kf[i].t && t<=kf[i+1].t){ a=kf[i]; b=kf[i+1]; break; } }
-    const sg=(t-a.t)/Math.max(0.0001,b.t-a.t), e=sg<0.5?4*sg*sg*sg:1-Math.pow(-2*sg+2,3)/2;
+    const sg=(t-a.t)/Math.max(0.0001,b.t-a.t), e=sg;
     tp.x += THREE.MathUtils.lerp(a.pos.x,b.pos.x,e); tp.y += THREE.MathUtils.lerp(a.pos.y,b.pos.y,e); tp.z += THREE.MathUtils.lerp(a.pos.z,b.pos.z,e);
     rx += THREE.MathUtils.lerp(a.rot.x,b.rot.x,e); ry += THREE.MathUtils.lerp(a.rot.y,b.rot.y,e); rz += THREE.MathUtils.lerp(a.rot.z,b.rot.z,e);
   } else {
@@ -1288,8 +1288,22 @@ function setKnifeType(t, quiet){
   knifeModel.visible=(currentWeapon==='knife');
   try{ fafiApplyEquippedSkins(); }catch(e){}
   if(!quiet){ showFloating('Cuchillo: '+(t==='karambit'?'KARAMBIT':'CUCHILLO DE COMBATE')); try{ SFX.weapon='knife'; SFX.play('draw_knife'); }catch(e){} }
+  try{ renderWeaponBar(); }catch(e){}
 }
 function toggleKnife(){ const keys2=Object.keys(KNIFE_CFG).filter(k=>knifeHolders[k]); if(keys2.length<2) return; setKnifeType(keys2[(keys2.indexOf(knifeType)+1)%keys2.length]); }
+// rueda / Q: recorre las armas que tienes; los dos cuchillos cuentan como armas separadas (karambit y cuchillo de combate)
+function cycleWeapon(dir){
+  const list=[];
+  for(const w of nextOwnedWeapon()){
+    if(w==='knife'){ const ks=Object.keys(KNIFE_CFG).filter(k=>knifeHolders[k]); if(ks.length) ks.forEach(k=>list.push('knife:'+k)); else list.push('knife'); }
+    else list.push(w);
+  }
+  if(list.length<2) return;
+  const cur = currentWeapon==='knife' ? (list.includes('knife:'+knifeType) ? 'knife:'+knifeType : 'knife') : currentWeapon;
+  const nx = list[(list.indexOf(cur)+dir+list.length)%list.length];
+  if(nx.startsWith('knife:')){ const t=nx.slice(6); if(currentWeapon==='knife') setKnifeType(t); else { setKnifeType(t,true); switchWeapon('knife'); } }
+  else switchWeapon(nx);
+}
 async function loadKnifeAnim(){
   const gk=await loadKnife();                                       // karambit ya fusionado en una sola malla (las skins lo cubren completo)
   if(gk) knifeHolders.karambit=makeKnifeHolder(gk.scene.clone(true), KNIFE_CFG.karambit);
@@ -2360,9 +2374,12 @@ function renderWeaponBar(){
   const el=document.getElementById('wBar'); if(!el) return;
   if(gameMode==='aim'){ if(el.dataset.h!==''){ el.dataset.h=''; el.innerHTML=''; } return; }   // en AIM no se muestra el inventario
   const base=['ak','m4','awp','deagle'].concat(extraOn ? Object.keys(EXTRA_W) : []);
-  const list=base.filter(k=> gameMode==='aim' || owned[k]).concat(['knife']);
+  const list=base.filter(k=> gameMode==='aim' || owned[k]);
+  const ks=Object.keys(KNIFE_CFG).filter(k=>knifeHolders[k]); if(ks.length) ks.forEach(k=>list.push('knife:'+k)); else list.push('knife');
   for(const g in GRENADES) if(grenadeStock[g]>0) list.push(g);
-  const html=list.map(k=>'<span class="'+(currentWeapon===k?'sel':'')+'"><em>'+(WEAPON_LABEL[k]||(EXTRA_W[k]&&EXTRA_W[k].label)||String(k).toUpperCase())+(GRENADES[k]&&grenadeStock[k]>1?' x'+grenadeStock[k]:'')+'</em>'+WI_SVG[wiKind(k)]+'</span>').join('');
+  const KL={'knife:karambit':'KARAMBIT','knife:combate':'CUCHILLO DE COMBATE'};
+  const html=list.map(k=>{ const sel=k.startsWith('knife:') ? (currentWeapon==='knife' && knifeType===k.slice(6)) : currentWeapon===k;
+    return '<span class="'+(sel?'sel':'')+'"><em>'+(KL[k]||WEAPON_LABEL[k]||(EXTRA_W[k]&&EXTRA_W[k].label)||String(k).toUpperCase())+(GRENADES[k]&&grenadeStock[k]>1?' x'+grenadeStock[k]:'')+'</em>'+WI_SVG[wiKind(k.startsWith('knife')?'knife':k)]+'</span>'; }).join('');
   if(el.dataset.h!==html){ el.dataset.h=html; el.innerHTML=html; }
 }
 // === ARMAS EXTRA (modelos propios): solo se pueden comprar y usar en el modo exploración; en Defuse siguen bloqueadas ===
@@ -2546,6 +2563,24 @@ function setAiming(v){
   updateAmmoHUD();
 }
 // Inspección CS:GO: acerca el arma, muestra un lado, el otro, la parte de arriba y vuelve. `s` escala el movimiento según el tamaño del arma.
+// inspeccion de armas de fuego: curva continua (Catmull-Rom) sin paradas en cada fotograma clave: sube el arma al centro, la gira para mostrar el costado, la balancea despacio y vuelve
+const _gkCache={};
+function gunKfs(s){
+  const key=s.toFixed(3); if(_gkCache[key]) return _gkCache[key];
+  // t, x, y, z, rx, ry, rz
+  const P=[[0,0,0,0,0,0,0],[0.14,-0.12,0.05,0.10,-0.12,0.45,0.05],[0.32,-0.17,0.07,0.13,-0.08,0.95,0.30],[0.50,-0.17,0.07,0.13,-0.22,0.80,-0.30],[0.68,-0.14,0.06,0.10,-0.14,0.30,-0.10],[0.86,-0.06,0.03,0.04,-0.05,0.08,0],[1,0,0,0,0,0,0]];
+  const out=[], N=10;
+  for(let i=0;i<P.length-1;i++){
+    const p0=P[Math.max(0,i-1)], p1=P[i], p2=P[i+1], p3=P[Math.min(P.length-1,i+2)];
+    for(let k=0;k<N;k++){
+      const u=k/N, u2=u*u, u3=u2*u, v=[];
+      for(let c=0;c<7;c++) v.push(0.5*((2*p1[c])+(-p0[c]+p2[c])*u+(2*p0[c]-5*p1[c]+4*p2[c]-p3[c])*u2+(-p0[c]+3*p1[c]-3*p2[c]+p3[c])*u3));
+      out.push({t:p1[0]+(p2[0]-p1[0])*u, pos:new THREE.Vector3(v[1]*s,v[2]*s,v[3]*s), rot:new THREE.Euler(v[4],v[5],v[6])});
+    }
+  }
+  out.push({t:1,pos:new THREE.Vector3(),rot:new THREE.Euler()});
+  return _gkCache[key]=out;
+}
 function richKfs(s){
   const K=(t,x,y,z,rx,ry,rz)=>({t, pos:new THREE.Vector3(x*s,y*s,z*s), rot:new THREE.Euler(rx,ry,rz)});
   return [ K(0,0,0,0,0,0,0), K(0.12,-0.10,0.05,0.08,-0.10,0.25,-0.05), K(0.30,-0.16,0.08,0.10,-0.05,1.15,0.25), K(0.48,-0.14,0.07,0.09,0.10,-0.90,-0.35),
@@ -2768,11 +2803,11 @@ function updateWeaponAnim(dt){
     if(isInspecting){
       inspectProgress += dt / 4.0;
       const t=Math.min(inspectProgress,1);
-      const kfsA = richKfs(1.25);
+      const kfsA = gunKfs(1.25);
       let a=kfsA[0], b=kfsA[1];
       for(let i=0;i<kfsA.length-1;i++){ if(t>=kfsA[i].t && t<=kfsA[i+1].t){ a=kfsA[i]; b=kfsA[i+1]; break; } }
       const segT=(t-a.t)/Math.max(0.0001,b.t-a.t);
-      const e= segT<0.5?4*segT*segT*segT:1-Math.pow(-2*segT+2,3)/2;
+      const e= segT;
       const ip = awpBasePos.clone().add(new THREE.Vector3().lerpVectors(a.pos,b.pos,e));
       // interpolar desde base actual si venías apuntando
       const baseNowPos = new THREE.Vector3().lerpVectors(awpBasePos, awpAimPos, aimProgress);
@@ -2869,11 +2904,11 @@ function updateWeaponAnim(dt){
     if(isInspecting){
       inspectProgress += dt / 3.4;
       const t=Math.min(inspectProgress,1);
-      const kfsD = richKfs(0.9);
+      const kfsD = gunKfs(0.9);
       let a=kfsD[0], b=kfsD[1];
       for(let i=0;i<kfsD.length-1;i++){ if(t>=kfsD[i].t && t<=kfsD[i+1].t){ a=kfsD[i]; b=kfsD[i+1]; break; } }
       const segT=(t-a.t)/Math.max(0.0001,b.t-a.t);
-      const e= segT<0.5?4*segT*segT*segT:1-Math.pow(-2*segT+2,3)/2;
+      const e= segT;
       const baseNowPos = new THREE.Vector3().lerpVectors(deagleBasePos, deagleAimPos, smoothAim);
       const baseNowRot = new THREE.Euler(
         THREE.MathUtils.lerp(deagleBaseRot.x, deagleAimRot.x, smoothAim),
@@ -2952,13 +2987,13 @@ function updateWeaponAnim(dt){
     inspectProgress += dt / inspectDuration;
     const t = Math.min(inspectProgress, 1);
     // keyframes al estilo CS:GO AK / Valorant Vandal (pos offset desde weaponBasePos, rot offset)
-      const kfs = richKfs(1.0);
+      const kfs = gunKfs(1.0);
     // encontrar segmento
     let a=kfs[0], b=kfs[1];
     for(let i=0;i<kfs.length-1;i++){ if(t >= kfs[i].t && t <= kfs[i+1].t){ a=kfs[i]; b=kfs[i+1]; break; } }
     const segT = (t - a.t) / Math.max(0.0001, b.t - a.t);
     // smoothstep CS:GO easing (cúbica)
-    const e = segT<0.5 ? 4*segT*segT*segT : 1 - Math.pow(-2*segT+2,3)/2;
+    const e = segT;
     const smoothP = new THREE.Vector3().lerpVectors(a.pos, b.pos, e);
     const smoothR = new THREE.Euler(
       THREE.MathUtils.lerp(a.rot.x, b.rot.x, e),
@@ -3667,14 +3702,7 @@ window.addEventListener('keydown', (e)=>{
     return; } }
   if(e.code==='KeyQ' && !e.ctrlKey){
     e.preventDefault();
-    if(gameMode==='dust2'){
-      const order=nextOwnedWeapon();
-      if(!order.length) return;
-      let idx=order.indexOf(currentWeapon);
-      switchWeapon(order[(idx+1)%order.length]);
-    } else {
-      const order=nextOwnedWeapon(); const idx=order.indexOf(currentWeapon); switchWeapon(order[(idx+1)%order.length]);
-    }
+    cycleWeapon(1);
     return;
   }
   // F = inspeccionar arma estilo CS:GO
@@ -4273,18 +4301,8 @@ window.addEventListener('mouseup', (e)=>{
 });
 window.addEventListener('wheel', (e)=>{
   if(!gameActive || !controls.isLocked || buyMenuOpen) return;
-  if(gameMode==='dust2'){
-    const order=nextOwnedWeapon();
-    if(order.length<2) return;
-    const idx=order.indexOf(currentWeapon);
-    if(e.deltaY < 0) switchWeapon(order[(idx-1+order.length)%order.length]);
-    else switchWeapon(order[(idx+1)%order.length]);
-    return;
-  }
-  const order=nextOwnedWeapon();
-  const idx=order.indexOf(currentWeapon);
-  if(e.deltaY < 0) switchWeapon(order[(idx-1+order.length)%order.length]);
-  else switchWeapon(order[(idx+1)%order.length]);
+  /* rueda: ver cycleWeapon */
+  cycleWeapon(e.deltaY < 0 ? -1 : 1);
 });
 // si se pierde el foco, dejar de apuntar/disparar
 window.addEventListener('blur', ()=> { setAiming(false); isHoldingShoot=false; });
