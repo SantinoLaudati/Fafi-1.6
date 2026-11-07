@@ -9,7 +9,7 @@ varying vec3 vWp;
 float h21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), f.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), f.x), f.y); }
-float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { v += a * vn(p); p = p * 2.03 + 7.1; a *= 0.5; } return v; }
+float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 3; i++) { v += a * vn(p); p = p * 2.03 + 7.1; a *= 0.5; } return v; }
 float joint(float x, float w){ float f = abs(fract(x) - 0.5); return smoothstep(0.5 - w, 0.5, f + 0.0); }
 `;
 
@@ -20,6 +20,8 @@ const GLSL_FRAG = `
     vec3 base = diffuseColor.rgb;
     float lum = dot(base, vec3(0.3333));
     vec3 c = vec3(1.0);
+    float vdist = length(vViewPosition);
+    if (vdist < 34.0) {                                   // el detalle fino solo se calcula cerca (ahorra mucho en la placa de video)
     if (kind < 0.5) {                                   // MURO: revoque con parches de piedra a la vista
       float u = abs(nrm.x) > abs(nrm.z) ? vWp.z : vWp.x, v = vWp.y;
       float st = fbm(vec2(u, v) * 5.5) * 0.28 + fbm(vec2(u, v) * 0.9) * 0.22;
@@ -50,6 +52,8 @@ const GLSL_FRAG = `
       vec2 p = vWp.xz / 0.6; float jl = max(joint(p.x, 0.04), joint(p.y, 0.04));
       c *= (0.8 + 0.36 * h21(floor(p))) * (1.0 - 0.36 * jl);
     }
+    c = mix(vec3(1.0), c, 1.0 - smoothstep(16.0, 34.0, vdist));
+    }
     vec3 col = base * c * vec3(1.12, 0.97, 0.76);                       // tono cálido de arena
     float l2 = dot(col, vec3(0.3333));
     diffuseColor.rgb = clamp(mix(vec3(l2), col, 1.3) * 1.12, 0.0, 1.0);   // más saturado y luminoso
@@ -66,7 +70,7 @@ export function mirageMaterial() {
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + GLSL_COMMON)
       .replace('#include <color_fragment>', '#include <color_fragment>\n' + GLSL_FRAG);
   };
-  m.customProgramCacheKey = () => 'mirage-v2';
+  m.customProgramCacheKey = () => 'mirage-v3';
   cached = m; return m;
 }
 

@@ -43,7 +43,7 @@ function effective(level) {
   const q = QUALITY[level] || QUALITY.high, o = loadOverrides(), dpr = window.devicePixelRatio || 1;
   const d = {
     resScale: q.resScale != null ? q.resScale : Math.min(dpr, q.maxPixelRatio) / dpr,
-    dynRes: false, targetFps: 60, fpsCap: q.fpsCap || 0, aa: q.aa !== false, fov: 75, viewDist: 160, showFps: true,
+    dynRes: true, targetFps: 60, fpsCap: q.fpsCap || 0, aa: q.aa !== false, fov: 75, viewDist: 160, showFps: true,
     shadows: !!q.shadows, shadowSize: q.shadowMapSize, shadowRange: q.shadowRange || 30, shadowType: SHADOW_NAME(q.shadowType),
     tone: !!q.tone, exposure: q.exposure || 1.05, fogMul: q.fogMul, time: lsGet(TIME_KEY, 'auto'),
     fx: q.fx != null ? q.fx : 1, maxBots: q.maxBots, tex: q.tex

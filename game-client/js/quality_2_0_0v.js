@@ -26,9 +26,9 @@ export const QUALITY = {
   },
   medium: {
     label: 'MEDIA',
-    desc: 'Sombras suaves cerca del jugador, resolución nativa hasta 1.25x.',
-    maxPixelRatio: 1.25,
-    shadows: true, shadowMapSize: 2048, shadowType: THREE.PCFShadowMap, shadowRange: 30,
+    desc: 'Sombras suaves cerca del jugador, resolución nativa; la resolución dinámica mantiene 60 FPS.',
+    maxPixelRatio: 1,
+    shadows: true, shadowMapSize: 1024, shadowType: THREE.PCFShadowMap, shadowRange: 26,
     tone: true, fogMul: 1.0, fill: true, tex: 'med', maxBots: 9
   },
   high: {

@@ -2121,14 +2121,14 @@ document.querySelectorAll('[data-util]').forEach(b=>b.addEventListener('click',(
 
 let lastTime=performance.now();
 // === FPS chiquito arriba-derecha + MINIMAPA circular Dust2 (sup-izq) ===
-let lastCapT=0;
+let lastCapT=0, _mmT=0;
 function animate(){
   rafId=requestAnimationFrame(animate);
   { const fc=QUALITY[qualityLevel].fpsCap; if(fc){ const n0=performance.now(); if(n0-lastCapT < 1000/fc-2) return; lastCapT=n0; } }   // tope de FPS en calidad mínima: menos CPU/GPU
   const now=performance.now();
   const dt = Math.min((now-lastTime)/1000, 0.05); lastTime=now;
   try{ updateFPS(now); }catch(e){}
-  try{ if(gameMode==='dust2' && gameActive) drawMinimap(); }catch(e){}
+  try{ if(gameMode==='dust2' && gameActive && now-_mmT>=33){ _mmT=now; drawMinimap(); } }catch(e){}   // minimapa a ~30 Hz
 
   if(mixer) mixer.update(dt);
   updateWeaponAnim(dt);
@@ -3930,9 +3930,9 @@ let dynGood=0, dynBadStreak=0;
 // resolución dinámica: si los FPS caen bajo el objetivo baja la escala de render; si sobra rendimiento la sube de a poco
 function adaptResolution(fps){
   const o=loadOverrides();
-  if(!o.dynRes || !gameActive || document.hidden || !renderer) { if(getDynScale()!==1){ setDynScale(1); applyDynRes(); } return; }
+  if(o.dynRes===false || !gameActive || document.hidden || !renderer) { if(getDynScale()!==1){ setDynScale(1); applyDynRes(); } return; }
   const target=o.targetFps||60, cur=getDynScale();
-  if(fps < target*0.92){ dynGood=0; if(++dynBadStreak>=2 && cur>0.5){ setDynScale(cur-0.1); applyDynRes(); dynBadStreak=0; } }
+  if(fps < target*0.92){ dynGood=0; if(++dynBadStreak>=3 && cur>0.65){ setDynScale(cur-0.1); applyDynRes(); dynBadStreak=0; } }
   else { dynBadStreak=0; if(fps >= target*0.985 && cur<1){ if(++dynGood>=6){ setDynScale(cur+0.05); applyDynRes(); dynGood=0; } } else dynGood=0; }
 }
 function applyDynRes(){ renderer.setPixelRatio(pixelRatioFor(qualityLevel)); renderer.setSize(innerWidth,innerHeight); }

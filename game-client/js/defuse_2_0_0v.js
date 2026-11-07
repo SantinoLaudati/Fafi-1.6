@@ -149,7 +149,7 @@ export function createDefuse(A) {
     for (let tries = 0; tries < 80 && pts.length < n; tries++) {
       const p = nav.randomNear(z.x, z.z, z.r * (1 + tries / 40));
       if (!p || Math.abs(p.y - z.y) > 1.5) continue;
-      if (pts.every(q => Math.hypot(q.x - p.x, q.z - p.z) > 1.05)) pts.push(p);
+      if (pts.every(q => Math.hypot(q.x - p.x, q.z - p.z) > 1.35)) pts.push(p);
     }
     while (pts.length < n) pts.push({ x: z.x + (pts.length - 2) * 0.6, y: z.y, z: z.z });
     return pts;
