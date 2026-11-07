@@ -4552,9 +4552,9 @@ try{ setInterval(()=>{ try{ fafiApplyEquippedSkins(); }catch(e){} }, 4000); }cat
 // Herramientas de desarrollo: con ?dev=1 en la URL se exponen objetos internos en window.__fafi (capturas, pruebas de mapas y zonas).
 if(/[?&]dev=1/.test(location.search)){ window.__fafi = { THREE, MAPS, ZONAS, defuse, buildMinimapImage, loadMap, wallLimit, get scene(){return scene;}, get camera(){return camera;}, get renderer(){return renderer;}, get controls(){return controls;}, get map(){return currentMapKey;}, get group(){return dust2Group;}, get colliders(){return dust2Colliders;} }; }
 
-// === Recomendar pantalla completa al iniciar sesion (una vez por sesion del navegador) ===
+// === Recomendar pantalla completa en cada inicio de sesion ===
 window.fafiRecommendFullscreen=function(){
-  try{ if(document.fullscreenElement || sessionStorage.getItem('fafi_fs_asked')) return; sessionStorage.setItem('fafi_fs_asked','1'); }catch(e){}
+  try{ if(document.fullscreenElement) return; }catch(e){}     // se muestra en cada inicio de sesion (salvo que ya estes en pantalla completa)
   const box=document.createElement('div');
   box.style.cssText='position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6)';
   box.innerHTML='<div style="background:#101822;border:1px solid rgba(224,168,46,.7);padding:24px 28px;max-width:380px;text-align:center;font-family:inherit;color:#fff;box-shadow:0 10px 40px #000">'
