@@ -9,8 +9,8 @@ for (const w of WEAPONS) LIB[w] = { dir: ARMAS, n: 3, v: 1 };
 Object.assign(LIB, {
   awp: { dir: ARMAS, n: 3, v: 1.0 }, vss: { dir: ARMAS, n: 3, v: 0.7 }, m4b: { dir: ARMAS, n: 3, v: 0.7 }, smg: { dir: ARMAS, n: 3, v: 0.8 }, five: { dir: ARMAS, n: 3, v: 0.8 },
   deagle: { dir: ARMAS, n: 3, v: 0.95 }, negev: { dir: ARMAS, n: 3, v: 0.9 },
-  step: { dir: EFECTOS, n: 3, v: 0.6 }, step_grass: { dir: EFECTOS, n: 3, v: 0.6 }, step_stone: { dir: EFECTOS, n: 3, v: 0.65 }, step_metal: { dir: EFECTOS, n: 3, v: 0.65 },
-  land: { dir: EFECTOS, n: 1, v: 0.7 }, reload_out: { dir: EFECTOS, n: 1, v: 0.8 }, reload_in: { dir: EFECTOS, n: 1, v: 0.7 },
+  step: { dir: EFECTOS, n: 3, v: 0.3 }, step_grass: { dir: EFECTOS, n: 3, v: 0.28 }, step_stone: { dir: EFECTOS, n: 3, v: 0.32 }, step_metal: { dir: EFECTOS, n: 3, v: 0.3 },
+  land: { dir: EFECTOS, n: 1, v: 0.4 }, reload_out: { dir: EFECTOS, n: 1, v: 0.8 }, reload_in: { dir: EFECTOS, n: 1, v: 0.7 },
   ui: { dir: EFECTOS, n: 1, v: 0.5 }, buy: { dir: EFECTOS, n: 1, v: 0.6 },
   grenade_pin: { dir: EFECTOS, n: 1, v: 0.7 }, grenade_throw: { dir: EFECTOS, n: 1, v: 0.6 }, grenade_bounce: { dir: EFECTOS, n: 1, v: 0.5 },
   he: { dir: EFECTOS, n: 1, v: 1.0 }, flash: { dir: EFECTOS, n: 1, v: 0.8 }, smoke: { dir: EFECTOS, n: 1, v: 0.8 }, molotov: { dir: EFECTOS, n: 1, v: 0.85 },
