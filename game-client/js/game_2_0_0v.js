@@ -1571,6 +1571,7 @@ function clearTargets(){
   targets=[];
 }
 function clearBullets(){
+  holes.forEach(h=>{ scene.remove(h); h.geometry.dispose(); h.material.dispose(); }); holes.length=0;
   bullets.forEach(b=>{ scene.remove(b.mesh); scene.remove(b.trail); b.trailGeo.dispose(); });
   bullets=[];
 }
@@ -1586,7 +1587,7 @@ function updateMoneyHUD(){
 }
 function nextOwnedWeapon(){
   // Para Q/rueda: cicla solo entre las que posees en Dust2
-  const order=['ak','m4','knife','awp','deagle'];
+  const order=['ak','m4','knife','awp','deagle'].concat(extraOn ? Object.keys(EXTRA_W) : []);
   if(gameMode!=='dust2') return order;
   return order.filter(w=>owned[w]);
 }
@@ -2070,7 +2071,7 @@ function startGame(mode='aim', team=null){
   }
   // cambiar visibilidad de mapas
   setMapVisibility(isDust2 ? 'dust2' : 'aim');
-  try{ enableExtraWeapons(isDust2); }catch(e){ console.warn(e); }
+  try{ enableExtraWeapons(true); }catch(e){ console.warn(e); }
   gameActive=true;
   resultOverlay.classList.remove('show');
   pauseOverlay.classList.remove('show');
@@ -3146,6 +3147,7 @@ function updateBullets(dt){
       if(outOfBounds && b.mesh.position.z < -11.5 && Math.abs(b.mesh.position.x)<11){
         spawnParticles(b.mesh.position.clone(), 0x8aa0b8);
       }
+      if(outOfBounds) aimWallMark(b.prev, b.mesh.position);
     }
     if(outOfBounds){
       scene.remove(b.mesh); scene.remove(b.trail); b.trailGeo.dispose(); bullets.splice(i,1);
@@ -3423,6 +3425,20 @@ function bulletHole(p, nrm){
   scene.add(m); holes.push(m);
   if(holes.length > 70){ const o=holes.shift(); scene.remove(o); o.geometry.dispose(); o.material.dispose(); }
 }
+// modo AIM: el recinto es un plano a cada lado; se calcula el cruce de la bala y se deja marca + esquirlas
+const _AIM_PL=[[2,-13,1],[2,18,-1],[0,13,-1],[0,-13,1],[1,0.04,1]];     // [eje, posicion, signo de la normal]
+function aimWallMark(p0, p1){
+  let bt=2, ba=-1, bi=-1;
+  for(let i=0;i<_AIM_PL.length;i++){
+    const [ax,pos]=_AIM_PL[i], a=ax===0?p0.x:ax===1?p0.y:p0.z, b=ax===0?p1.x:ax===1?p1.y:p1.z;
+    if((a-pos)*(b-pos)<0||(i===4&&b<pos&&a>=pos)||(i===0&&b<pos&&a>=pos)){ const t=(pos-a)/((b-a)||1e-6); if(t>=0&&t<bt){ bt=t; bi=i; } }
+  }
+  if(bi<0) return;
+  const pt=new THREE.Vector3().lerpVectors(p0,p1,bt), pl=_AIM_PL[bi], n=new THREE.Vector3();
+  if(pl[0]===0) n.x=pl[2]; else if(pl[0]===1) n.y=pl[2]; else n.z=pl[2];
+  emitDebris(pt, n, 0xd8c2a0, 10, 3, Math.max(0.04, pt.y-0.4));
+  bulletHole(pt, n);
+}
 const _hn = new THREE.Vector3();
 function impactFx(hit, dir, hex=0xd8c2a0){
   const n = hit.face ? _hn.copy(hit.face.normal).transformDirection(hit.object.matrixWorld).clone() : new THREE.Vector3(0,1,0);
@@ -3652,7 +3668,7 @@ window.addEventListener('keydown', (e)=>{
       let idx=order.indexOf(currentWeapon);
       switchWeapon(order[(idx+1)%order.length]);
     } else {
-      const order=['ak','m4','knife','awp','deagle']; const idx=order.indexOf(currentWeapon); switchWeapon(order[(idx+1)%order.length]);
+      const order=nextOwnedWeapon(); const idx=order.indexOf(currentWeapon); switchWeapon(order[(idx+1)%order.length]);
     }
     return;
   }
@@ -4260,7 +4276,7 @@ window.addEventListener('wheel', (e)=>{
     else switchWeapon(order[(idx+1)%order.length]);
     return;
   }
-  const order=['ak','m4','knife','awp','deagle'];
+  const order=nextOwnedWeapon();
   const idx=order.indexOf(currentWeapon);
   if(e.deltaY < 0) switchWeapon(order[(idx-1+order.length)%order.length]);
   else switchWeapon(order[(idx+1)%order.length]);
