@@ -758,7 +758,7 @@ const MAPS = {
 function mapFile(key){ const d=MAPS[key]; return d.files ? d.files[QUALITY[qualityLevel].tex] : d.file; }
 // spawns marcados a mano en la partida (Z = CT, C = T, con el modo vuelo P); se guardan en localStorage 'fafi_spawns'
 function loadZoneOverrides(){ try{ return JSON.parse(localStorage.getItem('fafi_spawns')||'{}')||{}; }catch(e){ return {}; } }
-{ const so=loadZoneOverrides(); for(const k in so){ const d=MAPS[k]; if(!d||!d.zones) continue; d.zones={...d.zones}; for(const t of ['t','ct']) if(so[k][t]) d.zones[t]={...d.zones[t], ...so[k][t]}; } }
+{ const so=loadZoneOverrides(); for(const k in so){ const d=MAPS[k]; if(!d||!d.zones) continue; d.zones={...d.zones}; for(const t of ['t','ct','A','B']) if(so[k][t]) d.zones[t]={...d.zones[t], ...so[k][t]}; } }
 let currentMapKey='dust2';
 let currentMapFile=null;
 let selectedMap='dust2';
@@ -860,6 +860,42 @@ function activateMap(key){
   console.log('Mapa activo:', key, 'bounds', e.bounds.min, e.bounds.max, 'spawns', e.spawns, 'colliders', e.colliders.length);
 }
 
+// Fusiona la geometría visible del mapa por material y por celda de 24 m: de ~1900 mallas (1350 llamadas de dibujo en Dust II) a unas 80.
+// Las mallas originales se quedan (invisibles) como colisión y para raycasts; lo que se dibuja son las fusionadas.
+async function mergeStaticVisuals(model, meshes){
+  const list=meshes.filter(m=>m.isMesh && !m.isSkinnedMesh && !Array.isArray(m.material) && m.geometry.attributes.position);
+  if(list.length<250) { model.traverse(o=>{ if(o!==model){ o.matrixAutoUpdate=false; } }); return; }       // mapas ya optimizados (Mirage): solo se congelan las matrices
+  const BU=await import('three/addons/utils/BufferGeometryUtils.js');
+  model.updateMatrixWorld(true);
+  const inv=new THREE.Matrix4().copy(model.matrixWorld).invert();
+  const CELL=24, groups=new Map(), box=new THREE.Box3(), c=new THREE.Vector3(), mm=new THREE.Matrix4();
+  for(const m of list){
+    box.setFromBufferAttribute(m.geometry.attributes.position).applyMatrix4(m.matrixWorld); box.getCenter(c);
+    const key=m.material.uuid+'|'+Math.floor(c.x/CELL)+'|'+Math.floor(c.z/CELL);
+    let a=groups.get(key); if(!a){ a=[]; groups.set(key,a); } a.push(m);
+  }
+  const out=[]; let n=0;
+  for(const [,arr] of groups){
+    const geos=arr.map(m=>{
+      const g=m.geometry.clone();
+      if(!g.index){ const cnt=g.attributes.position.count, ia=new Uint32Array(cnt); for(let i=0;i<cnt;i++) ia[i]=i; g.setIndex(new THREE.BufferAttribute(ia,1)); }
+      mm.multiplyMatrices(inv, m.matrixWorld); g.applyMatrix4(mm);
+      return g;
+    });
+    const names=Object.keys(geos[0].attributes).filter(k=>geos.every(g=>g.attributes[k]));
+    geos.forEach(g=>{ for(const k of Object.keys(g.attributes)) if(!names.includes(k)) g.deleteAttribute(k); g.morphAttributes={}; });
+    const mg=BU.mergeGeometries(geos,false); if(!mg) continue;
+    mg.computeBoundingSphere();
+    const mesh=new THREE.Mesh(mg, arr[0].material); mesh.castShadow=true; mesh.receiveShadow=true; mesh.userData.merged=true;
+    out.push({mesh, arr});
+    if((++n)%12===0) await new Promise(r=>setTimeout(r,0));     // deja respirar al navegador (no se congela la pantalla de carga)
+  }
+  for(const {mesh,arr} of out){ model.add(mesh); mesh.updateMatrix(); mesh.matrixAutoUpdate=false; for(const m of arr){ m.visible=false; } }
+  model.traverse(o=>{ if(o!==model) o.matrixAutoUpdate=false; });
+  model.updateMatrixWorld(true);
+  console.log('mapa fusionado:', list.length, 'mallas ->', out.length);
+}
+
 function loadMap(key, onDone){
   const def=MAPS[key];
   if(!def) return;
@@ -898,6 +934,8 @@ function loadMap(key, onDone){
     model.updateMatrixWorld(true);
     const bounds=new THREE.Box3().setFromObject(model);
     const colliders=[]; model.traverse(o=>{ if(o.isMesh) colliders.push(o); });
+    if(loadingEl) loadingEl.textContent='Optimizando '+def.name+'...';
+    try{ await mergeStaticVisuals(model, colliders); }catch(err){ console.warn('merge estático', err); }
     if(loadingEl) loadingEl.textContent='Preparando colisiones de '+def.name+'...';
     if(await bvhPromise){ for(const m of colliders){ try{ if(!m.geometry.boundsTree) m.geometry.computeBoundsTree(); }catch(err){} } }
     const entry={ model, bounds, colliders, spawns:null, scale:s };
@@ -2134,19 +2172,21 @@ function animate(){
   try{ updateFPS(now); }catch(e){}
   try{ if(gameMode==='dust2' && gameActive && now-_mmT>=33){ _mmT=now; drawMinimap(); } }catch(e){}   // minimapa a ~30 Hz
 
+  const _P=PROF.on?PROF.t:null;   // perfilador (solo con ?dev=1): window.__prof() muestra el costo medio de cada etapa
   if(mixer) mixer.update(dt);
-  updateWeaponAnim(dt);
-  updateViewRecoil(dt);
-  updateAwpAndCrosshair(dt);
-  handleMovement(dt);
-  updateFootsteps(dt);
+  if(_P)_P('weaponAnim'); updateWeaponAnim(dt);
+  if(_P)_P('viewRecoil'); updateViewRecoil(dt);
+  if(_P)_P('awpXhair'); updateAwpAndCrosshair(dt);
+  if(_P)_P('movement'); handleMovement(dt);
+  if(_P)_P('footsteps'); updateFootsteps(dt);
   SFX.listener(camera);
-  updateBullets(dt);
+  if(_P)_P('bullets'); updateBullets(dt);
   updateDebris(dt);
   if(!defuse.active) updateCharacters();
-  if(!pauseOverlay.classList.contains('show')) defuse.update(dt);
-  updateFlashOverlay(dt);
+  if(_P)_P('defuse'); if(!pauseOverlay.classList.contains('show')) defuse.update(dt);
+  if(_P)_P('flash+gren'); updateFlashOverlay(dt);
   grenades.update(dt);
+  if(_P)_P('misc');
   // las sombras (lo más caro del cuadro) se recalculan cada `shadowK` cuadros; la luz se mueve solo cuando se recalcula, así no "nadan"
   _shadowDue = (++_shPhase % shadowK)===0;
   if(sunLight && _shadowDue) updateSun(sunLight, camera.position, qualityLevel, SUN_DIR);
@@ -2182,8 +2222,13 @@ function animate(){
     }
   }
 
-  if(renderer && scene && camera) renderFrame();
+  if(_P)_P('hud+rest'); if(renderer && scene && camera) renderFrame();
+  if(_P){ _P('render'); _P(null); }
 }
+// perfilador mínimo: PROF.t(nombre) cierra la etapa anterior y abre la siguiente
+const PROF={ on:/[?&]dev=1/.test(location.search), acc:{}, n:0, cur:null, t0:0,
+  t(name){ const now=performance.now(); if(PROF.cur) PROF.acc[PROF.cur]=(PROF.acc[PROF.cur]||0)+now-PROF.t0; PROF.cur=name; PROF.t0=now; if(name===null) PROF.n++; } };
+window.__prof=()=>{ const o={on:PROF.on,n:PROF.n}; for(const k in PROF.acc) o[k]=+(PROF.acc[k]/Math.max(1,PROF.n)).toFixed(2); PROF.acc={}; PROF.n=0; return o; };
 
 
 
@@ -3469,9 +3514,9 @@ window.addEventListener('keydown', (e)=>{
   // P = modo vuelo sin daño (atraviesa todo) · Z = guarda aquí el spawn CT · C = guarda aquí el spawn T
   if(gameActive && gameMode==='dust2' && !e.repeat && !e.ctrlKey && !e.altKey){
     if(e.code==='KeyP'){ e.preventDefault(); toggleSpectator(); window.fafiGod=freeCam; showFloating(freeCam?'VUELO + INVULNERABLE (P para salir)':'Vuelo desactivado'); return; }
-    if(e.code==='KeyZ' || e.code==='KeyC'){
+    if(e.code==='KeyZ' || e.code==='KeyC' || e.code==='KeyN' || e.code==='KeyM'){
       e.preventDefault();
-      const team=e.code==='KeyZ'?'ct':'t';
+      const team={KeyZ:'ct',KeyC:'t',KeyN:'A',KeyM:'B'}[e.code]; const isSite=(team==='A'||team==='B');
       const feet={x:+camera.position.x.toFixed(2), z:+camera.position.z.toFixed(2)};
       let y=camera.position.y-eyeStandHeight;
       try{ const rc=new THREE.Raycaster(new THREE.Vector3(feet.x,camera.position.y,feet.z), new THREE.Vector3(0,-1,0), 0, 40); const h=rc.intersectObjects(dust2Colliders,false)[0]; if(h) y=h.point.y; }catch(err){}
@@ -3479,9 +3524,9 @@ window.addEventListener('keydown', (e)=>{
       const so=loadZoneOverrides(); (so[currentMapKey]=so[currentMapKey]||{})[team]=feet;
       try{ localStorage.setItem('fafi_spawns', JSON.stringify(so)); }catch(err){}
       const d=MAPS[currentMapKey]; if(d){ d.zones={...(d.zones||{})}; d.zones[team]={...(d.zones[team]||{r:5}), ...feet}; }
-      try{ markSpawn(team); }catch(err){}
+      if(!isSite){ try{ markSpawn(team); }catch(err){} }
       console.log('SPAWN '+team.toUpperCase()+' '+currentMapKey+':', JSON.stringify(feet));
-      showFloating('Spawn '+(team==='ct'?'CT':'T')+' guardado: x '+feet.x+'  y '+feet.y+'  z '+feet.z+' (rige desde la próxima ronda/partida)');
+      showFloating((isSite?'SITE ':'Spawn ')+(team==='ct'?'CT':team==='t'?'T':team)+' guardado: x '+feet.x+'  y '+feet.y+'  z '+feet.z+' (rige desde la próxima ronda/partida)');
       return;
     }
   }

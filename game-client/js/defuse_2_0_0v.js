@@ -554,7 +554,14 @@ export function createDefuse(A) {
   const _td = new THREE.Vector3(), _tp = new THREE.Vector3();
   const gO = new THREE.Vector3(), wO = new THREE.Vector3(), wD = new THREE.Vector3();
   const WDIRS = Array.from({ length: 8 }, (_, i) => new THREE.Vector3(Math.sin(i * Math.PI / 4), 0, Math.cos(i * Math.PI / 4)));
+  let gCacheFor = null; const gCache = new Map();           // el suelo del mapa es estático: se guarda la altura por celdas de 12 cm
   function groundAt(x, z, y) {
+    if (gCacheFor !== A.colliders) { gCache.clear(); gCacheFor = A.colliders; }
+    const ck = ((Math.round(x * 8) + 8192) * 16384 + (Math.round(z * 8) + 8192)) * 128 + Math.round(y * 3) + 64;
+    const hit = gCache.get(ck); if (hit !== undefined) return hit === Infinity ? null : hit;
+    const r = groundAtRaw(x, z, y); if (gCache.size > 40000) gCache.clear(); gCache.set(ck, r === null ? Infinity : r); return r;
+  }
+  function groundAtRaw(x, z, y) {
     gRay.set(gO.set(x, y + 0.75, z), gDown); gRay.far = 2.2; gRay.firstHitOnly = false;
     for (const h of gRay.intersectObjects(A.colliders, false)) {
       if (!h.face) continue;
@@ -563,13 +570,15 @@ export function createDefuse(A) {
     }
     return null;
   }
-  function settle(u, dt) {
+  function settle(u, dt, mdx, mdz) {
     // paredes: 8 rayos cortos a la altura del torso; se empuja hacia fuera lo que penetra
     const sc = A.colScale ? A.colScale() : 1, rad = 0.26 * Math.max(0.5, sc);
     wRay.far = rad; wRay.firstHitOnly = true;
-    for (let k = 0; k < 2; k++) {
+    const phase = (u._st = ((u._st | 0) + 1) % 3), doWalls = phase === 0;   // paredes: 1 de cada 3 cuadros (el desplazamiento por cuadro es mínimo)
+    for (let k = 0; k < (doWalls ? 2 : 0); k++) {
       let moved = false;
       for (const d of WDIRS) {
+        if (mdx !== undefined && d.x * mdx + d.z * mdz < 0.3) continue;          // al caminar solo importan las paredes hacia donde avanza
         wRay.set(wO.set(u.pos.x, u.pos.y + 0.62 * Math.max(0.7, sc), u.pos.z), d);
         const h = wRay.intersectObjects(A.colliders, false)[0];
         if (h && (!h.face || Math.abs(h.face.normal.clone().transformDirection(h.object.matrixWorld).y) < 0.6)) {
@@ -579,8 +588,9 @@ export function createDefuse(A) {
       if (!moved) break;
     }
     // suelo: la altura sigue la geometría (escaleras, rampas)
+    if (phase === 2) return;                                       // suelo: se ajusta en 2 de cada 3 cuadros
     const gy = groundAt(u.pos.x, u.pos.z, u.pos.y);
-    if (gy !== null && Math.abs(gy - u.pos.y) < 1.0) u.pos.y += (gy - u.pos.y) * Math.min(1, (dt || 0.016) * 14);
+    if (gy !== null && Math.abs(gy - u.pos.y) < 1.0) u.pos.y += (gy - u.pos.y) * Math.min(1, (dt || 0.016) * 14 * 1.5);
   }
   function moveAlongPath(u, dt, speed) {
     if (!u.path || u.pathIdx >= u.path.length) { u.speed = 0; return true; }
@@ -590,7 +600,7 @@ export function createDefuse(A) {
     const st = Math.min(d, speed * dt);
     u.pos.x += dx / d * st; u.pos.z += dz / d * st;
     u.pos.y += (w.y - u.pos.y) * Math.min(1, dt * 4);
-    settle(u, dt);
+    settle(u, dt, dx / d, dz / d);
     u.speed = speed;
     return false;
   }
@@ -811,11 +821,18 @@ export function createDefuse(A) {
       u.lvx = (u.lvx || 0) + (lvx - (u.lvx || 0)) * Math.min(1, dt * 12); u.lvz = (u.lvz || 0) + (lvz - (u.lvz || 0)) * Math.min(1, dt * 12);
       let dyw = u.yaw - u.yawPrev; while (dyw > Math.PI) dyw -= 2 * Math.PI; while (dyw < -Math.PI) dyw += 2 * Math.PI; u.yawPrev = u.yaw;
       const crouch = planting ? 1 : (u.crouchFight && tgt && !strafing && Math.hypot(u.lvx, u.lvz) < 0.4) ? 1 : 0;
-      animateCharacter(u.char, dt, u.lvz, pitch, { vx: u.lvx, vz: u.lvz, crouch, engaged: !!(tgt && now - u.lastSeenT < 2500), plant: planting, yawRate: _cl(dyw / dtv, -9, 9) });
+      // nivel de detalle: la animación con huesos es lo más caro del bot; lejos o fuera de pantalla se actualiza cada 2-5 cuadros (con el dt acumulado)
+      u._ad = (u._ad || 0) + dt; u._af = (u._af || 0) + 1; if (u._ph === undefined) u._ph = Math.floor(Math.random() * 6);
+      const dCam = u.pos.distanceTo(A.camera.position), seen = _frustum.intersectsSphere(_sph.set(_tp.set(u.pos.x, u.pos.y + 0.6, u.pos.z), 1.1));
+      const every = !seen ? 5 : dCam < 9 ? 1 : dCam < 22 ? 2 : 3;
+      if (every === 1 || (u._af + u._ph) % every === 0 || u.crouchAmt === undefined) {
+        animateCharacter(u.char, u._ad, u.lvz, pitch, { vx: u.lvx, vz: u.lvz, crouch, engaged: !!(tgt && now - u.lastSeenT < 2500), plant: planting, yawRate: _cl(dyw / dtv, -9, 9) }); u._ad = 0;
+      }
       u.crouchAmt = u.char.crouch;
       if (!tgt && speed > 0.3) { u.stepAcc = (u.stepAcc || 0) + speed * dt; if (u.stepAcc > 1.55) { u.stepAcc = 0; if (u.pos.distanceTo(A.camera.position) < 38) SFX.at(SFX.surface, { x: u.pos.x, y: u.pos.y + 0.1, z: u.pos.z }, { vol: 0.7, ref: 3 }); } }
     }
   }
+  const _frustum = new THREE.Frustum(), _pm = new THREE.Matrix4(), _sph = new THREE.Sphere();
   function separate() {
     const us = D.units.filter(u => u.alive);
     for (let i = 0; i < us.length; i++) for (let j = i + 1; j < us.length; j++) {
@@ -901,6 +918,7 @@ export function createDefuse(A) {
       D.stateT -= dt;
       if (D.stateT <= 0 && !D.matchOver) { nextRound(false); }
     }
+    _frustum.setFromProjectionMatrix(_pm.multiplyMatrices(A.camera.projectionMatrix, A.camera.matrixWorldInverse));
     for (const u of D.units) if (!u.isPlayer) updateBot(u, dt, now);
     separate();
     chickens.update(dt, D.nav, D.player ? D.player.pos : null);
