@@ -829,7 +829,7 @@ function loadZoneOverrides(){ try{ return JSON.parse(localStorage.getItem('fafi_
 let currentMapKey='dust2';
 let currentMapFile=null;
 let selectedMap='dust2';
-try{ const sm=localStorage.getItem('fafi_map'); if(sm && MAPS[sm]) selectedMap=sm; }catch(e){}
+try{ const sm=localStorage.getItem('fafi_map'); if(sm && MAPS[sm] && !MAPS[sm].surf) selectedMap=sm; }catch(e){}
 const mapCache={};   // clave: key|archivo
 let siteBoxGroup=null;
 
@@ -922,7 +922,7 @@ function activateMap(key){
   dust2GroundY=null;
   refreshSpawnRings();
   dust2Loaded=true;
-  try{ localStorage.setItem('fafi_map', key); }catch(err){}
+  try{ if(!MAPS[key].surf) localStorage.setItem('fafi_map', key); }catch(err){}
   refreshMapPicker();
   console.log('Mapa activo:', key, 'bounds', e.bounds.min, e.bounds.max, 'spawns', e.spawns, 'colliders', e.colliders.length);
 }
@@ -1254,35 +1254,48 @@ const KNIFE_FILE = 'assets/Cuchillos/karambit.glb';
 const KNIFE_ANIM_ROT = [0.10,0.95,0.30];   // karambit: punta hacia delante, la hoja de costado hacia la cámara
 const KNIFE_LEN = 0.30;
 const KNIFE_ANIM_POS = [0.16,-0.17,-0.55];
-async function loadKnifeAnim(){
-  const g=await loadKnife();                    // karambit: ya viene fusionado en una sola malla (así las skins cubren todo el cuchillo)
-  if(!g){
-    const gk=new THREE.Group();
-    gk.add(new THREE.Mesh(new THREE.BoxGeometry(0.032,0.012,0.22), new THREE.MeshStandardMaterial({color:0xcdd6e6, metalness:0.7, roughness:0.2})));
-    gk.position.set(0.16,-0.28,-0.52);
-    knifeModel=gk; knifeBasePos=gk.position.clone(); knifeBaseRot=gk.rotation.clone();
-    knifeModel.visible=(currentWeapon==='knife'); vmAdd(gk); scene.add(camera); updateWeaponVisibility();
-    return;
-  }
-  const model=g.scene.clone(true);
-  model.traverse(o=>{ if(o.isMesh){ o.material=o.material.clone(); if(o.material.color) o.material.color.multiplyScalar(2.2); o.material.metalness=0.35; o.material.roughness=0.4; o.material.emissive=new THREE.Color(0x15181c); o.frustumCulled=false; o.castShadow=false; o.receiveShadow=false; } });
-  const inner=new THREE.Group(); inner.add(model);      // el modelo trae la punta hacia -Z y el anillo hacia +Z/+Y
-  const holder=new THREE.Group(); holder.add(inner);
-  holder.updateMatrixWorld(true);
-  const box=new THREE.Box3().setFromObject(holder);
-  const size=box.getSize(new THREE.Vector3()), center=box.getCenter(new THREE.Vector3());
-  const s=KNIFE_LEN/Math.max(size.x,size.y,size.z);
-  inner.scale.setScalar(s);
-  inner.position.copy(center).multiplyScalar(-s);
-  holder.position.set(...KNIFE_ANIM_POS);
-  holder.rotation.set(...KNIFE_ANIM_ROT);
-  if(knifeModel){ vmRoot.remove(knifeModel); }
-  knifeModel=holder; knifeBasePos=holder.position.clone(); knifeBaseRot=holder.rotation.clone();
+// Dos cuchillos: karambit y cuchillo de combate. Se alternan apretando 3 con el cuchillo en la mano (o desde el menú de equipo); se recuerda el elegido.
+const KNIFE_CFG = {
+  karambit: { file:'karambit', len:0.30, pos:[0.16,-0.17,-0.55], rot:[0.10,0.95,0.30], rotX:0 },
+  combate:  { file:'assets/Cuchillos/cuchillo_de_combate.glb', len:0.62, pos:[0.27,-0.30,-0.74], rot:[0.28,0.52,Math.PI+0.38], rotX:-Math.PI/2 }
+};
+const knifeHolders={};
+let knifeType='karambit'; try{ const k=localStorage.getItem('fafi_knife'); if(k && KNIFE_CFG[k]) knifeType=k; }catch(e){}
+function makeKnifeHolder(model, cfg){
+  model.traverse(o=>{ if(o.isMesh){ o.material=Array.isArray(o.material)?o.material.map(m=>m.clone()):o.material.clone(); const ms=Array.isArray(o.material)?o.material:[o.material]; ms.forEach(m=>{ if(m.color) m.color.multiplyScalar(cfg.rotX?1.0:2.2); m.metalness=0.35; m.roughness=0.4; if(m.emissive) m.emissive=new THREE.Color(0x15181c); }); o.frustumCulled=false; o.castShadow=false; o.receiveShadow=false; } });
+  const inner=new THREE.Group(); inner.add(model); inner.rotation.x=cfg.rotX;
+  const holder=new THREE.Group(); holder.add(inner); holder.updateMatrixWorld(true);
+  const box=new THREE.Box3().setFromObject(holder), size=box.getSize(new THREE.Vector3()), center=box.getCenter(new THREE.Vector3());
+  const s=cfg.len/Math.max(size.x,size.y,size.z);
+  inner.scale.setScalar(s); inner.position.copy(center).multiplyScalar(-s);
+  holder.position.set(...cfg.pos); holder.rotation.set(...cfg.rot);
+  holder.userData.basePos=holder.position.clone(); holder.userData.baseRot=holder.rotation.clone();
+  holder.visible=false; vmAdd(holder);
+  return holder;
+}
+function setKnifeType(t, quiet){
+  if(!KNIFE_CFG[t] || !knifeHolders[t]) return;
+  knifeType=t; try{ localStorage.setItem('fafi_knife', t); }catch(e){}
+  for(const k in knifeHolders) knifeHolders[k].visible=false;
+  knifeModel=knifeHolders[t]; knifeBasePos=knifeModel.userData.basePos.clone(); knifeBaseRot=knifeModel.userData.baseRot.clone();
+  knifeModel.position.copy(knifeBasePos); knifeModel.rotation.copy(knifeBaseRot);
   knifeModel.visible=(currentWeapon==='knife');
-  vmAdd(holder); scene.add(camera);
-  knifeAnim=null;                              // modelo estático: el ataque es procedural
-  updateWeaponVisibility();
   try{ fafiApplyEquippedSkins(); }catch(e){}
+  if(!quiet){ showFloating('Cuchillo: '+(t==='karambit'?'KARAMBIT':'CUCHILLO DE COMBATE')); try{ SFX.weapon='knife'; SFX.play('draw_knife'); }catch(e){} }
+}
+function toggleKnife(){ const keys2=Object.keys(KNIFE_CFG).filter(k=>knifeHolders[k]); if(keys2.length<2) return; setKnifeType(keys2[(keys2.indexOf(knifeType)+1)%keys2.length]); }
+async function loadKnifeAnim(){
+  const gk=await loadKnife();                                       // karambit ya fusionado en una sola malla (las skins lo cubren completo)
+  if(gk) knifeHolders.karambit=makeKnifeHolder(gk.scene.clone(true), KNIFE_CFG.karambit);
+  try{ const g2=await new Promise((res,rej)=>makeLoader().load(KNIFE_CFG.combate.file, res, undefined, rej)); knifeHolders.combate=makeKnifeHolder(g2.scene, KNIFE_CFG.combate); }catch(e){ console.warn('cuchillo de combate', e); }
+  if(!Object.keys(knifeHolders).length){
+    const fb=new THREE.Group(); fb.add(new THREE.Mesh(new THREE.BoxGeometry(0.032,0.012,0.22), new THREE.MeshStandardMaterial({color:0xcdd6e6, metalness:0.7, roughness:0.2})));
+    fb.position.set(0.16,-0.28,-0.52); knifeModel=fb; knifeBasePos=fb.position.clone(); knifeBaseRot=fb.rotation.clone(); knifeModel.visible=(currentWeapon==='knife'); vmAdd(fb); scene.add(camera); updateWeaponVisibility(); return;
+  }
+  if(!knifeHolders[knifeType]) knifeType=Object.keys(knifeHolders)[0];
+  scene.add(camera); knifeAnim=null;
+  setKnifeType(knifeType, true);
+  updateWeaponVisibility();
 }
 
 // === DEFUSE: puente entre el motor y js/defuse_2_0_0v.js ===
@@ -2670,7 +2683,7 @@ function updateWeaponAnim(dt){
       );
       // suavizado Valorant
       if(wallPush>0.01){ ip.z+=wallPush*0.7; ip.y-=wallPush*0.2; }
-      { const q=Math.min(1,Math.max(0,(t-0.30)/0.45)); ir.x += (q<0.5?2*q*q:1-Math.pow(-2*q+2,2)/2)*Math.PI*4; ir.z += Math.sin(q*Math.PI)*0.5; }   // giro del karambit alrededor del anillo (flip)
+      if(knifeType==='karambit'){ const q=Math.min(1,Math.max(0,(t-0.30)/0.45)); ir.x += (q<0.5?2*q*q:1-Math.pow(-2*q+2,2)/2)*Math.PI*4; ir.z += Math.sin(q*Math.PI)*0.5; }   // giro del karambit alrededor del anillo (flip)
       knifeModel.position.lerp(ip, 0.38);
       knifeModel.rotation.x = THREE.MathUtils.lerp(knifeModel.rotation.x, knifeBaseRot.x + ir.x, 0.38);
       knifeModel.rotation.y = THREE.MathUtils.lerp(knifeModel.rotation.y, knifeBaseRot.y + ir.y, 0.38);
@@ -3213,7 +3226,7 @@ function updateViewRecoil(dt){
     if(Math.abs(viewRecoilY)<0.00005) viewRecoilY=0;
   }
   // spread y heat por ráfaga decaen cuando no disparas (más lento si spameaste mucho)
-  const spreadDecay = isAiming ? 6.5 : 3.2;
+  const spreadDecay = isAiming ? 6.5 : 2.0;
   spreadAccum = THREE.MathUtils.lerp(spreadAccum, 0, 1 - Math.pow(0.001, dt*spreadDecay));
   // heat de spam decae exponencial, tarda ~1.2s en volver a 0 si dejaste de disparar
   const heatDecay = 2.4;
@@ -3289,14 +3302,14 @@ function shoot(){
     const rs = WREC[currentWeapon] || WREC.ak;
     const pk = patternKick(rs.pat==='m4' ? M4_PATTERN : AK_PATTERN, consecutiveSpam-1);
     const crouchMult = (isCrouching && !isMovingNowPre) ? 0.82 : 1.0;
-    const verticalKick = pk[0] * rs.k * (aimMult<1?0.8:1) * walkMult * crouchMult * (0.92 + Math.random()*0.16);
-    const horizKick = pk[1] * rs.h * (aimMult<1?0.8:1) * walkMult * crouchMult + (Math.random()-0.5)*0.0022*walkMult*rs.rnd;
+    const verticalKick = pk[0] * rs.k * 0.5 * (aimMult<1?0.8:1) * walkMult * crouchMult * (0.92 + Math.random()*0.16);
+    const horizKick = pk[1] * rs.h * 0.5 * (aimMult<1?0.8:1) * walkMult * crouchMult + (Math.random()-0.5)*0.0022*walkMult*rs.rnd;
     viewRecoilX += verticalKick;
     viewRecoilY += horizKick;
     camera.rotateX(-verticalKick);
     camera.rotateY(-horizKick);
-    const addSpread = (isAiming?0.0028:0.0062) * rs.sp * (1 + spamHeat*0.55) * walkMult;
-    const maxSpread = (isMovingNowPre ? 0.034 : 0.020) * rs.max;
+    const addSpread = (isAiming?0.0028:0.0062) * rs.sp * 1.8 * (1 + spamHeat*0.55) * walkMult;
+    const maxSpread = (isMovingNowPre ? 0.034 : 0.020) * rs.max * 1.4;
     spreadAccum = Math.min(spreadAccum + addSpread, maxSpread);
     recoilKick = (isAiming?0.85:1.35) * rs.kick * (1 + spamHeat*0.22);
   }
@@ -3348,7 +3361,7 @@ function shoot(){
     if(consecutiveSpam===1 && !isMovingNow) baseSpread *= 0.48;
   } else {
     const rs = WREC[currentWeapon] || WREC.ak;
-    baseSpread = 0.0009 * rs.base;
+    baseSpread = 0.0012 * rs.base;
     if(isMovingNow) baseSpread += 0.010 * rs.move;     // caminando y disparando el spray se abre muchísimo
     if(canScope(currentWeapon) && !isAiming) baseSpread += isMovingNow ? 0.11 : 0.06;   // francotirador sin mira: las balas van para cualquier lado
     if(isCrouching && !isMovingNow) baseSpread *= 0.7;
@@ -3646,7 +3659,7 @@ window.addEventListener('keydown', (e)=>{
   // Ranuras como en CS: 1 primaria · 2 secundaria · 3 cuchillo · 4 flash · 5 humo · 6 HE · 7 molotov
   { const m=/^(?:Digit|Numpad)([1-7])$/.exec(e.code); if(m){ e.preventDefault(); const n=+m[1];
     if(n===1){ const prim=PRIMARIES.filter(w=>gameMode!=='dust2'||owned[w]); if(prim.length){ const i=prim.indexOf(currentWeapon); switchWeapon(i>=0 ? prim[(i+1)%prim.length] : (prim.includes(lastPrimary)?lastPrimary:prim[0])); } else showFloating('No tienes primaria • Pulsa B para comprar'); }
-    else if(n===2){ const sec=SECONDARIES.filter(w=>gameMode!=='dust2'||owned[w]); if(sec.length){ const i=sec.indexOf(currentWeapon); switchWeapon(i>=0?sec[(i+1)%sec.length]:sec[0]); } } else if(n===3) switchWeapon('knife');
+    else if(n===2){ const sec=SECONDARIES.filter(w=>gameMode!=='dust2'||owned[w]); if(sec.length){ const i=sec.indexOf(currentWeapon); switchWeapon(i>=0?sec[(i+1)%sec.length]:sec[0]); } } else if(n===3){ if(currentWeapon==='knife') toggleKnife(); else switchWeapon('knife'); }
     else switchWeapon(['flash','smoke','he','molo'][n-4]);
     return; } }
   if(e.code==='KeyQ' && !e.ctrlKey){
