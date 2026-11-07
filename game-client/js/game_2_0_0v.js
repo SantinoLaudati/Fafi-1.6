@@ -4580,7 +4580,7 @@ document.addEventListener('fullscreenchange',()=>{
   }catch(_){}
 });
 
-// === GRAFITI: con la tecla | se pega la imagen en la pared o el piso que miras (hasta 4 m) ===
+// === GRAFITI: con la tecla a la izquierda del 1 (Backquote) se pega la imagen en la pared o el piso que miras (hasta 4 m) ===
 const sprays=[]; let sprayTex=null, sprayLoading=false, lastSprayT=0;
 function sprayTexture(cb){
   if(sprayTex) return cb(sprayTex);
@@ -4628,4 +4628,4 @@ function placeSpray(){
     try{ SFX.weapon='knife'; SFX.play('draw_knife',{vol:0.5}); }catch(e){}
   });
 }
-window.addEventListener('keydown',(e)=>{ if(e.key==='|' && !e.repeat){ e.preventDefault(); placeSpray(); } }, true);
+window.addEventListener('keydown',(e)=>{ if(e.code==='Backquote' && !e.repeat){ e.preventDefault(); placeSpray(); } }, true);
