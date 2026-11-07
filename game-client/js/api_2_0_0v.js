@@ -118,6 +118,14 @@ class ApiService {
         });
     }
 
+    async saveSurf(tiempo) {
+        return this.request('/game/surf', { method: 'POST', body: JSON.stringify({ tiempo }) });
+    }
+
+    async getSurf() {
+        return this.request('/game/surf');
+    }
+
     async getConfig() {
         return this.request('/game/config');
     }

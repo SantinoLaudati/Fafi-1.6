@@ -66,6 +66,7 @@ const PAIRS = [
   ['SELECCIONA UN ARMA', 'SELECT A WEAPON'], ['Comunes + chance Épica.', 'Commons + chance of Epic.'], ['Alta prob. Épicas.', 'High chance of Epics.'], ['Épica o Legendaria.', 'Epic or Legendary.'],
   // avisos del juego
   ['De vuelta al cuerpo', 'Back in your body'], ['Vuelo desactivado', 'Flight off'], ['Sin conexión', 'Offline'], ['¡Hola', 'Hello'], ['lanzada', 'thrown'], ['No tienes', "You don't have"], ['Pulsa B para comprar', 'Press B to buy'],
+  ['NUEVO', 'NEW'], ['Deslizate por rampas: ganá velocidad con el mouse y A/D, sin bunny hop.', 'Glide down ramps: gain speed with the mouse and A/D, no bunny hopping.'], ['¡META! Tiempo:', 'FINISH! Time:'], ['Caíste: volvés al inicio', 'You fell: back to the start'],
   ['Guardado en este equipo', 'Saved on this device']
 ];
 let lang = 'es';

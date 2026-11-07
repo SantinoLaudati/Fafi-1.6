@@ -519,29 +519,25 @@ if (php_sapi_name() === 'cli') {
     
     require_once $autoload;
     
-    $port = (int)(getenv('WS_PORT') ?? 8080);
+    $port = (int)(getenv('WS_PORT') ?: 8080);
     
+    $game = new GameServer();
     $server = IoServer::factory(
         new HttpServer(
             new WsServer(
-                new GameServer()
+                $game
             )
         ),
         $port,
         '0.0.0.0'
     );
-    
+
     echo "🚀 Fafi-1.6 WebSocket Server running on port {$port}\n";
-    
-    // Run periodic tick for respawns
-    $loop = $server->loop;
-    $loop->addPeriodicTimer(1, function() use ($server) {
-        foreach ($server->getApplication()->getApplication()->getApplication() as $app) {
-            if ($app instanceof GameServer) {
-                $app->tick();
-            }
-        }
+
+    // tarea periódica: reapariciones y limpieza de desafíos 1v1 vencidos
+    $server->loop->addPeriodicTimer(1, function () use ($game) {
+        try { $game->tick(); } catch (\Throwable $e) { echo "tick error: {$e->getMessage()}\n"; }
     });
-    
+
     $server->run();
 }

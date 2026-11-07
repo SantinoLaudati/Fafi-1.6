@@ -292,3 +292,11 @@ SELECT
 FROM lista_amigos la
 JOIN usuarios u ON la.amigo_id = u.id
 WHERE la.usuario_id = 1 AND la.estado = 'aceptada';
+-- Surf: mejor tiempo de cada jugador
+CREATE TABLE IF NOT EXISTS `records_surf` (
+    `usuario_id` BIGINT UNSIGNED NOT NULL,
+    `mejor_tiempo` DECIMAL(8,2) NOT NULL,
+    `fecha` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`usuario_id`),
+    CONSTRAINT `fk_surf_user` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

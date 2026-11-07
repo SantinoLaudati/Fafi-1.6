@@ -297,7 +297,7 @@ async function fafiPreloadAll(){
   }
   ov.style.display='flex';
   const low=qualityLevel==='min';
-  const names=Object.keys(MAPS); names.sort((a,b)=>(a===selectedMap?-1:0)-(b===selectedMap?-1:0));
+  const names=Object.keys(MAPS).filter(k=>!MAPS[k].surf); names.sort((a,b)=>(a===selectedMap?-1:0)-(b===selectedMap?-1:0));
   const withTimeout=(p,ms)=>Promise.race([p, new Promise(r=>setTimeout(r,ms))]);
   const tasks=[
     ['Armas', ()=>loadWeaponPack()],
@@ -627,6 +627,7 @@ let bullets = [];
 let spamHeat = 0; // crece con cada disparo seguido, hace el recoil exponencial
 let consecutiveSpam = 0;
 // inspección estilo CS:GO / Valorant - más lenta y sutil
+let crouchWant=0, crouchFlipT=0, jumpArmed=true, jumpLockUntil=0;
 let isInspecting=false, inspectProgress=0, inspectDuration=4.2;
 // cuchillo
 let knifeModel=null, knifeBasePos=null, knifeBaseRot=null;
@@ -818,7 +819,8 @@ const MAPS = {
   mirage: {
     name:'MIRAGE', file:MAP_DIR+'optimizados/cs_mirage_lite.glb', size:84,
     logo:'assets/Logos mapas/mirage logo.png', baked:false, hide:/Blocker/, noCollide:/Plants|WindowsAndDoors/, zones:ZONAS.mirage || null, nav:{ cell:0.9, step:1.0, headroom:1.2 }
-  }
+  },
+  surf: { name:'SURF', file:'surf', size:100, logo:'assets/Logos mapas/mirage logo.png', surf:true, zones:null }
 };
 function mapFile(key){ const d=MAPS[key]; return d.files ? d.files[QUALITY[qualityLevel].tex] : d.file; }
 // spawns marcados a mano en la partida (Z = CT, C = T, con el modo vuelo P); se guardan en localStorage 'fafi_spawns'
@@ -1043,7 +1045,7 @@ function refreshMapPicker(){
   if(!el) return;
   if(!el.dataset.built){
     el.dataset.built='1';
-    for(const k of Object.keys(MAPS)){
+    for(const k of Object.keys(MAPS).filter(k=>!MAPS[k].surf)){
       const b=document.createElement('button');
       const info=MAP_INFO[k]||{ tag:'', desc:'', stats:[] };
       b.className='map-pick'; b.dataset.map=k; b.innerHTML='<div class="mp-art"><img src="'+encodeURI(MAPS[k].logo)+'" alt=""><i class="mp-load"><b></b></i></div><div class="mp-body"><em>'+info.tag+'</em><strong>'+MAPS[k].name+'</strong><p>'+info.desc+'</p><div class="mp-stats">'+info.stats.map(s=>'<span><b>'+s[1]+'</b>'+s[0]+'</span>').join('')+'</div></div>';
@@ -1052,7 +1054,7 @@ function refreshMapPicker(){
     }
     const rnd=document.createElement('button');
     rnd.className='map-pick map-rand'; rnd.innerHTML='<div class="mp-art" style="display:flex;align-items:center;justify-content:center;font-size:54px;background:linear-gradient(135deg,#1a2230,#0e1218)">🎲</div><div class="mp-body"><em>SORPRESA</em><strong>ALEATORIO</strong><p>Elige un mapa al azar entre todos los disponibles.</p></div>';
-    rnd.addEventListener('click', ()=>{ const ks=Object.keys(MAPS); selectMap(ks[Math.floor(Math.random()*ks.length)]); });
+    rnd.addEventListener('click', ()=>{ const ks=Object.keys(MAPS).filter(k=>!MAPS[k].surf); selectMap(ks[Math.floor(Math.random()*ks.length)]); });
     el.appendChild(rnd);
   }
   el.querySelectorAll('.map-pick').forEach(b=>{
@@ -1485,7 +1487,7 @@ function tintMap(on){
 }
 // Hora del día (ajustes gráficos): auto = Mirage de día y el resto de noche; también se puede forzar día o noche.
 function getTimeOfDay(){ try{ return localStorage.getItem('fafi_time')||'auto'; }catch(e){ return 'auto'; } }
-function isNightNow(){ const t=getTimeOfDay(); return t==='noche' || (t==='auto' && currentMapKey!=='mirage'); }
+function isNightNow(){ const t=getTimeOfDay(); return t==='noche' || (t==='auto' && currentMapKey!=='mirage' && currentMapKey!=='surf'); }
 function applyAtmosphere(){
   if(!scene || !hemiLight || !sunLight) return;
   const night = gameMode==='dust2' && isNightNow();
@@ -2093,6 +2095,37 @@ function startGame(mode='aim', team=null){
   updateHUD();
 }
 function startAimMode(){ startGame('aim'); }
+// ===== MODO SURF =====
+let surfState=null, surfMap=null;
+async function startSurf(){
+  if(!scene) initThree();
+  try{
+    const m=await import('./surf_2_0_0v.js');
+    if(!surfMap){
+      surfMap=m.buildSurfMap();
+      if(await bvhPromise){ for(const c of surfMap.colliders){ try{ if(!c.geometry.boundsTree) c.geometry.computeBoundsTree(); }catch(err){} } }
+      const sp={ x:surfMap.start.x, y:surfMap.start.y, z:surfMap.start.z };
+      mapCache['surf|surf']={ model:surfMap.group, bounds:surfMap.bounds, colliders:surfMap.colliders, spawns:{ t:sp, ct:sp }, scale:1 };
+      surfState=m.createSurf();
+    }
+    window.fafiDefuse=false; window.campaignActiveLevel=0;
+    try{ if(typeof fafiHideShell==='function') fafiHideShell(); }catch(e){}
+    selectedMap='surf'; activateMap('surf');
+    startGame('dust2','ct');
+    surfState.reset(surfMap);
+    showFloating('SURF: deslizate por las rampas — mové el mouse hacia el lado de la rampa y apretá A o D. Si caés vuelves a empezar.');
+  }catch(err){ console.warn('surf', err); showFloating('No se pudo iniciar SURF'); }
+}
+function surfFrame(dt){
+  const dir=new THREE.Vector3(); camera.getWorldDirection(dir); dir.y=0; if(dir.lengthSq()<1e-6) dir.set(0,0,-1); dir.normalize();
+  const rgt=new THREE.Vector3(-dir.z,0,dir.x);
+  const out=surfState.step(dt,{ fx:dir.x, fz:dir.z, rx:rgt.x, rz:rgt.z, forward:(keys['KeyW']?1:0)-(keys['KeyS']?1:0), right:(keys['KeyD']?1:0)-(keys['KeyA']?1:0), jump:!!keys['Space'] }, dust2Colliders);
+  surfState.eye(camera); controls.getObject().position.copy(camera.position);
+  playerGrounded=surfState.grounded; playerVelY=surfState.vel.y; pVel.set(surfState.vel.x,0,surfState.vel.z);
+  if(out.respawn) showFloating('Caíste: volvés al inicio');
+  if(out.finished){ showFloating('¡META! Tiempo: '+out.time.toFixed(2)+' s'+(surfState.best!=null?'  ·  mejor: '+surfState.best.toFixed(2)+' s':'')); try{ if(window.authService && window.authService.isAuthenticated() && !window.authService.devMode) window.apiService.saveSurf(out.time).catch(()=>{}); }catch(e){} }
+  const fc=document.getElementById('fpsCounter'); if(fc && fc.dataset.surf!==String(Math.round(surfState.speed()*10))){ fc.dataset.surf=String(Math.round(surfState.speed()*10)); }
+}
 function startDust2Mode(){
   const btn = document.getElementById('dust2Btn');
   const shellBtn = document.getElementById('fafiPlayDust2');
@@ -3639,7 +3672,7 @@ window.addEventListener('keydown', (e)=>{
     tryReload();
   }
 });
-window.addEventListener('keyup', (e)=>{ keys[e.code]=false; });
+window.addEventListener('keyup', (e)=>{ keys[e.code]=false; if(e.code==='Space') jumpArmed=true; });
 function getDust2GroundY(x, z, feetY){
   if(!dust2Colliders.length) return null;
   // Origen BAJO (pies+1.2m): así el techo de arcos/túneles queda POR ENCIMA
@@ -3737,8 +3770,10 @@ function handleMovement(dt){
     if(jumpFatigueMult > 0.992) jumpFatigueMult = 1;
     if(jumpFatigueMult < 1 && consecutiveJumps===0) jumpFatigueMult = THREE.MathUtils.lerp(jumpFatigueMult, 1, dt*0.9);
   }
-  const targetCrouch = (keys['ShiftLeft']||keys['ShiftRight']) ? 1 : 0;
-  crouchProgress = THREE.MathUtils.lerp(crouchProgress, targetCrouch, 1 - Math.pow(0.001, dt*9));
+  // sin agacharse rápido: entre un cambio y el siguiente pasan al menos 0,45 s y la transición es más lenta (no se puede spamear para esquivar)
+  const wantC = (keys['ShiftLeft']||keys['ShiftRight']) ? 1 : 0;
+  if(wantC!==crouchWant && performance.now()-crouchFlipT>450){ crouchWant=wantC; crouchFlipT=performance.now(); }
+  crouchProgress = THREE.MathUtils.lerp(crouchProgress, crouchWant, 1 - Math.pow(0.001, dt*4.5));
   isCrouching = crouchProgress > 0.02;
   const curHeight = THREE.MathUtils.lerp(standHeight, crouchHeight, crouchProgress);
   const curBody = curHeight; // cápsula de colisión (escalada con , . K L, puertas)
@@ -3769,12 +3804,14 @@ function handleMovement(dt){
   if(pauseOverlay.classList.contains('show') || resultOverlay.classList.contains('show')) return;
 
   // === DUST2 FÍSICAS COMPLETAS ===
+  if(gameMode==='dust2' && currentMapKey==='surf' && surfState && dust2Colliders.length){ surfFrame(dt); return; }
   if(gameMode==='dust2' && dust2Colliders.length){
     const useArrows = !isAiming;
     const forward = (keys['KeyW']?1:0) - (keys['KeyS']?1:0) + (useArrows ? ((keys['ArrowUp']?1:0) - (keys['ArrowDown']?1:0)) : 0);
     const right = (keys['KeyD']?1:0) - (keys['KeyA']?1:0);
     // salto con Espacio + anti bunny hop (fatiga si spameas)
-    if(keys['Space'] && playerGrounded && !isCrouching && playerVelY < 0.1){
+    if(keys['Space'] && jumpArmed && performance.now()>jumpLockUntil && playerGrounded && !isCrouching && playerVelY < 0.1){
+      jumpArmed=false; jumpLockUntil=performance.now()+800;     // sin bunny hop: hay que soltar y volver a apretar, y esperar entre saltos
       const nowJump = performance.now();
       const sinceLastJump = nowJump - lastJumpTime;
       if(sinceLastJump > 1800) consecutiveJumps = 0;
@@ -3783,7 +3820,7 @@ function handleMovement(dt){
       // como en CS:GO: el salto siempre llega a la misma altura y, al saltar seguido, la velocidad horizontal
       // se limita a 1.1x la de correr (así el bunny hop no acelera sin fin)
       jumpFatigueMult = 1;
-      { const runMax = baseMoveSpeed * getWeaponMoveMult() * 1.08, cap = runMax * 1.1, hs = Math.hypot(pVel.x, pVel.z);
+      { const runMax = baseMoveSpeed * getWeaponMoveMult() * 1.08, cap = runMax, hs = Math.hypot(pVel.x, pVel.z);
         if(hs > cap){ pVel.x *= cap/hs; pVel.z *= cap/hs; } }
       playerVelY = playerJumpForce;
       playerGrounded = false;
@@ -4342,6 +4379,7 @@ try{
   document.getElementById('login-pass')?.addEventListener('keydown',(e)=>{ if(e.key==='Enter') fafiDoLogin(); });
   document.getElementById('reg-pass')?.addEventListener('keydown',(e)=>{ if(e.key==='Enter') fafiDoRegister(); });
   document.getElementById('fafiPlayAim')?.addEventListener('click',()=>{ window.campaignActiveLevel=0; window.fafiAimSpeedMult=1; startGame('aim'); });
+  document.getElementById('fafiPlaySurf')?.addEventListener('click',()=>{ startSurf(); });
   document.getElementById('fafiPlayDust2')?.addEventListener('click',()=>{ window.campaignActiveLevel=0; window.fafiAimSpeedMult=1; window.fafiDefuse=false; startDust2Mode(); });
   document.getElementById('fafiPlayDefuse')?.addEventListener('click',()=>{ window.campaignActiveLevel=0; window.fafiAimSpeedMult=1; window.fafiDefuse=true; startDust2Mode(); });
   document.getElementById('dfBadgeCT').innerHTML=TEAM_BADGE.ct; document.getElementById('dfBadgeT').innerHTML=TEAM_BADGE.t;

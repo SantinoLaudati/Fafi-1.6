@@ -19,6 +19,9 @@ function handleGame($method, $id, $action, $input, $user) {
                 case 'matches':
                     handleGetMatches($user, $_GET['limit'] ?? 20);
                     break;
+                case 'surf':
+                    handleGetSurf($user);
+                    break;
                 case 'config':
                     handleGetConfig($user);
                     break;
@@ -47,6 +50,9 @@ function handleGame($method, $id, $action, $input, $user) {
                     break;
                 case 'matches':
                     handleSaveMatch($input, $user);
+                    break;
+                case 'surf':
+                    handleSaveSurf($input, $user);
                     break;
                 case 'earn':
                     if ($id === 'coins') {
@@ -423,4 +429,23 @@ function handleUpdateConfig($input, $user) {
     );
     
     echo json_encode(['message' => 'Configuración guardada']);
+}
+// ===== SURF: mejores tiempos por jugador =====
+function handleSaveSurf($input, $user) {
+    $t = (float)($input['tiempo'] ?? 0);
+    if ($t < 5 || $t > 3600) { http_response_code(400); echo json_encode(['error' => 'Tiempo inválido']); return; }
+    db()->query(
+        'INSERT INTO records_surf (usuario_id, mejor_tiempo) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE mejor_tiempo = LEAST(mejor_tiempo, VALUES(mejor_tiempo)), fecha = IF(VALUES(mejor_tiempo) < mejor_tiempo, CURRENT_TIMESTAMP, fecha)',
+        [$user['id'], $t]
+    );
+    handleGetSurf($user);
+}
+
+function handleGetSurf($user) {
+    $top = db()->fetchAll(
+        'SELECT u.username, r.mejor_tiempo FROM records_surf r JOIN usuarios u ON u.id = r.usuario_id ORDER BY r.mejor_tiempo ASC LIMIT 20'
+    );
+    $mine = db()->fetchOne('SELECT mejor_tiempo FROM records_surf WHERE usuario_id = ?', [$user['id']]);
+    echo json_encode(['top' => $top, 'mine' => $mine['mejor_tiempo'] ?? null]);
 }
