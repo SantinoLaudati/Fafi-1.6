@@ -4,7 +4,8 @@
  * Supports both MySQL and PostgreSQL
  */
 
-return [
+function getDbConfig() {
+    return [
     'driver' => env('DB_DRIVER', 'mysql'), // 'mysql' or 'pgsql'
     
     'mysql' => [
@@ -40,7 +41,8 @@ return [
             PDO::ATTR_EMULATE_PREPARES => false,
         ]
     ]
-];
+    ];
+}
 
 function env($key, $default = null) {
     $value = getenv($key);

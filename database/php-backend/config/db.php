@@ -87,14 +87,14 @@ class Database {
         }
         $sql = "UPDATE {$table} SET " . implode(', ', $set) . " WHERE {$where}";
         $params = array_merge($data, $whereParams);
-        $this->query($sql, $params);
-        return $this->getPdo()->rowCount();
+        $stmt = $this->query($sql, $params);
+        return $stmt->rowCount();
     }
     
     public function delete($table, $where, $params = []) {
         $sql = "DELETE FROM {$table} WHERE {$where}";
-        $this->query($sql, $params);
-        return $this->getPdo()->rowCount();
+        $stmt = $this->query($sql, $params);
+        return $stmt->rowCount();
     }
     
     public function beginTransaction() {
