@@ -491,10 +491,9 @@ function vmAdd(obj){
   vmRoot.add(obj); return obj;
 }
 function vmLayer(obj){ obj.traverse(o=>{ if(!o.isLight) o.layers.set(1); }); return obj; }
-let _rfN=0;
+let _shPhase=0, _shadowDue=true, shadowK=2, shadowKBase=2;
 function renderFrame(){
-  // sombras: si los FPS bajan de 60 el mapa de sombras se recalcula cada 2 o 3 cuadros (casi no se nota y ahorra mucho en placas lentas)
-  { const sm=renderer.shadowMap; if(sm.enabled){ const k=fpsVal<45?3:fpsVal<57?2:1; sm.autoUpdate=false; if((++_rfN)%k===0) sm.needsUpdate=true; } }
+  { const sm=renderer.shadowMap; if(sm.enabled){ sm.autoUpdate=false; if(_shadowDue) sm.needsUpdate=true; } }
   renderer.render(scene, camera);                            // mundo (capa 0)
   if(!viewCamera || !vmRoot) return;
   camera.updateMatrixWorld();
@@ -602,6 +601,8 @@ function acquireLight(color,intensity,distance,pos){ const l=lightPool.find(x=>x
 function releaseLight(l){ if(!l) return; l.intensity=0; l.userData.free=true; }
 function applyGraphicsQuality(){
   if(!renderer) return;
+  shadowKBase = shadowK = (qualityLevel==='high') ? 1 : 2;
+  _shadowDue = true;
   const q = applyQuality(renderer, sunLight, qualityLevel);
   if(fillLight) fillLight.visible = q.fill && gameMode!=='dust2';
   if(scene && scene.fog && scene.userData.fogBase){ scene.fog.near=scene.userData.fogBase[0]*q.fogMul; scene.fog.far=scene.userData.fogBase[1]*q.fogMul; }
@@ -2143,7 +2144,9 @@ function animate(){
   if(!pauseOverlay.classList.contains('show')) defuse.update(dt);
   updateFlashOverlay(dt);
   grenades.update(dt);
-  if(sunLight) updateSun(sunLight, camera.position, qualityLevel, SUN_DIR);
+  // las sombras (lo más caro del cuadro) se recalculan cada `shadowK` cuadros; la luz se mueve solo cuando se recalcula, así no "nadan"
+  _shadowDue = (++_shPhase % shadowK)===0;
+  if(sunLight && _shadowDue) updateSun(sunLight, camera.position, qualityLevel, SUN_DIR);
   if(skyDome && skyDome.visible) skyDome.position.copy(camera.position);
   // cadencia automática si mantienes pulsado (AK) / repetición cuchillo
   if(isHoldingShoot && gameActive && controls.isLocked && !isReloading && !pauseOverlay.classList.contains('show') && !resultOverlay.classList.contains('show')){
@@ -3932,8 +3935,11 @@ function adaptResolution(fps){
   const o=loadOverrides();
   if(o.dynRes===false || !gameActive || document.hidden || !renderer) { if(getDynScale()!==1){ setDynScale(1); applyDynRes(); } return; }
   const target=o.targetFps||60, cur=getDynScale();
-  if(fps < target*0.92){ dynGood=0; if(++dynBadStreak>=3 && cur>0.65){ setDynScale(cur-0.1); applyDynRes(); dynBadStreak=0; } }
-  else { dynBadStreak=0; if(fps >= target*0.985 && cur<1){ if(++dynGood>=6){ setDynScale(cur+0.05); applyDynRes(); dynGood=0; } } else dynGood=0; }
+  // gobernador de rendimiento: primero se espacian las sombras, después baja un poco la resolución (nunca de 75 %)
+  if(fps < target*0.92){ dynGood=0; if(++dynBadStreak>=3){ dynBadStreak=0;
+      if(QUALITY[qualityLevel].shadows && shadowK<4){ shadowK++; }
+      else if(cur>0.75){ setDynScale(cur-0.05); applyDynRes(); } } }
+  else { dynBadStreak=0; if(fps >= target*0.985){ if(++dynGood>=8){ dynGood=0; if(cur<1){ setDynScale(cur+0.05); applyDynRes(); } else if(shadowK>shadowKBase) shadowK--; } } else dynGood=0; }
 }
 function applyDynRes(){ renderer.setPixelRatio(pixelRatioFor(qualityLevel)); renderer.setSize(innerWidth,innerHeight); }
 function updateFPS(now){
