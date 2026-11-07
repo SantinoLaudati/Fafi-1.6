@@ -346,6 +346,8 @@ async function fafiFinalizeAuth(user, isLocal){
   }
   fafiApplySensitivity(); fafiApplyQuality();
   try{ await fafiPreloadAll(); }catch(e){ console.warn('precarga', e); }      // descarga y prepara todo antes de mostrar el menú: al entrar se puede jugar de una
+  try{ if(window.fafiSync) await window.fafiSync.pull(); }catch(e){}       // trae de la cuenta el perfil, la mira y los ajustes guardados
+  try{ if(window.fafiInitInvites) window.fafiInitInvites(); }catch(e){}      // en segundo plano: conecta con el servidor para recibir desafíos 1v1
   fafiShowShell();
   try{ if(typeof showFloating==='function'&&typeof gameActive!=='undefined'&&gameActive) showFloating('¡Hola '+username+'!'); }catch(e){}
 }
@@ -4380,7 +4382,9 @@ try{
     }catch(err){ console.warn('gfx', err); }
   });
   window.fafiSaveGameData = fafiSaveGameData;
-  import('./online_2_0_0v.js').then(m=>m.initOnlineLobby(()=>selectedMap)).catch(err=>console.warn('online', err));
+  import('./online_2_0_0v.js').then(m=>{ m.initOnlineLobby(); window.fafiInitInvites=m.initInvites; }).catch(err=>console.warn('online', err));
+  import('./sync_2_0_0v.js').then(m=>m.initSync()).catch(err=>console.warn('sync', err));
+  import('./idioma_2_0_0v.js').then(m=>m.initIdioma()).catch(err=>console.warn('idioma', err));
   import('./perfil_2_0_0v.js').then(m=>m.initPerfil()).catch(err=>console.warn('perfil', err));
   import('./amigos_2_0_0v.js').then(m=>m.initAmigos()).catch(err=>console.warn('amigos', err));
   import('./ajustes_2_0_0v.js').then(m=>m.initAjustes({ getQualityLevel:()=>qualityLevel })).catch(err=>console.warn('ajustes', err));

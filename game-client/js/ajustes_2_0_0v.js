@@ -206,6 +206,12 @@ export function initAjustes(opts = {}) {
     applyCrosshair(c);
   };
 
+  // ----- idioma -----
+  const renderLang = () => {
+    const cur = (window.fafiGetLang && window.fafiGetLang()) || (localStorage.getItem('fafi_lang') || 'es');
+    root.querySelector('#axLang').innerHTML = `<div class="ax-h" style="margin-top:8px">Idioma</div><div class="ax-row"><label for="axLangSel">Idioma / Language<small>Cambia los textos del juego. Language of the game texts.</small></label><select id="axLangSel"><option value="es" ${cur === 'es' ? 'selected' : ''}>Español</option><option value="en" ${cur === 'en' ? 'selected' : ''}>English</option></select></div>`;
+    root.querySelector('#axLangSel').addEventListener('change', (e) => { if (window.fafiSetLang) window.fafiSetLang(e.target.value); window.dispatchEvent(new Event('fafi-lang-change')); });
+  };
   // ----- sonido -----
   const renderAudio = () => {
     const S = window.SFX; if (!S || !S.getConfig) return;
@@ -227,7 +233,7 @@ export function initAjustes(opts = {}) {
     box.querySelector('#axaTest').addEventListener('click', () => { S.init(); S.weapon = 'ak'; S.play('ak'); });
     box.querySelector('#axaReset').addEventListener('click', () => { S.setConfig({ master: 0.35, mute: false, armas: 1, recarga: 1, pasos: 1, impactos: 1, granadas: 1, bomba: 1, menu: 1 }); renderAudio(); });
   };
-  root.innerHTML = '<div id="axAudio"></div><div id="axGfx"></div><div id="axXhBox"></div>';
-  renderAudio(); renderGfx(); renderXh();
+  root.innerHTML = '<div id="axLang"></div><div id="axAudio"></div><div id="axGfx"></div><div id="axXhBox"></div>';
+  renderLang(); renderAudio(); renderGfx(); renderXh();
   window.addEventListener('fafi-gfx-refresh', renderGfx);
 }

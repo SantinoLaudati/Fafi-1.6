@@ -96,6 +96,12 @@ class GameServer implements MessageComponentInterface {
             case 'chat':
                 $this->handleChat($from, $data);
                 break;
+            case 'invite':
+                $this->handleInvite($from, $data);
+                break;
+            case 'invite_reply':
+                $this->handleInviteReply($from, $data);
+                break;
             case 'list_rooms':
                 $this->sendRooms($from);
                 break;
@@ -285,6 +291,52 @@ class GameServer implements MessageComponentInterface {
         $this->broadcastRooms();
     }
     
+
+    // ===== desafíos 1v1 entre amigos: el invitado recibe una notificación y, si acepta, empieza un duelo 1 contra 1 =====
+    private $invites = [];
+
+    private function findSocketByUsername($name) {
+        foreach ($this->clients as $c) {
+            if (isset($c->username) && strcasecmp($c->username, $name) === 0) return $c;
+        }
+        return null;
+    }
+
+    private function handleInvite(ConnectionInterface $from, $data) {
+        $name = trim((string)($data['to'] ?? ''));
+        $target = $name === '' ? null : $this->findSocketByUsername($name);
+        if (!$target || $target === $from) {
+            $from->send(json_encode(['type' => 'error', 'message' => 'Ese jugador no está conectado ahora']));
+            return;
+        }
+        $id = bin2hex(random_bytes(4));
+        $this->invites[$id] = ['from' => $from->userId, 'to' => $target->userId, 'at' => time()];
+        $target->send(json_encode(['type' => 'invite', 'inviteId' => $id, 'from' => ['id' => $from->userId, 'username' => $from->username], 'mode' => '1v1']));
+        $from->send(json_encode(['type' => 'invite_sent', 'to' => $target->username]));
+    }
+
+    private function handleInviteReply(ConnectionInterface $conn, $data) {
+        $id = (string)($data['inviteId'] ?? '');
+        $inv = $this->invites[$id] ?? null;
+        if (!$inv || $inv['to'] !== $conn->userId) return;
+        unset($this->invites[$id]);
+        $sender = $this->userSockets[$inv['from']] ?? null;
+        if (!$sender) { $conn->send(json_encode(['type' => 'error', 'message' => 'El jugador ya no está conectado'])); return; }
+        if (empty($data['accept'])) { $sender->send(json_encode(['type' => 'invite_declined', 'by' => $conn->username])); return; }
+        $roomId = 'D' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 5));
+        $this->handleJoinRoom($sender, ['roomId' => $roomId, 'mode' => '1v1', 'name' => 'Duelo ' . $sender->username . ' vs ' . $conn->username]);
+        $this->handleJoinRoom($conn, ['roomId' => $roomId, 'mode' => '1v1']);
+        $maps = ['dust2', 'italy', 'office', 'mirage'];
+        $map = $maps[array_rand($maps)];
+        $pair = [$sender, $conn]; shuffle($pair);
+        $this->rooms[$roomId]['state'] = 'playing';
+        $msg = ['type' => 'match_start', 'mode' => '1v1', 'map' => $map, 'teams' => [
+            't' => [['id' => $pair[0]->userId, 'username' => $pair[0]->username]],
+            'ct' => [['id' => $pair[1]->userId, 'username' => $pair[1]->username]]
+        ]];
+        $this->broadcastToRoom($roomId, $msg);
+        $this->broadcastRooms();
+    }
     private function handlePlayerUpdate(ConnectionInterface $conn, $data) {
         if (!$conn->currentRoom) return;
         

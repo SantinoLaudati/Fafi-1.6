@@ -111,7 +111,7 @@ export function initPerfil() {
     box.querySelector('#pfSave').onclick = async () => {
       const p2 = getMyProfile(); p2.bio = box.querySelector('#pfBio').value.slice(0, 160); lsSet(key(user()), p2);
       let ok = false;
-      if (window.authService && window.authService.isAuthenticated() && !window.authService.devMode) { try { await window.apiService.updateConfig({ preferencias_ui: { perfil: p2 }, mira: myCrosshair() }); ok = true; } catch (e) { /* sin servidor: queda local */ } }
+      if (window.authService && window.authService.isAuthenticated() && !window.authService.devMode) { try { if (window.fafiSync) { window.fafiSync.push(); ok = true; } } catch (e) { /* sin servidor: queda local */ } }
       msg(ok ? 'Perfil guardado en tu cuenta: otros jugadores ya pueden verlo.' : 'Perfil guardado en este equipo (con cuenta del servidor también lo verán los demás).');
       window.dispatchEvent(new Event('fafi-perfil-change'));
     };

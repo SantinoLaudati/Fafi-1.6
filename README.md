@@ -342,3 +342,10 @@ AWP: clic derecho = zoom 1 (33°), otra vez = zoom 2 (11°), otra vez = salir; a
 
 Modo exploración: las 9 armas bloqueadas (Five-SeveN, P90, SMG Silenciada, Escopeta Pump, Shorty, M4 Táctico, Vandal, VSS Vintorez, Negev) se pueden comprar y usar; en Defuse siguen con candado.
 En el menú principal, la flecha ↑ abre una ventana de código secreto.
+
+## Cuentas, base de datos y despliegue (resumen)
+Todo lo personal se guarda por cuenta en MySQL: monedas, skins, equipo, amigos, logros, historial, y (`configuraciones_jugador`) el perfil (foto, descripción, logros destacados),
+la mira y los ajustes (gráficos, sonido, idioma). Sin servidor el juego sigue funcionando y lo guarda en el navegador.
+Para levantarlo en un servidor: copiar `.env.docker` a `.env`, completar las contraseñas y ejecutar `docker compose up -d --build`
+(app PHP + Nginx + WebSocket + MySQL + Redis; el esquema y los datos iniciales se cargan solos la primera vez desde `database/`).
+El WebSocket (`/game`) maneja las salas online, los desafíos 1v1 entre amigos y las notificaciones.

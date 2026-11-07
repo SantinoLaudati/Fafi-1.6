@@ -156,3 +156,28 @@ export function initOnlineLobby() {
   });
   showTab('off');
 }
+
+// ----- notificaciones de desafío 1v1 (llegan por WebSocket mientras estás conectado al servidor) -----
+export function initInvites() {
+  if (window.__invInit) return; window.__invInit = true;
+  const css = document.createElement('style');
+  css.textContent = '#invBox{position:fixed;right:18px;top:80px;z-index:100001;display:flex;flex-direction:column;gap:10px;width:min(340px,92vw)}#invBox .inv{background:linear-gradient(180deg,#1b2433,#10151c);border:1px solid #e0a82e;border-radius:6px;padding:14px;color:#e8eef5;box-shadow:0 10px 30px rgba(0,0,0,.6);animation:invIn .25s}#invBox b{letter-spacing:2px;color:#ffd86b}#invBox .row{display:flex;gap:8px;margin-top:10px}#invBox button{flex:1;padding:9px;border-radius:3px;border:1px solid #3a4558;background:#1b2230;color:#fff;font-weight:800;letter-spacing:1px;cursor:pointer}#invBox button.ok{background:linear-gradient(180deg,#2f9e3f,#1c6b27);border-color:#4dbf5e}@keyframes invIn{from{transform:translateX(30px);opacity:0}}';
+  document.head.appendChild(css);
+  const box = document.createElement('div'); box.id = 'invBox'; document.body.appendChild(box);
+  const toast = (html, ms) => { const d = document.createElement('div'); d.className = 'inv'; d.innerHTML = html; box.appendChild(d); if (ms) setTimeout(() => d.remove(), ms); return d; };
+  const esc = (s) => String(s).replace(/[<>&"']/g, '');
+  online.on('invite', (m) => {
+    const d = toast(`<b>⚔ DESAFÍO 1v1</b><div style="margin-top:6px">${esc(m.from.username)} te desafía a un 1v1</div><div class="row"><button class="ok" data-y>ACEPTAR</button><button data-n>RECHAZAR</button></div>`, 60000);
+    d.querySelector('[data-y]').onclick = () => { online.send('invite_reply', { inviteId: m.inviteId, accept: true }); d.remove(); };
+    d.querySelector('[data-n]').onclick = () => { online.send('invite_reply', { inviteId: m.inviteId, accept: false }); d.remove(); };
+    try { window.SFX && window.SFX.play('ui'); } catch (e) {}
+  });
+  online.on('invite_sent', (m) => toast(`Desafío enviado a <b>${esc(m.to)}</b>. Esperando respuesta...`, 5000));
+  online.on('invite_declined', (m) => toast(`${esc(m.by)} rechazó tu desafío.`, 5000));
+  online.on('error', (m) => { if (m.message && /conectado/.test(m.message)) toast(esc(m.message), 5000); });
+  // el duelo arranca igual que una partida de sala (ver initOnlineLobby): mapa y bando sorteados por el servidor
+  online.on('match_start', (m) => { if (m.mode === '1v1') toast('<b>¡Duelo!</b> Empezando la partida...', 3000); });
+  // conexión en segundo plano al iniciar sesión con cuenta del servidor, para poder recibir desafíos
+  window.fafiOnlineConnect = () => { if (online.available) online.connect().catch(() => {}); };
+  window.fafiOnlineConnect();
+}

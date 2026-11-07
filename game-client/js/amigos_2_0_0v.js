@@ -68,7 +68,7 @@ export function initAmigos() {
     const empty = { amigos: 'Todavía no tenés amigos. Buscá un jugador arriba y mandale una solicitud.', recibidas: 'No tenés solicitudes pendientes.', enviadas: 'No enviaste solicitudes.', bloqueados: 'No bloqueaste a nadie.' }[tab];
     $('frList').innerHTML = list.length ? list.map((f) => {
       const id = esc(f.amigo_id), name = esc(f.username);
-      const acts = (tab === 'amigos' ? `<button class="fr-btn" data-a="view" data-id="${id}" data-n="${name}">PERFIL</button>` : '') + (tab === 'amigos' ? `<button class="fr-btn no" data-a="del" data-id="${id}" data-n="${name}">QUITAR</button>${local ? '' : `<button class="fr-btn" data-a="block" data-id="${id}" data-n="${name}">BLOQUEAR</button>`}`
+      const acts = (tab === 'amigos' ? `<button class="fr-btn" data-a="view" data-id="${id}" data-n="${name}">PERFIL</button>${local ? '' : `<button class="fr-btn ok" data-a="duel" data-id="${id}" data-n="${name}">RETAR 1v1</button>`}` : '') + (tab === 'amigos' ? `<button class="fr-btn no" data-a="del" data-id="${id}" data-n="${name}">QUITAR</button>${local ? '' : `<button class="fr-btn" data-a="block" data-id="${id}" data-n="${name}">BLOQUEAR</button>`}`
         : tab === 'recibidas' ? `<button class="fr-btn ok" data-a="accept" data-id="${id}" data-n="${name}">ACEPTAR</button><button class="fr-btn no" data-a="del" data-id="${id}" data-n="${name}">RECHAZAR</button>`
         : tab === 'enviadas' ? `<button class="fr-btn" data-a="del" data-id="${id}" data-n="${name}">CANCELAR</button>`
         : `<button class="fr-btn" data-a="del" data-id="${id}" data-n="${name}">DESBLOQUEAR</button>`);
@@ -81,6 +81,7 @@ export function initAmigos() {
   };
 
   const act = async (a, id, name) => {
+    if (a === 'duel') { try { if (window.fafiInitInvites) window.fafiInitInvites(); await window.fafiOnline.connect(); window.fafiOnline.send('invite', { to: name }); msg('Desafío enviado a ' + name + '.', 'good'); } catch (e) { msg(e.message || 'No se pudo enviar el desafío', 'err'); } return; }
     if (a === 'view') { if (window.fafiVerPerfil) window.fafiVerPerfil(name); return; }
     try {
       if (local) { window.friendsList = (window.friendsList || []).filter((n) => n !== name); window.fafiSaveGameData && window.fafiSaveGameData(); msg('Amigo eliminado.', 'good'); return load(); }
