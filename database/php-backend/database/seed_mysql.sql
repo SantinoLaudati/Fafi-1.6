@@ -329,3 +329,324 @@ INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
 SELECT `id`, 'knife', 'legendaria', 'skin:k_neon' FROM `articulos_tienda` WHERE `nombre` = 'Cuchillo | Filo Neón'
 ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
 
+
+-- =====================================================================
+-- Skins de las armas adicionales (Five-SeveN, P90, SMG, escopetas, M4 Tactico, Vandal, VSS, Negev): 45 skins.
+-- Idempotente: se puede ejecutar mas de una vez. No modifica la estructura de las tablas.
+-- =====================================================================
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Five-SeveN | Camuflaje Urbano', 'Skin comun para Five-SeveN', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Five-SeveN | Camuflaje Urbano');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'five', 'comun', 'skin:five_urbano' FROM `articulos_tienda` WHERE `nombre` = 'Five-SeveN | Camuflaje Urbano'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Five-SeveN | Selva Tropical', 'Skin comun para Five-SeveN', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Five-SeveN | Selva Tropical');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'five', 'comun', 'skin:five_selva' FROM `articulos_tienda` WHERE `nombre` = 'Five-SeveN | Selva Tropical'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Five-SeveN | Colmena Cobalto', 'Skin epica para Five-SeveN', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Five-SeveN | Colmena Cobalto');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'five', 'epica', 'skin:five_cobalto' FROM `articulos_tienda` WHERE `nombre` = 'Five-SeveN | Colmena Cobalto'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Five-SeveN | Serpiente de Fuego', 'Skin epica para Five-SeveN', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Five-SeveN | Serpiente de Fuego');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'five', 'epica', 'skin:five_fuego' FROM `articulos_tienda` WHERE `nombre` = 'Five-SeveN | Serpiente de Fuego'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Five-SeveN | Oro Barroco', 'Skin legendaria para Five-SeveN', 1000, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Five-SeveN | Oro Barroco');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'five', 'legendaria', 'skin:five_oro' FROM `articulos_tienda` WHERE `nombre` = 'Five-SeveN | Oro Barroco'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'P90 | Selva Tropical', 'Skin comun para P90', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'P90 | Selva Tropical');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'p90', 'comun', 'skin:p90_selva' FROM `articulos_tienda` WHERE `nombre` = 'P90 | Selva Tropical'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'P90 | Tormenta de Arena', 'Skin comun para P90', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'P90 | Tormenta de Arena');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'p90', 'comun', 'skin:p90_arena' FROM `articulos_tienda` WHERE `nombre` = 'P90 | Tormenta de Arena'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'P90 | Serpiente de Fuego', 'Skin epica para P90', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'P90 | Serpiente de Fuego');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'p90', 'epica', 'skin:p90_fuego' FROM `articulos_tienda` WHERE `nombre` = 'P90 | Serpiente de Fuego'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'P90 | Carbono Carmesí', 'Skin epica para P90', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'P90 | Carbono Carmesí');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'p90', 'epica', 'skin:p90_carbono' FROM `articulos_tienda` WHERE `nombre` = 'P90 | Carbono Carmesí'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'P90 | Circuito Neón', 'Skin legendaria para P90', 1000, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'P90 | Circuito Neón');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'p90', 'legendaria', 'skin:p90_neon' FROM `articulos_tienda` WHERE `nombre` = 'P90 | Circuito Neón'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'SMG Silenciada | Tormenta de Arena', 'Skin comun para SMG Silenciada', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'SMG Silenciada | Tormenta de Arena');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'smg', 'comun', 'skin:smg_arena' FROM `articulos_tienda` WHERE `nombre` = 'SMG Silenciada | Tormenta de Arena'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'SMG Silenciada | Degradado Ártico', 'Skin comun para SMG Silenciada', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'SMG Silenciada | Degradado Ártico');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'smg', 'comun', 'skin:smg_artico' FROM `articulos_tienda` WHERE `nombre` = 'SMG Silenciada | Degradado Ártico'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'SMG Silenciada | Carbono Carmesí', 'Skin epica para SMG Silenciada', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'SMG Silenciada | Carbono Carmesí');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'smg', 'epica', 'skin:smg_carbono' FROM `articulos_tienda` WHERE `nombre` = 'SMG Silenciada | Carbono Carmesí'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'SMG Silenciada | Tigre de Bengala', 'Skin epica para SMG Silenciada', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'SMG Silenciada | Tigre de Bengala');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'smg', 'epica', 'skin:smg_tigre' FROM `articulos_tienda` WHERE `nombre` = 'SMG Silenciada | Tigre de Bengala'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'SMG Silenciada | Nebulosa del Vacío', 'Skin legendaria para SMG Silenciada', 1000, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'SMG Silenciada | Nebulosa del Vacío');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'smg', 'legendaria', 'skin:smg_galaxia' FROM `articulos_tienda` WHERE `nombre` = 'SMG Silenciada | Nebulosa del Vacío'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Escopeta Pump | Degradado Ártico', 'Skin comun para Escopeta Pump', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Escopeta Pump | Degradado Ártico');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'shotgun', 'comun', 'skin:shotgun_artico' FROM `articulos_tienda` WHERE `nombre` = 'Escopeta Pump | Degradado Ártico'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Escopeta Pump | Camuflaje Urbano', 'Skin comun para Escopeta Pump', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Escopeta Pump | Camuflaje Urbano');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'shotgun', 'comun', 'skin:shotgun_urbano' FROM `articulos_tienda` WHERE `nombre` = 'Escopeta Pump | Camuflaje Urbano'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Escopeta Pump | Tigre de Bengala', 'Skin epica para Escopeta Pump', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Escopeta Pump | Tigre de Bengala');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'shotgun', 'epica', 'skin:shotgun_tigre' FROM `articulos_tienda` WHERE `nombre` = 'Escopeta Pump | Tigre de Bengala'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Escopeta Pump | Oleaje del Océano', 'Skin epica para Escopeta Pump', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Escopeta Pump | Oleaje del Océano');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'shotgun', 'epica', 'skin:shotgun_oceano' FROM `articulos_tienda` WHERE `nombre` = 'Escopeta Pump | Oleaje del Océano'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Escopeta Pump | Residuo Tóxico', 'Skin legendaria para Escopeta Pump', 1000, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Escopeta Pump | Residuo Tóxico');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'shotgun', 'legendaria', 'skin:shotgun_toxico' FROM `articulos_tienda` WHERE `nombre` = 'Escopeta Pump | Residuo Tóxico'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Shorty | Camuflaje Urbano', 'Skin comun para Shorty', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Shorty | Camuflaje Urbano');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'shorty', 'comun', 'skin:shorty_urbano' FROM `articulos_tienda` WHERE `nombre` = 'Shorty | Camuflaje Urbano'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Shorty | Selva Tropical', 'Skin comun para Shorty', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Shorty | Selva Tropical');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'shorty', 'comun', 'skin:shorty_selva' FROM `articulos_tienda` WHERE `nombre` = 'Shorty | Selva Tropical'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Shorty | Oleaje del Océano', 'Skin epica para Shorty', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Shorty | Oleaje del Océano');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'shorty', 'epica', 'skin:shorty_oceano' FROM `articulos_tienda` WHERE `nombre` = 'Shorty | Oleaje del Océano'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Shorty | Colmena Cobalto', 'Skin epica para Shorty', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Shorty | Colmena Cobalto');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'shorty', 'epica', 'skin:shorty_cobalto' FROM `articulos_tienda` WHERE `nombre` = 'Shorty | Colmena Cobalto'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Shorty | Oro Barroco', 'Skin legendaria para Shorty', 1000, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Shorty | Oro Barroco');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'shorty', 'legendaria', 'skin:shorty_oro' FROM `articulos_tienda` WHERE `nombre` = 'Shorty | Oro Barroco'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'M4 Táctico | Selva Tropical', 'Skin comun para M4 Táctico', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'M4 Táctico | Selva Tropical');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'm4b', 'comun', 'skin:m4b_selva' FROM `articulos_tienda` WHERE `nombre` = 'M4 Táctico | Selva Tropical'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'M4 Táctico | Tormenta de Arena', 'Skin comun para M4 Táctico', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'M4 Táctico | Tormenta de Arena');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'm4b', 'comun', 'skin:m4b_arena' FROM `articulos_tienda` WHERE `nombre` = 'M4 Táctico | Tormenta de Arena'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'M4 Táctico | Colmena Cobalto', 'Skin epica para M4 Táctico', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'M4 Táctico | Colmena Cobalto');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'm4b', 'epica', 'skin:m4b_cobalto' FROM `articulos_tienda` WHERE `nombre` = 'M4 Táctico | Colmena Cobalto'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'M4 Táctico | Serpiente de Fuego', 'Skin epica para M4 Táctico', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'M4 Táctico | Serpiente de Fuego');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'm4b', 'epica', 'skin:m4b_fuego' FROM `articulos_tienda` WHERE `nombre` = 'M4 Táctico | Serpiente de Fuego'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'M4 Táctico | Circuito Neón', 'Skin legendaria para M4 Táctico', 1000, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'M4 Táctico | Circuito Neón');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'm4b', 'legendaria', 'skin:m4b_neon' FROM `articulos_tienda` WHERE `nombre` = 'M4 Táctico | Circuito Neón'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Vandal | Tormenta de Arena', 'Skin comun para Vandal', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Vandal | Tormenta de Arena');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'vandal', 'comun', 'skin:vandal_arena' FROM `articulos_tienda` WHERE `nombre` = 'Vandal | Tormenta de Arena'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Vandal | Degradado Ártico', 'Skin comun para Vandal', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Vandal | Degradado Ártico');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'vandal', 'comun', 'skin:vandal_artico' FROM `articulos_tienda` WHERE `nombre` = 'Vandal | Degradado Ártico'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Vandal | Serpiente de Fuego', 'Skin epica para Vandal', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Vandal | Serpiente de Fuego');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'vandal', 'epica', 'skin:vandal_fuego' FROM `articulos_tienda` WHERE `nombre` = 'Vandal | Serpiente de Fuego'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Vandal | Carbono Carmesí', 'Skin epica para Vandal', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Vandal | Carbono Carmesí');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'vandal', 'epica', 'skin:vandal_carbono' FROM `articulos_tienda` WHERE `nombre` = 'Vandal | Carbono Carmesí'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Vandal | Nebulosa del Vacío', 'Skin legendaria para Vandal', 1000, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Vandal | Nebulosa del Vacío');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'vandal', 'legendaria', 'skin:vandal_galaxia' FROM `articulos_tienda` WHERE `nombre` = 'Vandal | Nebulosa del Vacío'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'VSS Vintorez | Degradado Ártico', 'Skin comun para VSS Vintorez', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'VSS Vintorez | Degradado Ártico');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'vss', 'comun', 'skin:vss_artico' FROM `articulos_tienda` WHERE `nombre` = 'VSS Vintorez | Degradado Ártico'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'VSS Vintorez | Camuflaje Urbano', 'Skin comun para VSS Vintorez', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'VSS Vintorez | Camuflaje Urbano');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'vss', 'comun', 'skin:vss_urbano' FROM `articulos_tienda` WHERE `nombre` = 'VSS Vintorez | Camuflaje Urbano'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'VSS Vintorez | Carbono Carmesí', 'Skin epica para VSS Vintorez', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'VSS Vintorez | Carbono Carmesí');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'vss', 'epica', 'skin:vss_carbono' FROM `articulos_tienda` WHERE `nombre` = 'VSS Vintorez | Carbono Carmesí'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'VSS Vintorez | Tigre de Bengala', 'Skin epica para VSS Vintorez', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'VSS Vintorez | Tigre de Bengala');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'vss', 'epica', 'skin:vss_tigre' FROM `articulos_tienda` WHERE `nombre` = 'VSS Vintorez | Tigre de Bengala'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'VSS Vintorez | Residuo Tóxico', 'Skin legendaria para VSS Vintorez', 1000, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'VSS Vintorez | Residuo Tóxico');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'vss', 'legendaria', 'skin:vss_toxico' FROM `articulos_tienda` WHERE `nombre` = 'VSS Vintorez | Residuo Tóxico'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Negev | Camuflaje Urbano', 'Skin comun para Negev', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Negev | Camuflaje Urbano');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'negev', 'comun', 'skin:negev_urbano' FROM `articulos_tienda` WHERE `nombre` = 'Negev | Camuflaje Urbano'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Negev | Selva Tropical', 'Skin comun para Negev', 50, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Negev | Selva Tropical');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'negev', 'comun', 'skin:negev_selva' FROM `articulos_tienda` WHERE `nombre` = 'Negev | Selva Tropical'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Negev | Tigre de Bengala', 'Skin epica para Negev', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Negev | Tigre de Bengala');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'negev', 'epica', 'skin:negev_tigre' FROM `articulos_tienda` WHERE `nombre` = 'Negev | Tigre de Bengala'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Negev | Oleaje del Océano', 'Skin epica para Negev', 500, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Negev | Oleaje del Océano');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'negev', 'epica', 'skin:negev_oceano' FROM `articulos_tienda` WHERE `nombre` = 'Negev | Oleaje del Océano'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+
+INSERT INTO `articulos_tienda` (`nombre`, `descripcion`, `precio`, `tipo_moneda`, `activo`)
+SELECT 'Negev | Oro Barroco', 'Skin legendaria para Negev', 1000, 'gratuita', 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `articulos_tienda` WHERE `nombre` = 'Negev | Oro Barroco');
+INSERT INTO `skins_armas` (`articulo_id`, `arma_base`, `rareza`, `ruta_modelo`)
+SELECT `id`, 'negev', 'legendaria', 'skin:negev_oro' FROM `articulos_tienda` WHERE `nombre` = 'Negev | Oro Barroco'
+ON DUPLICATE KEY UPDATE `arma_base` = VALUES(`arma_base`), `rareza` = VALUES(`rareza`), `ruta_modelo` = VALUES(`ruta_modelo`);
+

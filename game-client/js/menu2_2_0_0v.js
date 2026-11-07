@@ -1,5 +1,5 @@
 // Menús del juego: inventario 3D (visor de armas arrastrable), tienda de cajas y el equipo equipado del menú principal.
-import { SKINS_DB, DEFAULTS, RARITY, WEAPON_LABEL, WEAPON_ORDER, thumb, createWeaponViewer, skinById } from './skins_2_0_0v.js';
+import { SKINS_DB, DEFAULTS, RARITY, WEAPON_LABEL, WEAPON_ORDER, CORE_WEAPONS, thumb, createWeaponViewer, skinById } from './skins_2_0_0v.js';
 import { CRATES, crateThumb, createCrateViewer, preloadCrate } from './cajas_2_0_0v.js';
 
 const $ = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstElementChild; };
@@ -132,6 +132,6 @@ export function closeStore() {
 // =============================================================== equipo equipado (menú principal)
 export function renderLoadout(el) {
   if (!el) return;
-  el.innerHTML = WEAPON_ORDER.map(w => { const id = equippedId(w), s = id ? skinById(id) : DEFAULTS.find(d => d.weapon === w), rc = RARITY[s.rarity]; return '<div class="lo-card r-' + s.rarity + '" data-w="' + w + '"><img alt=""><div class="lo-w">' + WEAPON_LABEL[w] + '</div><div class="lo-n" style="color:' + rc.color + '">' + (id ? s.name.split('|').pop().trim() : 'Estándar') + '</div></div>'; }).join('');
-  el.querySelectorAll('.lo-card').forEach((c, i) => { const w = WEAPON_ORDER[i], id = equippedId(w); queueThumb(c.querySelector('img'), id ? skinById(id) : DEFAULTS.find(d => d.weapon === w)); c.onclick = () => window.openInventory && window.openInventory(); });
+  el.innerHTML = CORE_WEAPONS.map(w => { const id = equippedId(w), s = id ? skinById(id) : DEFAULTS.find(d => d.weapon === w), rc = RARITY[s.rarity]; return '<div class="lo-card r-' + s.rarity + '" data-w="' + w + '"><img alt=""><div class="lo-w">' + WEAPON_LABEL[w] + '</div><div class="lo-n" style="color:' + rc.color + '">' + (id ? s.name.split('|').pop().trim() : 'Estándar') + '</div></div>'; }).join('');
+  el.querySelectorAll('.lo-card').forEach((c, i) => { const w = CORE_WEAPONS[i], id = equippedId(w); queueThumb(c.querySelector('img'), id ? skinById(id) : DEFAULTS.find(d => d.weapon === w)); c.onclick = () => window.openInventory && window.openInventory(); });
 }

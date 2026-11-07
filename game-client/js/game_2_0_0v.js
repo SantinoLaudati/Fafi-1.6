@@ -1929,7 +1929,7 @@ function startGame(mode='aim', team=null){
   }
   // cambiar visibilidad de mapas
   setMapVisibility(isDust2 ? 'dust2' : 'aim');
-  try{ enableExtraWeapons(isDust2 && !window.fafiDefuse); }catch(e){ console.warn(e); }
+  try{ enableExtraWeapons(isDust2); }catch(e){ console.warn(e); }
   gameActive=true;
   resultOverlay.classList.remove('show');
   pauseOverlay.classList.remove('show');

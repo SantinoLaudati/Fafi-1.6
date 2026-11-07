@@ -13,7 +13,8 @@ export const WEAPON_LABEL = { ak: 'AK-47', m4: 'M4A4', awp: 'AWP', deagle: 'Dese
   five: 'Five-SeveN', p90: 'P90', smg: 'SMG Silenciada', shotgun: 'Escopeta Pump', shorty: 'Shorty', m4b: 'M4 Táctico', vandal: 'Vandal', vss: 'VSS Vintorez', negev: 'Negev' };
 // Armas habilitadas: tienen tienda, inventario y cajas. Las demás (con modelo y skins ya hechos) están bloqueadas:
 // para habilitar una basta con añadir su id a WEAPON_ORDER (y darle su lógica de arma en game_2_0_0v.js).
-export const WEAPON_ORDER = ['ak', 'm4', 'awp', 'deagle', 'knife'];
+export const CORE_WEAPONS = ['ak', 'm4', 'awp', 'deagle', 'knife'];     // el equipo del menú principal
+export const WEAPON_ORDER = [...CORE_WEAPONS, ...EXTRA_WEAPON_IDS];     // todas habilitadas: tienen tienda, inventario, cajas y skins
 export const LOCKED_WEAPONS = EXTRA_WEAPON_IDS.filter(w => !WEAPON_ORDER.includes(w));
 
 const S = (id, weapon, name, rarity, zones, pattern) => ({ id, weapon, name, rarity, zones, pattern });
