@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>FAFI 1.6 - Fanzine #1</title>
+<!-- Fanzine de 12 páginas A5. Dos modos (los usa generar-fanzine_2_0_0v.py):
+       ?m=lectura  -> 12 páginas A5 en orden, para leer en pantalla
+       ?m=imprimir -> 6 caras A4 apaisadas con las páginas ordenadas para imprimir a doble faz (borde corto) y engrapar al centro -->
+<style>
+@font-face{font-family:'ZImpact';src:local('Impact'),url('file:///C:/Windows/Fonts/impact.ttf')}
+@font-face{font-family:'ZInk';src:local('Ink Free'),url('file:///C:/Windows/Fonts/Inkfree.ttf'),local('Segoe Print'),url('file:///C:/Windows/Fonts/segoepr.ttf')}
+:root{--ink:#111;--paper:#f6f2e7;--hi:#ffd23f;--mut:#555}
+*{box-sizing:border-box;margin:0;padding:0}
+@page{margin:0}
+html,body{background:#888}
+body{font-family:'Bahnschrift','Segoe UI',Arial,sans-serif;color:var(--ink)}
+.pg{width:148mm;height:210mm;background:var(--paper);position:relative;overflow:hidden;page-break-after:always;break-after:page;
+  background-image:radial-gradient(rgba(0,0,0,.05) 1px,transparent 1.2px);background-size:3.2mm 3.2mm}
+.sheet{width:297mm;height:210mm;display:flex;page-break-after:always;break-after:page;overflow:hidden}
+.sheet .pg{page-break-after:auto;break-after:auto;flex:none}
+.rot{transform:rotate(180deg)}
+body.lectura .sheet{display:contents}
+.pad{position:absolute;inset:11mm 11mm 13mm 11mm}
+.num{position:absolute;bottom:5mm;font:700 9pt 'ZImpact','Impact','Bahnschrift',sans-serif;letter-spacing:1px}
+.pg:nth-child(odd) .num{right:9mm}.pg:nth-child(even) .num{left:9mm}
+.head{font:400 34pt/0.95 'ZImpact','Impact','Bahnschrift',sans-serif;text-transform:uppercase;letter-spacing:1px}
+.head mark{background:var(--hi);padding:0 2mm;display:inline-block;transform:rotate(-1.5deg);box-decoration-break:clone}
+.kick{font:700 9pt 'Bahnschrift',sans-serif;letter-spacing:3px;text-transform:uppercase;margin-bottom:3mm;border-bottom:2px solid var(--ink);display:inline-block;padding-bottom:1mm}
+p{font-size:10.5pt;line-height:1.38;margin-top:3.5mm}
+p b,li b{background:linear-gradient(transparent 55%,var(--hi) 55%)}
+.note{font:400 12pt/1.15 'ZInk','Ink Free','Segoe Print','Comic Sans MS',cursive;transform:rotate(-2deg);display:inline-block}
+ul{list-style:none;margin-top:3mm}
+li{font-size:10.5pt;line-height:1.3;margin:2mm 0;padding-left:6mm;position:relative}
+li:before{content:"";position:absolute;left:0;top:1.3mm;width:2.6mm;height:2.6mm;background:var(--ink);transform:rotate(45deg)}
+.shot{border:2.5px solid var(--ink);background:#fff;box-shadow:2mm 2mm 0 var(--ink);position:relative}
+.shot img{display:block;width:100%;filter:grayscale(1) contrast(1.35) brightness(1.05)}
+.shot.c img{filter:none}
+.tape{position:absolute;width:20mm;height:6mm;background:rgba(255,210,63,.75);border:1px dashed rgba(0,0,0,.25);z-index:2}
+.box{border:2.5px solid var(--ink);background:#fff;padding:3.5mm 4mm;margin-top:4mm}
+.box.y{background:var(--hi)}
+.box h4{font:400 14pt 'ZImpact','Impact',sans-serif;text-transform:uppercase;letter-spacing:1px;margin-bottom:1.5mm}
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:2.2mm 4mm;margin-top:4mm}
+.k{display:flex;gap:2.5mm;align-items:center;font-size:9.5pt;line-height:1.15}
+.k i{font-style:normal;min-width:11mm;text-align:center;border:2px solid var(--ink);border-bottom-width:4px;border-radius:1.5mm;background:#fff;font:700 9pt 'Bahnschrift',sans-serif;padding:1mm 1.2mm;white-space:nowrap}
+.tbl{width:100%;border-collapse:collapse;margin-top:3mm;font-size:9.5pt}
+.tbl td,.tbl th{border:2px solid var(--ink);padding:1.6mm 2mm;text-align:left;vertical-align:top}
+.tbl th{background:var(--ink);color:#fff;font:400 10pt 'ZImpact','Impact',sans-serif;letter-spacing:1px}
+.stamp{position:absolute;border:3px solid var(--ink);padding:1mm 3mm;font:400 15pt 'ZImpact','Impact',sans-serif;text-transform:uppercase;letter-spacing:2px;transform:rotate(-6deg);background:var(--paper)}
+.big{font:400 78pt/0.85 'ZImpact','Impact',sans-serif;text-transform:uppercase}
+.ph{width:36mm;height:36mm;border-radius:50%;border:3px solid var(--ink);background-size:cover;background-position:center 20%;filter:grayscale(1) contrast(1.2);box-shadow:1.5mm 1.5mm 0 var(--ink)}
+.team{display:flex;gap:5mm;margin-top:6mm;justify-content:space-between}
+.mem{text-align:center;flex:1;font-size:9.5pt;line-height:1.2}
+.mem b{display:block;font:400 13pt 'ZImpact','Impact',sans-serif;margin:3mm 0 1mm;text-transform:uppercase;background:none}
+.cut{position:absolute;inset:0;pointer-events:none}
+.bk{background:var(--ink);color:var(--paper)}
+.bk p,.bk li{color:var(--paper)}
+.bk li:before{background:var(--hi)}
+.bk .num{color:var(--paper)}
+.bk .kick{border-color:var(--paper)}
+.bk b{background:var(--hi);color:var(--ink);padding:0 1mm}
+.url{display:inline-block;border:3px solid var(--ink);background:var(--hi);color:var(--ink);padding:2mm 5mm;font:400 20pt 'ZImpact','Impact',sans-serif;letter-spacing:2px;margin-top:5mm;transform:rotate(-2deg)}
+</style>
+</head>
+<body>
+<div id="pages">
+
+<!-- 1 · TAPA -->
+<section class="pg" id="p1" style="background:var(--ink);color:var(--paper)">
+  <div class="pad">
+    <div class="kick" style="border-color:var(--paper)">Fanzine · número 1 · 2026</div>
+    <div class="big" style="margin-top:3mm;font-size:92pt;color:var(--hi)">FAFI<br>1.6</div>
+    <p style="font-size:14pt;margin-top:5mm;color:var(--paper)">El shooter táctico que corre en <b style="background:var(--hi);color:var(--ink)">tu navegador</b>.</p>
+    <div class="shot c" style="margin-top:8mm;transform:rotate(1.5deg);width:118mm"><div class="tape" style="left:6mm;top:-3mm;transform:rotate(-8deg)"></div><div class="tape" style="right:6mm;top:-3mm;transform:rotate(7deg)"></div><img src="../../docs/imagenes/11_defuse_partida.png" alt=""></div>
+    <div class="stamp" style="right:6mm;top:108mm;background:var(--hi);color:var(--ink);border-color:var(--ink)">Gratis</div>
+    <div style="position:absolute;left:0;right:0;bottom:2mm;display:flex;justify-content:space-between;align-items:end">
+      <span class="note" style="color:var(--paper);font-size:15pt">hecho a mano por<br>Team T Studio ✂</span>
+      <img src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" style="width:20mm;filter:invert(0)" alt="">
+    </div>
+  </div>
+</section>
+
+<!-- 2 · EDITORIAL -->
+<section class="pg" id="p2">
+  <div class="pad">
+    <div class="kick">Editorial</div>
+    <div class="head">Hola, <mark>jugador</mark></div>
+    <p>Esto es un fanzine sobre <b>FAFI 1.6</b>, un juego de disparos por equipos inspirado en Counter-Strike que hicimos en el colegio y que se juega <b>en una página web</b>: abrís el link y jugás.</p>
+    <p>Nació de tres problemas: el hardware caro, las descargas que pesan horas y los controles que espantan a quien nunca jugó. Por eso FAFI corre en computadoras de pocos recursos (alcanza con <b>4 GB</b> de memoria), no se instala y tiene reglas fáciles de entender.</p>
+    <div class="box y"><h4>Qué vas a encontrar</h4><ul><li>Cómo se juega y los controles</li><li>Los modos, las armas y las skins</li><li>Online, amigos y chat de voz</li><li>Cómo está hecho por dentro</li><li>Quiénes somos</li></ul></div>
+    <span class="note" style="margin-top:6mm">¡leelo, recortalo, pasalo! →</span>
+    <div class="shot" style="width:70mm;position:absolute;right:0;bottom:6mm;transform:rotate(2deg)"><img src="../../docs/imagenes/03_menu.png" alt=""></div>
+  </div><div class="num">2</div>
+</section>
+
+<!-- 3 · CONTROLES -->
+<section class="pg" id="p3">
+  <div class="pad">
+    <div class="kick">Manual rápido</div>
+    <div class="head">Cómo se <mark>juega</mark></div>
+    <div class="keys">
+      <div class="k"><i>W A S D</i> moverte</div><div class="k"><i>ESPACIO</i> saltar</div>
+      <div class="k"><i>SHIFT</i> agacharte</div><div class="k"><i>CLIC IZQ</i> disparar</div>
+      <div class="k"><i>CLIC DER</i> mirar con zoom</div><div class="k"><i>R</i> recargar</div>
+      <div class="k"><i>F</i> inspeccionar el arma</div><div class="k"><i>B</i> abrir la tienda</div>
+      <div class="k"><i>E</i> plantar o desactivar</div><div class="k"><i>TAB</i> ver el marcador</div>
+      <div class="k"><i>1 a 7</i> primaria, pistola, cuchillo y granadas</div><div class="k"><i>RUEDA / Q</i> cambiar de arma</div>
+      <div class="k"><i>º</i> pegar un grafiti</div><div class="k"><i>V</i> hablar (si elegís pulsar)</div>
+      <div class="k"><i>ESC / F10</i> pausa</div><div class="k"><i>AJUSTES</i> cambiás todas las teclas</div>
+    </div>
+    <div class="box"><h4>Tres consejos</h4><ul><li>Agachate y disparás <b>ráfagas cortas</b>: después de 7 balas seguidas el retroceso se dispara.</li><li>Un tiro a la <b>cabeza</b> hace mucho más daño.</li><li>La Desert Eagle solo es precisa <b>quieto</b> y sin spamear.</li></ul></div>
+    <span class="note" style="margin-top:4mm">el AWP en movimiento no pega ni una</span>
+  </div><div class="num">3</div>
+</section>
+
+<!-- 4 · DEFUSE -->
+<section class="pg" id="p4">
+  <div class="pad">
+    <div class="kick">Modo principal</div>
+    <div class="head">Defuse <mark>5 vs 5</mark></div>
+    <p>Terroristas contra antiterroristas. Los T plantan la bomba en el sitio <b>A</b> o <b>B</b>; los CT lo impiden o la desactivan antes de que explote.</p>
+    <div class="shot" style="margin-top:3mm;width:104mm"><img src="../../docs/imagenes/10_defuse_seleccion.png" alt=""></div>
+    <table class="tbl"><tr><th>Regla</th><th>Cómo es</th></tr>
+      <tr><td>Partida</td><td>18 rondas · gana quien llega a 12</td></tr>
+      <tr><td>Bandos</td><td>al azar, y se cambian a mitad de partida</td></tr>
+      <tr><td>Economía</td><td>ganás dinero por ronda y por baja; comprás con <b>B</b></td></tr>
+      <tr><td>Bombas</td><td>se planta y desactiva manteniendo <b>E</b></td></tr>
+      <tr><td>Mapas</td><td>Dust II · Italy · Office · Mirage</td></tr></table>
+    <p style="margin-top:2.5mm">Los bots no hacen trampa: escuchan disparos y pasos, se avisan entre sí y rescatan la bomba.</p>
+  </div><div class="num">4</div>
+</section>
+
+<!-- 5 · AIM Y MAPAS LIBRES -->
+<section class="pg" id="p5">
+  <div class="pad">
+    <div class="kick">Practicá</div>
+    <div class="head">Modo <mark>Aim</mark> y mapas libres</div>
+    <div class="shot" style="margin-top:4mm;transform:rotate(-1deg)"><div class="tape" style="left:8mm;top:-3mm;transform:rotate(-6deg)"></div><img src="../../docs/imagenes/09_campo_de_tiro.png" alt=""></div>
+    <p><b>Modo Aim:</b> un campo de tiro con blancos móviles y <b>sin límite de tiempo</b>. Todas las armas están en la tienda y cada disparo deja su marca en las paredes. Es práctica pura: no da coins.</p>
+    <p><b>Mapa libre:</b> recorré Dust II, Italy y Office sin reglas ni rondas, a tu ritmo, con ambientación nocturna.</p>
+    <div class="box y"><h4>Truco de dibujante</h4><p style="margin-top:1mm">Apretá la tecla a la izquierda del 1 y dejá un grafiti en la pared o en el piso, con pintura que salpica y todo.</p></div>
+  </div><div class="num">5</div>
+</section>
+
+<!-- 6 · ARMAS -->
+<section class="pg" id="p6">
+  <div class="pad">
+    <div class="kick">Arsenal</div>
+    <div class="head">Armas y <mark>granadas</mark></div>
+    <table class="tbl"><tr><th>Tipo</th><th>Armas</th></tr>
+      <tr><td>Rifles</td><td>AK-47 · M4A4 · Vandal</td></tr>
+      <tr><td>Francotiradores</td><td>AWP (zoom doble y cerrojo) · VSS</td></tr>
+      <tr><td>Pistolas</td><td>Five-SeveN (gratis al empezar) · Desert Eagle</td></tr>
+      <tr><td>Subfusiles</td><td>P90 · SMG silenciada</td></tr>
+      <tr><td>Escopetas</td><td>Pump · Shorty</td></tr>
+      <tr><td>Pesada</td><td>Negev</td></tr>
+      <tr><td>Cuerpo a cuerpo</td><td>Karambit y cuchillo de combate</td></tr>
+      <tr><td>Granadas</td><td>aturdidora · humo · explosiva · incendiaria</td></tr></table>
+    <div class="shot" style="margin-top:5mm;width:96mm;transform:rotate(1.5deg)"><img src="../../docs/imagenes/12_defuse_compra.png" alt=""></div>
+    <p style="margin-top:4mm">Cada arma tiene su propio <b>patrón de retroceso</b> y la mira se abre cuando te movés o disparás.</p>
+  </div><div class="num">6</div>
+</section>
+
+<!-- 7 · SKINS Y FAFI PASS -->
+<section class="pg" id="p7">
+  <div class="pad">
+    <div class="kick">Coleccioná</div>
+    <div class="head">Skins, cajas y <mark>Fafi Pass</mark></div>
+    <div class="shot" style="margin-top:4mm"><img src="../../docs/imagenes/05_tienda.png" alt=""></div>
+    <p><b>Skins:</b> camuflajes, llamas, escamas y circuitos que se pintan sobre el modelo 3D, en tres rarezas: común, épica y legendaria.</p>
+    <p><b>Cajas:</b> se abren con Fafi Coins. Si te sale una repetida, te devuelven coins.</p>
+    <div class="box y"><h4>Fafi Pass · 100 niveles</h4><p style="margin-top:1mm">Jugá partidas de Defuse, ganá experiencia y desbloqueá recompensas. Hay un <b>pase gratis</b> y un <b>pase premium</b> (el premium todavía no está habilitado).</p></div>
+    <span class="note" style="margin-top:3mm">las cuentas nuevas arrancan con 400 coins</span>
+  </div><div class="num">7</div>
+</section>
+
+<!-- 8 · MODO HISTORIA -->
+<section class="pg bk" id="p8">
+  <div class="pad">
+    <div class="kick">Aprender jugando</div>
+    <div class="head" style="color:var(--paper)">Modo <mark style="color:var(--ink)">historia</mark></div>
+    <p>Una película dentro del juego. El primer capítulo cuenta <b style="color:var(--ink)">el desembarco de Normandía</b>, el 6 de junio de 1944, en ocho escenas narradas con voz.</p>
+    <div class="shot" style="margin-top:5mm;transform:rotate(-1.2deg);border-color:var(--paper);box-shadow:2mm 2mm 0 var(--hi)"><img src="../../docs/imagenes/14_modo_historia_mapa.png" alt=""></div>
+    <ul style="margin-top:5mm"><li>Lanchas Higgins, aviones, búnkeres y el Muro del Atlántico, todo hecho con el mismo motor 3D del juego.</li><li>La duración de cada escena la marca la locución.</li><li>Los otros seis capítulos, del ascenso del nazismo a la caída de Berlín, ya están en el mapa de la campaña.</li></ul>
+  </div><div class="num">8</div>
+</section>
+
+<!-- 9 · ONLINE -->
+<section class="pg" id="p9">
+  <div class="pad">
+    <div class="kick">Juntos</div>
+    <div class="head">Online, amigos y <mark>voz</mark></div>
+    <div class="box"><h4>Salas 5 vs 5</h4><p style="margin-top:1mm">Creá una sala, mirá quién está conectado y votá el mapa entre todos.</p></div>
+    <div class="box"><h4>Amigos al instante</h4><p style="margin-top:1mm">Buscá jugadores, mandá solicitudes y recibí el aviso en pantalla en tiempo real. Ves quién está en línea.</p></div>
+    <div class="box"><h4>Retos 1 vs 1</h4><p style="margin-top:1mm">Desafiá a un amigo conectado y aceptá desde una notificación.</p></div>
+    <div class="box y"><h4>Chat de voz</h4><p style="margin-top:1mm">Se activa al entrar a una sala. Elegís voz automática, pulsar para hablar o micrófono abierto, y en Ajustes regulás micrófono, volumen, eco y ruido.</p></div>
+    <span class="note" style="margin-top:4mm">con auriculares, mejor</span>
+  </div><div class="num">9</div>
+</section>
+
+<!-- 10 · POR DENTRO -->
+<section class="pg" id="p10">
+  <div class="pad">
+    <div class="kick">Por dentro</div>
+    <div class="head">¿Cómo una web es un <mark>juego</mark>?</div>
+    <p>El navegador ya sabe dibujar, leer teclado y mouse y reproducir sonido. Solo hay que darle las instrucciones correctas:</p>
+    <table class="tbl"><tr><th>Pieza</th><th>Para qué sirve</th></tr>
+      <tr><td>HTML + CSS</td><td>la página, los menús y el diseño</td></tr>
+      <tr><td>JavaScript</td><td>las reglas, los bots, el movimiento y los disparos</td></tr>
+      <tr><td>Three.js / WebGL</td><td>dibuja el mundo 3D con la placa de video</td></tr>
+      <tr><td>Web Audio</td><td>sonido con dirección y distancia</td></tr>
+      <tr><td>WebRTC</td><td>el chat de voz entre jugadores</td></tr></table>
+    <div class="box"><h4>El bucle del juego</h4><p style="margin-top:1mm"><b>Leer</b> teclas y mouse → <b>actualizar</b> jugador, bots y balas → <b>dibujar</b> → repetir. 60 veces por segundo.</p></div>
+    <div class="box y"><h4>Detrás del juego</h4><p style="margin-top:1mm">Servidor con <b>PHP 8</b>, <b>MySQL</b>, <b>WebSocket</b>, <b>Redis</b> y <b>Docker</b>: se levanta todo con un solo comando. Más de 12 mil líneas de código en módulos.</p></div>
+  </div><div class="num">10</div>
+</section>
+
+<!-- 11 · EQUIPO -->
+<section class="pg" id="p11">
+  <div class="pad">
+    <div class="kick">Quiénes somos</div>
+    <div class="head">Team T <mark>Studio</mark></div>
+    <div class="team">
+      <div class="mem"><div class="ph" style="background-image:url('../../dev-website/assets/SantinoLaudati.png')"></div><b>Santino Laudati</b>Lead Developer<br>R&amp;D</div>
+      <div class="mem"><div class="ph" style="background-image:url('../../dev-website/assets/DanteIglesias.png')"></div><b>Dante Iglesias</b>Frontend Designer<br>Technical Writer</div>
+      <div class="mem"><div class="ph" style="background-image:url('../../dev-website/assets/Pachus13.png')"></div><b>Ian Quiroga</b>Backend<br>Developer</div>
+    </div>
+    <div class="box" style="margin-top:8mm"><h4>De dónde venimos</h4><p style="margin-top:1mm">EEST N°1 “Eduardo Ader”, Vicente López. Laboratorio de Programación 5°3.<br>Profesores: <b>Yamil Ganduglia</b> y <b>Elias York</b>.</p></div>
+    <div class="box y"><h4>Gracias</h4><p style="margin-top:1mm">A quienes probaron el juego y a los autores de los sonidos con licencia libre (los créditos están en el repositorio).</p></div>
+    <img src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" style="position:absolute;right:0;bottom:4mm;width:22mm;filter:invert(1)" alt="">
+  </div><div class="num">11</div>
+</section>
+
+<!-- 12 · CONTRATAPA -->
+<section class="pg" id="p12" style="background:var(--hi)">
+  <div class="pad" style="text-align:center">
+    <div class="kick" style="margin-top:8mm">Sin descargas · sin instalar · gratis</div>
+    <div class="big" style="font-size:62pt;margin-top:8mm">Abrí la<br>web y<br>jugá</div>
+    <div class="url">fafi.bauti.dev</div>
+    <p style="margin-top:12mm;font-size:12pt">Código: <b style="background:none;border-bottom:2px solid var(--ink)">github.com/SantinoLaudati/Fafi-1.6</b></p>
+    <p style="font-size:12pt">Instagram: <b style="background:none;border-bottom:2px solid var(--ink)">@teamtstudio</b></p>
+    <span class="note" style="margin-top:12mm;font-size:16pt">pasá este fanzine a alguien que no juegue nunca ✂</span>
+    <img src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" style="width:20mm;margin-top:10mm;filter:invert(1)" alt="">
+  </div>
+</section>
+
+</div>
+<script>
+  const modo = (location.search.match(/m=(\w+)/) || [0, 'lectura'])[1];
+  document.body.className = modo;
+  const st = document.createElement('style'); st.textContent = '@page{size:' + (modo === 'imprimir' ? '297mm 210mm' : '148mm 210mm') + ';margin:0}'; document.head.appendChild(st);
+  if (modo === 'imprimir') {
+    // grapado al centro de 12 páginas: 3 hojas, 6 caras A4 apaisadas (a doble faz, borde corto)
+    const orden = [[12, 1], [2, 11], [10, 3], [4, 9], [8, 5], [6, 7]];
+    const src = {}; document.querySelectorAll('.pg').forEach((p, i) => { src[i + 1] = p; });
+    const cont = document.getElementById('pages'), sheets = [];
+    orden.forEach(([a, b]) => { const s = document.createElement('div'); s.className = 'sheet'; s.append(src[a].cloneNode(true), src[b].cloneNode(true)); sheets.push(s); });
+    cont.innerHTML = ''; sheets.forEach((s) => cont.append(s));
+  }
+</script>
+</body>
+</html>
