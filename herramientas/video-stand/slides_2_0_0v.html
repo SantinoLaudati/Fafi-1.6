@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>FAFI 1.6 - Video para el stand (diapositivas)</title>
+<!-- Cada <section class="slide"> es un cuadro de 1920x1080. generar-video-stand_2_0_0v.py las captura una por una con ?s=N y arma el video.
+     Para cambiar un texto basta con editar este archivo y volver a ejecutar el script. -->
+<style>
+:root{--bg:#0a0e14;--panel:#121823;--line:rgba(255,255,255,.12);--gold:#e0a82e;--gold2:#ffd770;--txt:#e8edf3;--mut:#8a97a8}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--txt);font-family:'Bahnschrift','Segoe UI',Arial,sans-serif}
+html.ov,body.ov{background:transparent}
+.slide{display:none;position:relative;width:1920px;height:1080px;overflow:hidden}
+.slide.on{display:block}
+.bgfx{position:absolute;inset:0;background:radial-gradient(1200px 700px at 78% 12%,rgba(224,168,46,.13),transparent 60%),radial-gradient(900px 600px at 8% 100%,rgba(70,120,200,.10),transparent 60%),linear-gradient(180deg,#0b1018,#080b10)}
+.ov .bgfx{background:linear-gradient(90deg,rgba(6,9,14,.90),rgba(6,9,14,.72) 55%,rgba(6,9,14,.86))}
+.tag{position:absolute;left:80px;top:56px;font-size:26px;letter-spacing:10px;color:var(--gold);font-weight:700;z-index:3}
+.logo{position:absolute;right:80px;top:44px;width:70px;height:70px;opacity:.9;z-index:3}
+.foot{position:absolute;left:80px;right:80px;bottom:44px;display:flex;justify-content:space-between;font-size:22px;letter-spacing:4px;color:var(--mut);z-index:3}
+.wrap{position:absolute;inset:150px 80px 100px 80px;display:flex;gap:70px;align-items:center;z-index:2}
+h1{font-size:150px;line-height:.95;letter-spacing:6px;font-weight:800;text-transform:uppercase}
+h1 span,h2 span{color:var(--gold)}
+h2{font-size:86px;line-height:1;letter-spacing:4px;font-weight:800;text-transform:uppercase;margin-bottom:26px}
+.kick{font-size:28px;letter-spacing:8px;color:var(--gold);margin-bottom:18px;text-transform:uppercase;font-weight:700}
+.lead{font-size:44px;line-height:1.3;color:#cdd6e2;max-width:900px}
+ul.pts{list-style:none;margin-top:10px}
+ul.pts li{font-size:38px;line-height:1.25;margin:16px 0;padding-left:46px;position:relative;color:#d6dde8}
+ul.pts li:before{content:"";position:absolute;left:0;top:15px;width:20px;height:20px;background:var(--gold);transform:rotate(45deg)}
+ul.pts b{color:#fff}
+.col{flex:1;min-width:0}
+.shot{flex:1.15;min-width:0;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.65),0 0 0 6px rgba(255,255,255,.03);background:#000;position:relative}
+.shot img{display:block;width:100%;height:auto}
+.shot:after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(224,168,46,.35)}
+.cards{display:grid;gap:28px;width:100%}
+.c3{grid-template-columns:repeat(3,1fr)}.c2{grid-template-columns:repeat(2,1fr)}.c4{grid-template-columns:repeat(4,1fr)}
+.card{background:linear-gradient(180deg,#151c29,#0f141d);border:1px solid var(--line);border-top:5px solid var(--gold);padding:34px 34px 38px}
+.card b{display:block;font-size:44px;letter-spacing:2px;margin-bottom:12px;text-transform:uppercase}
+.card p{font-size:31px;line-height:1.3;color:#b9c4d2}
+.card em{font-style:normal;display:block;font-size:20px;letter-spacing:6px;color:var(--gold);margin-bottom:14px}
+.big{font-size:120px;font-weight:800;color:var(--gold2);line-height:1}
+.chips{display:flex;gap:16px;flex-wrap:wrap;margin-top:30px}
+.chip{border:1px solid rgba(224,168,46,.6);color:var(--gold2);padding:12px 24px;font-size:28px;letter-spacing:3px;background:rgba(224,168,46,.08)}
+.team{display:flex;gap:40px;width:100%;align-items:stretch}
+.member{flex:1;background:linear-gradient(180deg,#151c29,#0f141d);border:1px solid var(--line);border-top:5px solid var(--gold);padding:34px;text-align:center}
+.member .ph{width:300px;height:300px;border-radius:50%;margin:0 auto 26px;background-size:cover;background-position:center 22%;border:5px solid var(--gold);box-shadow:0 0 40px rgba(224,168,46,.25)}
+.member b{display:block;font-size:46px;letter-spacing:2px;margin-bottom:8px}
+.member span{font-size:28px;color:var(--gold2);letter-spacing:2px}
+.school{margin-top:34px;font-size:32px;color:#b9c4d2;letter-spacing:2px;text-align:center;line-height:1.5;width:100%}
+.center{text-align:center;width:100%}
+.url{display:inline-block;margin-top:34px;border:2px solid var(--gold);padding:18px 40px;font-size:50px;letter-spacing:4px;color:var(--gold2)}
+.steps{display:flex;gap:18px;align-items:stretch;width:100%}
+.steps .card{flex:1}
+.arrow{align-self:center;font-size:60px;color:var(--gold)}
+</style>
+</head>
+<body>
+
+<!-- 1. PORTADA (sobre video de fondo) -->
+<section class="slide ov" id="s1">
+  <div class="bgfx"></div><div class="tag">TEAM T STUDIO</div><img class="logo" src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" alt="">
+  <div class="wrap"><div class="col">
+    <div class="kick">Presentamos</div>
+    <h1>FAFI <span>1.6</span></h1>
+    <p class="lead" style="margin-top:36px">Un shooter táctico en primera persona que corre directo en tu navegador.</p>
+    <div class="chips"><span class="chip">SIN DESCARGAS</span><span class="chip">SIN INSTALAR</span><span class="chip">GRATIS</span></div>
+  </div></div>
+  <div class="foot"><span>EEST N°1 “EDUARDO ADER” · VICENTE LÓPEZ</span><span>LABORATORIO DE PROGRAMACIÓN 5°3</span></div>
+</section>
+
+<!-- 2. QUÉ ES -->
+<section class="slide" id="s2">
+  <div class="bgfx"></div><div class="tag">FAFI 1.6</div><img class="logo" src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" alt="">
+  <div class="wrap">
+    <div class="col">
+      <div class="kick">El juego</div><h2>¿Qué es <span>FAFI?</span></h2>
+      <p class="lead">Un juego de disparos por equipos inspirado en Counter-Strike. Se juega en una página web: abrís el link y jugás.</p>
+      <ul class="pts"><li><b>Defuse 5 vs 5</b> contra bots</li><li><b>Modo Aim</b> para entrenar la puntería</li><li><b>Mapa libre</b> para recorrer Dust II, Italy y Office</li><li><b>Modo historia</b> del Día D</li></ul>
+    </div>
+    <div class="shot"><img src="../../docs/imagenes/03_menu.png" alt=""></div>
+  </div>
+  <div class="foot"><span>MENÚ PRINCIPAL</span><span>TEAM T STUDIO</span></div>
+</section>
+
+<!-- 3. EL PROBLEMA Y LA SOLUCIÓN -->
+<section class="slide" id="s3">
+  <div class="bgfx"></div><div class="tag">LA IDEA</div><img class="logo" src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" alt="">
+  <div class="wrap" style="flex-direction:column;align-items:stretch;gap:36px;justify-content:center">
+    <div><div class="kick">El problema que queremos resolver</div><h2 style="margin-bottom:0">Jugar no debería <span>costar tanto</span></h2></div>
+    <div class="cards c3">
+      <div class="card"><em>01</em><b>Hardware caro</b><p>Muchos juegos piden una PC potente. Mucha gente no puede pagarla y queda afuera.</p></div>
+      <div class="card"><em>02</em><b>Descargas pesadas</b><p>Instalar un juego lleva horas, mucho espacio y a veces cuentas y launchers.</p></div>
+      <div class="card"><em>03</em><b>Demasiado complejo</b><p>Controles y reglas difíciles alejan a quien nunca jugó este tipo de juegos.</p></div>
+    </div>
+    <div class="card" style="border-top-color:#4dff7a;display:flex;gap:40px;align-items:center"><div class="big" style="color:#4dff7a;white-space:nowrap">4 GB</div><div><b style="font-size:40px">Nuestra solución</b><p style="font-size:34px">Corre en el navegador, alcanza con una computadora de pocos recursos, no necesita instalación y tiene mecánicas fáciles de entender.</p></div></div>
+  </div>
+  <div class="foot"><span>NADIE QUEDA AFUERA POR EL HARDWARE</span><span>TEAM T STUDIO</span></div>
+</section>
+
+<!-- 4. DEFUSE -->
+<section class="slide" id="s4">
+  <div class="bgfx"></div><div class="tag">MODO PRINCIPAL</div><img class="logo" src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" alt="">
+  <div class="wrap">
+    <div class="shot"><img src="../../docs/imagenes/11_defuse_partida.png" alt=""></div>
+    <div class="col">
+      <div class="kick">Terroristas vs Antiterroristas</div><h2>Defuse <span>5 vs 5</span></h2>
+      <ul class="pts"><li>Plantá o desactivá la bomba en el sitio <b>A</b> o <b>B</b></li><li><b>18 rondas</b>: gana quien llega a 12 y a mitad de partida se cambian los bandos</li><li>Economía de rondas y tienda con la tecla <b>B</b></li><li>Bots con inteligencia artificial: escuchan, se comunican y rescatan la bomba</li></ul>
+    </div>
+  </div>
+  <div class="foot"><span>DUST II · ITALY · OFFICE · MIRAGE</span><span>TEAM T STUDIO</span></div>
+</section>
+
+<!-- 5. AIM Y MAPAS -->
+<section class="slide" id="s5">
+  <div class="bgfx"></div><div class="tag">ENTRENAMIENTO</div><img class="logo" src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" alt="">
+  <div class="wrap">
+    <div class="col">
+      <div class="kick">Practicá a tu ritmo</div><h2>Modo <span>Aim</span></h2>
+      <p class="lead">Un campo de tiro con blancos móviles, sin límite de tiempo. Todas las armas están disponibles desde la tienda y cada disparo deja su marca en las paredes.</p>
+      <div class="chips"><span class="chip">RETROCESO REAL</span><span class="chip">MIRA DINÁMICA</span><span class="chip">SKINS</span></div>
+    </div>
+    <div class="shot"><img src="../../docs/imagenes/09_campo_de_tiro.png" alt=""></div>
+  </div>
+  <div class="foot"><span>CAMPO DE TIRO</span><span>TEAM T STUDIO</span></div>
+</section>
+
+<!-- 6. ARMAS, SKINS, CAJAS Y FAFI PASS -->
+<section class="slide" id="s6">
+  <div class="bgfx"></div><div class="tag">PERSONALIZACIÓN</div><img class="logo" src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" alt="">
+  <div class="wrap">
+    <div class="shot"><img src="../../docs/imagenes/05_tienda.png" alt=""></div>
+    <div class="col">
+      <div class="kick">Armas, skins y cajas</div><h2>Hacelo <span>tuyo</span></h2>
+      <ul class="pts"><li>Rifles, AWP, pistolas, escopetas, <b>dos cuchillos</b> y cuatro granadas</li><li>Decenas de <b>skins</b> en tres rarezas: abrí cajas con Fafi Coins</li><li><b>Fafi Pass</b> de 100 niveles con pase gratis y pase premium</li><li>Grafitis y marcas de bala en las paredes</li></ul>
+    </div>
+  </div>
+  <div class="foot"><span>TIENDA DE CAJAS</span><span>TEAM T STUDIO</span></div>
+</section>
+
+<!-- 7. MODO HISTORIA -->
+<section class="slide" id="s7">
+  <div class="bgfx"></div><div class="tag">APRENDER JUGANDO</div><img class="logo" src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" alt="">
+  <div class="wrap">
+    <div class="col">
+      <div class="kick">Campaña educativa</div><h2>Modo <span>historia</span></h2>
+      <p class="lead">Una película dentro del juego sobre la Segunda Guerra Mundial. El primer capítulo cuenta el desembarco de Normandía, el 6 de junio de 1944, en ocho escenas narradas con voz.</p>
+      <div class="chips"><span class="chip">CINEMÁTICA EN 3D</span><span class="chip">NARRACIÓN</span></div>
+    </div>
+    <div class="shot"><img src="../../docs/imagenes/14_modo_historia_mapa.png" alt=""></div>
+  </div>
+  <div class="foot"><span>EL DESEMBARCO DE NORMANDÍA</span><span>TEAM T STUDIO</span></div>
+</section>
+
+<!-- 8. AMIGOS, ONLINE Y VOZ -->
+<section class="slide" id="s8">
+  <div class="bgfx"></div><div class="tag">JUGÁ CON AMIGOS</div><img class="logo" src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" alt="">
+  <div class="wrap" style="flex-direction:column;align-items:stretch;gap:36px;justify-content:center">
+    <div><div class="kick">Social</div><h2 style="margin-bottom:0">Online, amigos y <span>voz</span></h2></div>
+    <div class="cards c2">
+      <div class="card"><em>SALAS</em><b>Salas online 5 vs 5</b><p>Creá una sala, mirá quién está conectado y votá el mapa entre todos.</p></div>
+      <div class="card"><em>AMIGOS</em><b>Solicitudes al instante</b><p>Buscá jugadores, mandá solicitudes y recibí el aviso en tu pantalla en tiempo real.</p></div>
+      <div class="card"><em>DUELOS</em><b>Retos 1 vs 1</b><p>Desafiá a un amigo que esté en línea y aceptá desde una notificación.</p></div>
+      <div class="card"><em>VOZ</em><b>Chat de voz</b><p>Hablá con tu sala: voz automática o pulsar para hablar, con todos los ajustes del micrófono.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>PERFIL · AMIGOS · AJUSTES</span><span>TEAM T STUDIO</span></div>
+</section>
+
+<!-- 9. POR DENTRO -->
+<section class="slide" id="s9">
+  <div class="bgfx"></div><div class="tag">POR DENTRO</div><img class="logo" src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" alt="">
+  <div class="wrap" style="flex-direction:column;align-items:stretch;gap:36px;justify-content:center">
+    <div><div class="kick">¿Cómo puede una página web ser un juego?</div><h2 style="margin-bottom:0">Tecnología <span>web</span></h2></div>
+    <div class="cards c4">
+      <div class="card"><em>EL ESQUELETO</em><b>HTML + CSS</b><p>La página, los menús y el diseño.</p></div>
+      <div class="card"><em>EL CEREBRO</em><b>JavaScript</b><p>Reglas, movimiento, bots y disparos, 60 veces por segundo.</p></div>
+      <div class="card"><em>EL MUNDO 3D</em><b>Three.js · WebGL</b><p>Dibuja mapas, personajes y armas con la placa de video.</p></div>
+      <div class="card"><em>EL SONIDO</em><b>Web Audio</b><p>Disparos, pasos y explosiones con dirección y distancia.</p></div>
+    </div>
+    <div class="card" style="display:flex;gap:34px;align-items:center;flex-wrap:wrap"><b style="margin:0;font-size:36px;color:var(--gold2)">DETRÁS DEL JUEGO</b><span class="chip">PHP 8</span><span class="chip">MySQL 8</span><span class="chip">WebSocket</span><span class="chip">WebRTC</span><span class="chip">Redis</span><span class="chip">Docker</span><span class="chip">JWT</span></div>
+  </div>
+  <div class="foot"><span>MÁS DE 12 MIL LÍNEAS DE CÓDIGO EN MÓDULOS</span><span>TEAM T STUDIO</span></div>
+</section>
+
+<!-- 10. EL EQUIPO -->
+<section class="slide" id="s10">
+  <div class="bgfx"></div><div class="tag">QUIÉNES SOMOS</div><img class="logo" src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" alt="">
+  <div class="wrap" style="flex-direction:column;align-items:stretch;gap:30px;justify-content:center">
+    <div class="center"><div class="kick">El equipo</div><h2 style="margin-bottom:0">Team T <span>Studio</span></h2></div>
+    <div class="team">
+      <div class="member"><div class="ph" style="background-image:url('../../dev-website/assets/SantinoLaudati.png')"></div><b>Santino Laudati</b><span>Lead Developer · R&amp;D</span></div>
+      <div class="member"><div class="ph" style="background-image:url('../../dev-website/assets/DanteIglesias.png')"></div><b>Dante Iglesias</b><span>Frontend Designer · Technical Writer</span></div>
+      <div class="member"><div class="ph" style="background-image:url('../../dev-website/assets/Pachus13.png')"></div><b>Ian Quiroga</b><span>Backend Developer</span></div>
+    </div>
+    <div class="school">EEST N°1 “Eduardo Ader” · Vicente López · Laboratorio de Programación 5°3<br>Profesores: Yamil Ganduglia y Elias York</div>
+  </div>
+  <div class="foot"><span>TEAM T STUDIO</span><span>2026</span></div>
+</section>
+
+<!-- 11. CIERRE (sobre video de fondo) -->
+<section class="slide ov" id="s11">
+  <div class="bgfx" style="background:rgba(6,9,14,.82)"></div><div class="tag">FAFI 1.6</div><img class="logo" src="../../dev-website/assets/Isotipo_TeamT_SinFondo.png" alt="">
+  <div class="wrap"><div class="center">
+    <h1 style="font-size:120px">Un juego completo,<br><span>en tu navegador</span></h1>
+    <p class="lead" style="margin:36px auto 0;max-width:1300px">Sin descargas. Sin instalar nada. Abrí la web y jugá.</p>
+    <div class="url">fafi.bauti.dev</div>
+    <p class="lead" style="margin:34px auto 0;font-size:34px;color:var(--mut)">github.com/SantinoLaudati/Fafi-1.6<br>Instagram @teamtstudio</p>
+    <p style="font-size:60px;letter-spacing:12px;color:var(--gold);margin-top:36px;font-weight:800">¡GRACIAS!</p>
+  </div></div>
+</section>
+
+<script>
+  const n = (location.search.match(/s=(\d+)/) || [0, 1])[1];
+  const el = document.getElementById('s' + n);
+  if (el) { el.classList.add('on'); if (el.classList.contains('ov')) { document.body.classList.add('ov'); document.documentElement.classList.add('ov'); } }
+</script>
+</body>
+</html>
