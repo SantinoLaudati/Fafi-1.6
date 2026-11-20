@@ -114,17 +114,87 @@ class GameServer implements MessageComponentInterface {
             case 'start_match':
                 $this->handleStartMatch($from);
                 break;
+            case 'notify':
+                $this->handleNotify($from, $data);
+                break;
+            case 'who_online':
+                $this->handleWhoOnline($from, $data);
+                break;
+            case 'voice_join':
+                $this->handleVoiceJoin($from);
+                break;
+            case 'voice_leave':
+                $this->handleVoiceLeave($from);
+                break;
+            case 'voice_signal':
+                $this->handleVoiceSignal($from, $data);
+                break;
             case 'ping':
                 $from->send(json_encode(['type' => 'pong', 'timestamp' => time() * 1000]));
                 break;
         }
     }
-    
+
     public function onClose(ConnectionInterface $conn) {
+        $this->handleVoiceLeave($conn);
         $this->handleDisconnect($conn);
         $this->clients->detach($conn);
-        unset($this->userSockets[$conn->userId ?? '']);
-        echo "Player disconnected: {$conn->username} ({$conn->userId})\n";
+        // solo se borra el registro si sigue apuntando a ESTA conexion (si el usuario ya reconecto, no se pisa la nueva)
+        $uid = $conn->userId ?? '';
+        if ($uid !== '' && isset($this->userSockets[$uid]) && $this->userSockets[$uid] === $conn) unset($this->userSockets[$uid]);
+        echo "Player disconnected: " . ($conn->username ?? '?') . " (" . $uid . ")\n";
+    }
+
+    // ===== avisos entre amigos en tiempo real: solicitud enviada / aceptada / lista cambiada =====
+    // El cliente avisa al servidor websocket (que ve a todos los conectados) y este lo reenvia al destinatario si esta en linea.
+    // Los datos de la amistad siguen guardandose por la API REST; esto solo avisa para que el otro jugador lo vea al instante.
+    private function handleNotify(ConnectionInterface $from, $data) {
+        $kind = (string)($data['kind'] ?? '');
+        if (!in_array($kind, ['friend_request', 'friend_accept', 'friend_update'], true)) return;
+        $name = trim((string)($data['to'] ?? ''));
+        $target = $name === '' ? null : $this->findSocketByUsername($name);
+        if (!$target || $target === $from) return;
+        $target->send(json_encode(['type' => 'friend_event', 'kind' => $kind, 'from' => ['id' => $from->userId, 'username' => $from->username]]));
+    }
+
+    // quien de la lista esta conectado ahora (para mostrar "en linea" y habilitar el desafio 1v1)
+    private function handleWhoOnline(ConnectionInterface $from, $data) {
+        $names = is_array($data['names'] ?? null) ? array_slice($data['names'], 0, 200) : [];
+        $online = [];
+        foreach ($names as $n) {
+            $n = (string)$n;
+            if ($n !== '' && $this->findSocketByUsername($n)) $online[] = $n;
+        }
+        $from->send(json_encode(['type' => 'online_list', 'names' => $online]));
+    }
+
+    // ===== chat de voz: el servidor solo hace de senalizacion (WebRTC va directo entre jugadores) =====
+    private function voicePeers($roomId, $exceptId = null) {
+        $out = [];
+        foreach (($this->rooms[$roomId]['players'] ?? []) as $id => $p) {
+            $s = $this->userSockets[$id] ?? null;
+            if ($s && (string)$id !== (string)$exceptId && !empty($s->voice)) $out[] = ['id' => $id, 'username' => $p['username']];
+        }
+        return $out;
+    }
+    private function handleVoiceJoin(ConnectionInterface $conn) {
+        if (!$conn->currentRoom || !isset($this->rooms[$conn->currentRoom])) { $conn->send(json_encode(['type' => 'error', 'message' => 'Entra a una sala para usar el chat de voz'])); return; }
+        $conn->voice = true;
+        // el que entra recibe la lista de los que ya estan en voz y les manda la oferta; a los demas se les avisa que llego
+        $conn->send(json_encode(['type' => 'voice_peers', 'peers' => $this->voicePeers($conn->currentRoom, $conn->userId)]));
+        $this->broadcastToRoom($conn->currentRoom, ['type' => 'voice_peer_joined', 'peer' => ['id' => $conn->userId, 'username' => $conn->username]], $conn->userId);
+    }
+    private function handleVoiceLeave(ConnectionInterface $conn) {
+        if (empty($conn->voice)) return;
+        $conn->voice = false;
+        if ($conn->currentRoom) $this->broadcastToRoom($conn->currentRoom, ['type' => 'voice_peer_left', 'id' => $conn->userId], $conn->userId);
+    }
+    private function handleVoiceSignal(ConnectionInterface $from, $data) {
+        if (!$from->currentRoom) return;
+        $to = (string)(is_scalar($data['to'] ?? null) ? $data['to'] : '');
+        $target = $this->userSockets[$to] ?? null;
+        if (!$target || ($target->currentRoom ?? null) !== $from->currentRoom) return;      // solo entre jugadores de la misma sala
+        $target->send(json_encode(['type' => 'voice_signal', 'from' => $from->userId, 'data' => $data['data'] ?? null]));
     }
     
     public function onError(ConnectionInterface $conn, \Exception $e) {
@@ -210,9 +280,9 @@ class GameServer implements MessageComponentInterface {
                 unset($room);
                 unset($this->rooms[$roomId]);          // sala vacía: se elimina
             } else {
-                if (($room['host'] ?? null) === $conn->userId) {
+                if ((string)($room['host'] ?? '') === (string)$conn->userId) {
                     $ids = array_keys($room['players']);
-                    $room['host'] = $ids[0];            // el anfitrión se va: pasa al siguiente jugador
+                    $room['host'] = (string)$room['players'][$ids[0]]['id'];            // el anfitrión se va: pasa al siguiente jugador
                 }
                 $this->broadcastToRoom($roomId, [
                     'type' => 'player_left',
@@ -275,7 +345,7 @@ class GameServer implements MessageComponentInterface {
         $roomId = $conn->currentRoom;
         if (!$roomId || !isset($this->rooms[$roomId])) return;
         $room = &$this->rooms[$roomId];
-        if (($room['host'] ?? null) !== $conn->userId) { $conn->send(json_encode(['type' => 'error', 'message' => 'Solo el anfitrión puede iniciar'])); return; }
+        if ((string)($room['host'] ?? '') !== (string)$conn->userId) { $conn->send(json_encode(['type' => 'error', 'message' => 'Solo el anfitrión puede iniciar'])); return; }
         if (($room['state'] ?? 'waiting') !== 'waiting') return;
         $ids = array_keys($room['players']);
         shuffle($ids);
@@ -468,7 +538,7 @@ class GameServer implements MessageComponentInterface {
         $json = json_encode($message);
         
         foreach ($room['players'] as $id => $player) {
-            if ($id !== $excludeId && isset($this->userSockets[$id])) {
+            if ((string)$id !== (string)$excludeId && isset($this->userSockets[$id])) {
                 $socket = $this->userSockets[$id];
                 if ($socket->resourceId) { // Check if connected
                     $socket->send($json);

@@ -34,7 +34,7 @@ export class OnlineClient {
         this._emit(m.type, m);
         this._emit('*', m);
       };
-      ws.onclose = (ev) => { clearTimeout(timer); this._stopPing(); this.room = null; this.players = []; if (!done) fail(ev.code === 4001 ? 'Sesión inválida: volvé a iniciar sesión.' : 'No se pudo conectar al servidor online.'); else { this._set('offline', 'Conexión cerrada'); if (this._want && this._tries < 5) setTimeout(() => this.connect().catch(() => {}), Math.min(8000, 1000 * ++this._tries)); } };
+      ws.onclose = (ev) => { clearTimeout(timer); this._stopPing(); this.room = null; this.players = []; if (!done) fail(ev.code === 4001 ? 'Sesión inválida: volvé a iniciar sesión.' : 'No se pudo conectar al servidor online.'); else { this._set('offline', 'Conexión cerrada'); if (this._want) setTimeout(() => this.connect().catch(() => {}), Math.min(15000, 1000 * ++this._tries)); } };
       ws.onerror = () => {};
     });
   }
@@ -42,6 +42,8 @@ export class OnlineClient {
   send(type, data = {}) { if (this.ws && this.ws.readyState === 1) { this.ws.send(JSON.stringify({ type, ...data })); return true; } return false; }
   joinRoom(roomId, mode = 'defuse', map = 'dust2') { return this.send('join_room', { roomId, mode, map }); }
   listRooms() { return this.send('list_rooms'); }
+  notify(kind, to) { return this.send('notify', { kind, to }); }                       // avisa a un amigo conectado (friend_request / friend_accept / friend_update)
+  whoOnline(names) { return this.send('who_online', { names }); }                      // el servidor responde con online_list {names}
   createRoom(name) { return this.send('create_room', { name }); }
   vote(map) { return this.send('vote_map', { map }); }
   startMatch() { return this.send('start_match'); }
@@ -120,14 +122,14 @@ export function initOnlineLobby() {
         <div class="on-note">Todos los jugadores conectados al servidor ven tu sala y pueden unirse (máximo 10).</div>`;
     } else if (view === 'room') {
       const pl = online.players || [], host = online.room && online.room.host, mine = online.me && online.me.id;
-      const slot = (i) => pl[i] ? `<div class="on-slot"><span>${esc(pl[i].username)}</span>${pl[i].id === host ? '<b>ANFITRIÓN</b>' : ''}</div>` : '<div class="on-slot empty">esperando jugador...</div>';
+      const slot = (i) => pl[i] ? `<div class="on-slot"><span>${esc(pl[i].username)}</span>${String(pl[i].id) === String(host) ? '<b>ANFITRIÓN</b>' : ''}</div>` : '<div class="on-slot empty">esperando jugador...</div>';
       const col = (from) => Array.from({ length: 5 }, (_, i) => slot(from + i)).join('');
       pane.innerHTML = `<div class="on-row"><b style="font-size:18px;letter-spacing:2px">${esc((online.room && online.room.name) || 'Sala')}</b><span class="on-st">${pl.length}/10 jugadores</span><span style="flex:1"></span><button class="on-btn" id="onLeave">SALIR</button></div>
         <div class="on-teams"><div class="on-team"><h4>EQUIPO 1</h4>${col(0)}</div><div class="on-team"><h4>EQUIPO 2</h4>${col(5)}</div></div>
         <div class="on-note">Al iniciar, los jugadores se reparten al azar en 5 contra 5 y el bando (terroristas / antiterroristas) también se sortea.</div>
         <div class="on-row"><span class="on-note" style="letter-spacing:3px">VOTÁ EL MAPA</span></div>
         <div class="on-maps">${Object.keys(MAP_NAMES).map((k) => `<div class="on-map ${myVote === k ? 'mine' : ''}" data-vote="${k}">${MAP_NAMES[k]}${votes[k] ? `<i>${votes[k]}</i>` : ''}</div>`).join('')}</div>
-        <div class="on-row"><span class="on-st ${msg[1]}" id="onMsg">${esc(msg[0])}</span><span style="flex:1"></span>${host === mine ? '<button class="on-btn go" id="onStart">INICIAR PARTIDA</button>' : '<span class="on-note">Solo el anfitrión inicia la partida</span>'}</div>`;
+        <div class="on-row"><span class="on-st ${msg[1]}" id="onMsg">${esc(msg[0])}</span><span style="flex:1"></span>${String(host) === String(mine) ? '<button class="on-btn go" id="onStart">INICIAR PARTIDA</button>' : '<span class="on-note">Solo el anfitrión inicia la partida</span>'}</div>`;
     }
   };
 
@@ -171,6 +173,18 @@ export function initInvites() {
     d.querySelector('[data-y]').onclick = () => { online.send('invite_reply', { inviteId: m.inviteId, accept: true }); d.remove(); };
     d.querySelector('[data-n]').onclick = () => { online.send('invite_reply', { inviteId: m.inviteId, accept: false }); d.remove(); };
     try { window.SFX && window.SFX.play('ui'); } catch (e) {}
+  });
+  window.fafiToast = (html, ms) => toast(html, ms);
+  // avisos de amistad en tiempo real (el otro jugador esta conectado): solicitud nueva o aceptada
+  online.on('friend_event', (m) => {
+    const n = esc(m.from.username);
+    if (m.kind === 'friend_request') {
+      const d = toast(`<b>SOLICITUD DE AMISTAD</b><div style="margin-top:6px">${n} quiere ser tu amigo</div><div class="row"><button class="ok" data-y>ACEPTAR</button><button data-n>MÁS TARDE</button></div>`, 60000);
+      d.querySelector('[data-y]').onclick = async () => { try { await window.apiService.acceptFriend(m.from.id); online.notify('friend_accept', m.from.username); toast(`Ahora sos amigo de <b>${n}</b>.`, 4000); } catch (e) { toast(esc(e.message || 'No se pudo aceptar'), 4000); } d.remove(); window.fafiRefreshFriends && window.fafiRefreshFriends(); };
+      d.querySelector('[data-n]').onclick = () => d.remove();
+      try { window.SFX && window.SFX.play('ui'); } catch (e) {}
+    } else if (m.kind === 'friend_accept') toast(`<b>${n}</b> aceptó tu solicitud de amistad.`, 6000);
+    window.fafiRefreshFriends && window.fafiRefreshFriends();
   });
   online.on('invite_sent', (m) => toast(`Desafío enviado a <b>${esc(m.to)}</b>. Esperando respuesta...`, 5000));
   online.on('invite_declined', (m) => toast(`${esc(m.by)} rechazó tu desafío.`, 5000));

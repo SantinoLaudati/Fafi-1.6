@@ -4475,7 +4475,7 @@ try{
     }catch(err){ console.warn('gfx', err); }
   });
   window.fafiSaveGameData = fafiSaveGameData;
-  import('./online_2_0_0v.js').then(m=>{ m.initOnlineLobby(); window.fafiInitInvites=m.initInvites; }).catch(err=>console.warn('online', err));
+  import('./online_2_0_0v.js').then(m=>{ m.initOnlineLobby(); window.fafiInitInvites=m.initInvites; import('./voz_2_0_0v.js').catch(err=>console.warn('voz', err)); }).catch(err=>console.warn('online', err));
   import('./sync_2_0_0v.js').then(m=>m.initSync()).catch(err=>console.warn('sync', err));
   import('./idioma_2_0_0v.js').then(m=>m.initIdioma()).catch(err=>console.warn('idioma', err));
   import('./perfil_2_0_0v.js').then(m=>m.initPerfil()).catch(err=>console.warn('perfil', err));

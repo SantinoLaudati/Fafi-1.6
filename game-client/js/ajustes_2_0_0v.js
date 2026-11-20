@@ -232,6 +232,55 @@ export function initAjustes(opts = {}) {
     }));
     box.querySelector('#axkReset').addEventListener('click', () => { saveKeymap({}); renderKeys(); });
   };
+  // ----- chat de voz -----
+  const renderVoice = async () => {
+    const box = root.querySelector('#axVoice'); if (!box) return;
+    let V; try { V = await import('./voz_2_0_0v.js'); } catch (e) { box.innerHTML = ''; return; }
+    const c = V.getConfig(), nice = (k) => String(k).replace(/^Key/, '').replace(/^Digit/, '');
+    const sel = (id, label, opts, val, hint) => `<div class="ax-row"><label for="${id}">${label}${hint ? `<small>${hint}</small>` : ''}</label><select id="${id}">${opts.map(([v, n]) => `<option value="${v}" ${String(v) === String(val) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
+    const tg = (id, label, v, hint) => `<div class="ax-row"><label for="${id}">${label}${hint ? `<small>${hint}</small>` : ''}</label><div class="ax-tg"><input type="checkbox" id="${id}" ${v ? 'checked' : ''}><span>${v ? 'Activado' : 'Desactivado'}</span></div></div>`;
+    const rg = (id, label, v, min, max, step, fmt, hint) => `<div class="ax-row"><label for="${id}">${label}${hint ? `<small>${hint}</small>` : ''}</label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${v}"><b>${fmt(v)}</b></div>`;
+    const dev = V.supported() ? await V.listDevices().catch(() => ({ inputs: [], outputs: [] })) : { inputs: [], outputs: [] };
+    const named = dev.inputs.some((d) => d.label);
+    box.innerHTML = '<div class="ax-h" style="margin-top:8px">Chat de voz</div>'
+      + `<div class="ax-note">Se activa solo al entrar a una sala online o a un duelo. ${V.supported() ? 'Necesita permiso de micrófono y conexión segura (https).' : 'Tu navegador no admite chat de voz.'}</div>`
+      + tg('vzEn', 'Activar chat de voz', c.enabled)
+      + sel('vzMode', 'Modo del micrófono', [['vad', 'Voz automática (detecta cuando hablás)'], ['ptt', 'Pulsar para hablar'], ['open', 'Micrófono siempre abierto']], c.mode)
+      + `<div class="ax-row"><label>Tecla pulsar para hablar</label><button class="ax-btn" id="vzPtt" style="grid-column:2/4;text-align:left">${nice(c.pttKey)}</button></div>`
+      + `<div class="ax-row"><label>Tecla silenciar micrófono</label><button class="ax-btn" id="vzMuteKey" style="grid-column:2/4;text-align:left">${nice(c.muteKey)}</button></div>`
+      + rg('vzThr', 'Sensibilidad de la voz automática', Math.round(c.threshold * 1000), 5, 300, 5, (v) => Math.round(v / 3) + '%', 'Más alto = hay que hablar más fuerte para que te escuchen.')
+      + `<div class="ax-row"><label>Prueba de micrófono<small>Hablá y mirá la barra: debe pasar la marca naranja cuando se te oye.</small></label><div style="grid-column:2/4;display:flex;gap:10px;align-items:center"><button class="ax-btn" id="vzTest">PROBAR</button><div style="flex:1;height:10px;background:#1b1f27;border:1px solid #333a46;position:relative"><i id="vzMeter" style="display:block;height:100%;width:0;background:#4dff7a"></i><i id="vzMark" style="position:absolute;top:-2px;bottom:-2px;width:2px;background:#e0a82e;left:${Math.min(100, Math.round(c.threshold * 1000) / 3)}%"></i></div></div></div>`
+      + rg('vzMic', 'Volumen del micrófono', Math.round(c.micVol * 100), 0, 200, 5, (v) => v + '%')
+      + rg('vzOut', 'Volumen de las voces', Math.round(c.outVol * 100), 0, 100, 5, (v) => v + '%', 'En la sala también podés ajustar a cada jugador.')
+      + sel('vzIn', 'Dispositivo de entrada', [['', 'Predeterminado'], ...dev.inputs.map((d, i) => [d.deviceId, d.label || ('Micrófono ' + (i + 1))])], c.inputId, named ? '' : 'Tocá PERMITIR MICRÓFONO para ver los nombres.')
+      + (dev.outputs.length && 'setSinkId' in HTMLMediaElement.prototype ? sel('vzOutDev', 'Dispositivo de salida', [['', 'Predeterminado'], ...dev.outputs.map((d, i) => [d.deviceId, d.label || ('Altavoz ' + (i + 1))])], c.outputId) : '')
+      + tg('vzEcho', 'Cancelación de eco', c.echo, 'Evita que tus altavoces se oigan por el micrófono.')
+      + tg('vzNoise', 'Supresión de ruido', c.noise)
+      + tg('vzAgc', 'Control automático de ganancia', c.agc, 'Nivela el volumen de tu voz.')
+      + tg('vzDeaf', 'Silenciar las voces de los demás', c.deafened)
+      + '<div class="ax-btns"><button class="ax-btn" id="vzPerm">PERMITIR MICRÓFONO</button></div>';
+    const $ = (id) => box.querySelector('#' + id);
+    const upd = (id) => { const s = $(id).closest('.ax-row').querySelector('span'); if (s) s.textContent = $(id).checked ? 'Activado' : 'Desactivado'; };
+    [['vzEn', 'enabled'], ['vzEcho', 'echo'], ['vzNoise', 'noise'], ['vzAgc', 'agc'], ['vzDeaf', 'deafened']].forEach(([id, k]) => $(id).addEventListener('change', () => { upd(id); V.setConfig({ [k]: $(id).checked }); }));
+    $('vzMode').addEventListener('change', () => V.setConfig({ mode: $('vzMode').value }));
+    $('vzIn').addEventListener('change', () => V.setConfig({ inputId: $('vzIn').value }));
+    if ($('vzOutDev')) $('vzOutDev').addEventListener('change', () => V.setConfig({ outputId: $('vzOutDev').value }));
+    [['vzThr', (v) => Math.round(v / 3) + '%', (v) => ({ threshold: v / 1000 })], ['vzMic', (v) => v + '%', (v) => ({ micVol: v / 100 })], ['vzOut', (v) => v + '%', (v) => ({ outVol: v / 100 })]].forEach(([id, fmt, mk]) => {
+      $(id).addEventListener('input', () => { $(id).closest('.ax-row').querySelector('b').textContent = fmt(+$(id).value); V.setConfig(mk(+$(id).value)); if (id === 'vzThr') $('vzMark').style.left = Math.min(100, $('vzThr').value / 3) + '%'; });
+    });
+    const rebind = (btnId, k) => $(btnId).addEventListener('click', () => {
+      $(btnId).textContent = 'Apretá una tecla...';
+      const on = (e) => { e.preventDefault(); e.stopImmediatePropagation(); window.removeEventListener('keydown', on, true); if (e.code !== 'Escape') V.setConfig({ [k]: e.code }); renderVoice(); };
+      window.addEventListener('keydown', on, true);
+    });
+    rebind('vzPtt', 'pttKey'); rebind('vzMuteKey', 'muteKey');
+    let testing = false;
+    $('vzTest').addEventListener('click', async () => {
+      if (testing) { V.stopMicTest(); testing = false; $('vzTest').textContent = 'PROBAR'; $('vzMeter').style.width = '0'; return; }
+      try { await V.startMicTest((l) => { const m = $('vzMeter'); if (m) m.style.width = Math.round(l * 100) + '%'; }); testing = true; $('vzTest').textContent = 'DETENER'; } catch (e) { alert('No se pudo usar el micrófono: ' + (e.message || e.name)); }
+    });
+    $('vzPerm').addEventListener('click', async () => { try { await V.askPermission(); renderVoice(); } catch (e) { alert('Permiso de micrófono denegado.'); } });
+  };
   // ----- idioma -----
   const renderLang = () => {
     const cur = (window.fafiGetLang && window.fafiGetLang()) || (localStorage.getItem('fafi_lang') || 'es');
@@ -259,8 +308,8 @@ export function initAjustes(opts = {}) {
     box.querySelector('#axaTest').addEventListener('click', () => { S.init(); S.weapon = 'ak'; S.play('ak'); });
     box.querySelector('#axaReset').addEventListener('click', () => { S.setConfig({ master: 0.35, mute: false, armas: 1, recarga: 1, pasos: 1, impactos: 1, granadas: 1, bomba: 1, menu: 1 }); renderAudio(); });
   };
-  root.innerHTML = '<div id="axKeys"></div><div id="axLang"></div><div id="axAudio"></div><div id="axGfx"></div><div id="axXhBox"></div>';
-  renderKeys(); renderLang(); renderAudio(); renderGfx(); renderXh();
+  root.innerHTML = '<div id="axKeys"></div><div id="axVoice"></div><div id="axLang"></div><div id="axAudio"></div><div id="axGfx"></div><div id="axXhBox"></div>';
+  renderKeys(); renderVoice(); renderLang(); renderAudio(); renderGfx(); renderXh();
   window.addEventListener('fafi-gfx-refresh', renderGfx);
 }
 

@@ -39,10 +39,16 @@ export function initAmigos() {
     <div class="fr-tabs" id="frTabs"></div>
     <div class="fr-list" id="frList"></div>`;
   const $ = (id) => root.querySelector('#' + id);
-  let tab = 'amigos', data = [], local = false, searchTimer = 0, pollTimer = 0;
+  let tab = 'amigos', data = [], local = false, searchTimer = 0, pollTimer = 0, onlineSet = new Set(), seenIncoming = null;
 
   const msg = (t, cls = '') => { const m = $('frMsg'); m.textContent = t || ''; m.className = 'fr-msg ' + cls; };
-  const load = async () => {
+  // conexion en tiempo real: avisos a otros jugadores y presencia ("en linea")
+  const ws = () => window.fafiOnline && window.fafiOnline.available ? window.fafiOnline : null;
+  const ensureWs = async () => { const o = ws(); if (!o) return null; try { await o.connect(); return o; } catch (e) { return null; } };
+  const notify = async (kind, name) => { const o = await ensureWs(); if (o) o.notify(kind, name); };
+  const askPresence = () => { const o = ws(); if (o && o.state !== 'offline') o.whoOnline(data.filter((f) => f.estado === 'aceptada').map((f) => f.username)); };
+  const bindWs = setInterval(() => { const o = window.fafiOnline; if (!o) return; clearInterval(bindWs); o.on('online_list', (m) => { onlineSet = new Set(m.names || []); render(); }); o.on('welcome', askPresence); }, 600);
+  const load = async (silent) => {
     if (!online()) {
       local = true;
       data = (window.friendsList || []).map((n) => ({ username: n, estado: 'aceptada', direccion: 'enviada', amigo_id: n }));
@@ -50,8 +56,14 @@ export function initAmigos() {
     }
     local = false;
     try { const r = await window.apiService.getFriends(); data = (r && r.friends) || []; window.friendsList = data.filter((f) => f.estado === 'aceptada').map((f) => f.username); }
-    catch (e) { msg(e.message || 'No se pudo cargar la lista', 'err'); }
-    render();
+    catch (e) { if (!silent) msg(e.message || 'No se pudo cargar la lista', 'err'); }
+    // solicitud nueva (aunque el aviso en tiempo real no haya llegado): se muestra un aviso
+    const inc = data.filter((f) => f.estado === 'pendiente' && f.direccion === 'recibida').map((f) => f.username);
+    if (seenIncoming !== null) {
+      inc.filter((n) => !seenIncoming.includes(n)).forEach((n) => { if (window.fafiToast) window.fafiToast(`<b>SOLICITUD DE AMISTAD</b><div style="margin-top:6px">${esc(n)} quiere ser tu amigo. Aceptala desde Amigos.</div>`, 12000); });
+    }
+    seenIncoming = inc;
+    render(); askPresence();
   };
   const groups = () => ({
     amigos: data.filter((f) => f.estado === 'aceptada'),
@@ -68,11 +80,11 @@ export function initAmigos() {
     const empty = { amigos: 'Todavía no tenés amigos. Buscá un jugador arriba y mandale una solicitud.', recibidas: 'No tenés solicitudes pendientes.', enviadas: 'No enviaste solicitudes.', bloqueados: 'No bloqueaste a nadie.' }[tab];
     $('frList').innerHTML = list.length ? list.map((f) => {
       const id = esc(f.amigo_id), name = esc(f.username);
-      const acts = (tab === 'amigos' ? `<button class="fr-btn" data-a="view" data-id="${id}" data-n="${name}">PERFIL</button>${local ? '' : `<button class="fr-btn ok" data-a="duel" data-id="${id}" data-n="${name}">RETAR 1v1</button>`}` : '') + (tab === 'amigos' ? `<button class="fr-btn no" data-a="del" data-id="${id}" data-n="${name}">QUITAR</button>${local ? '' : `<button class="fr-btn" data-a="block" data-id="${id}" data-n="${name}">BLOQUEAR</button>`}`
+      const acts = (tab === 'amigos' ? `<button class="fr-btn" data-a="view" data-id="${id}" data-n="${name}">PERFIL</button>${local ? '' : `<button class="fr-btn ok" data-a="duel" data-id="${id}" data-n="${name}" ${onlineSet.has(f.username) ? "" : "disabled title=\"No esta conectado\" style=\"opacity:.4;cursor:not-allowed\""}>RETAR 1v1</button>`}` : '') + (tab === 'amigos' ? `<button class="fr-btn no" data-a="del" data-id="${id}" data-n="${name}">QUITAR</button>${local ? '' : `<button class="fr-btn" data-a="block" data-id="${id}" data-n="${name}">BLOQUEAR</button>`}`
         : tab === 'recibidas' ? `<button class="fr-btn ok" data-a="accept" data-id="${id}" data-n="${name}">ACEPTAR</button><button class="fr-btn no" data-a="del" data-id="${id}" data-n="${name}">RECHAZAR</button>`
         : tab === 'enviadas' ? `<button class="fr-btn" data-a="del" data-id="${id}" data-n="${name}">CANCELAR</button>`
         : `<button class="fr-btn" data-a="del" data-id="${id}" data-n="${name}">DESBLOQUEAR</button>`);
-      const sub = tab === 'amigos' ? (local ? 'Lista local (sin conexión)' : 'Cuenta activa') : tab === 'recibidas' ? 'Quiere ser tu amigo' : tab === 'enviadas' ? 'Esperando respuesta' : 'Bloqueado';
+      const sub = tab === 'amigos' ? (local ? 'Lista local (sin conexión)' : (onlineSet.has(f.username) ? '● En línea' : 'Desconectado')) : tab === 'recibidas' ? 'Quiere ser tu amigo' : tab === 'enviadas' ? 'Esperando respuesta' : 'Bloqueado';
       return `<div class="fr-row"><div class="fr-av">${name.charAt(0).toUpperCase()}</div><div class="fr-name">${name}<small>${sub}</small></div>${acts}</div>`;
     }).join('') : `<div class="fr-empty">${empty}</div>`;
     // aviso en la pestaña principal cuando hay solicitudes nuevas
@@ -85,7 +97,7 @@ export function initAmigos() {
     if (a === 'view') { if (window.fafiVerPerfil) window.fafiVerPerfil(name); return; }
     try {
       if (local) { window.friendsList = (window.friendsList || []).filter((n) => n !== name); window.fafiSaveGameData && window.fafiSaveGameData(); msg('Amigo eliminado.', 'good'); return load(); }
-      if (a === 'accept') { await window.apiService.acceptFriend(id); msg(`Ahora sos amigo de ${name}.`, 'good'); }
+      if (a === 'accept') { await window.apiService.acceptFriend(id); msg(`Ahora sos amigo de ${name}.`, 'good'); notify('friend_accept', name); }
       else if (a === 'block') { if (!confirm(`¿Bloquear a ${name}?`)) return; await window.apiService.blockUser(id); msg(`${name} fue bloqueado.`, 'good'); }
       else { if (tab === 'amigos' && !confirm(`¿Quitar a ${name} de tus amigos?`)) return; await window.apiService.removeFriend(id); msg('Hecho.', 'good'); }
     } catch (e) { msg(e.message, 'err'); }
@@ -100,7 +112,7 @@ export function initAmigos() {
       if (l.includes(name)) return msg('Ya está en tu lista.', 'err');
       l.push(name); window.fafiSaveGameData && window.fafiSaveGameData(); $('frInput').value = ''; msg(`${name} agregado (lista local).`, 'good'); return load();
     }
-    try { const r = await window.apiService.addFriend(name); $('frInput').value = ''; msg(r.message || 'Solicitud enviada.', 'good'); tab = r.message && /aceptada/i.test(r.message) ? 'amigos' : 'enviadas'; }
+    try { const r = await window.apiService.addFriend(name); $('frInput').value = ''; msg(r.message || 'Solicitud enviada.', 'good'); notify(r.message && /aceptada/i.test(r.message) ? 'friend_accept' : 'friend_request', name); tab = r.message && /aceptada/i.test(r.message) ? 'amigos' : 'enviadas'; }
     catch (e) { msg(e.message, 'err'); }
     load();
   };
@@ -127,7 +139,7 @@ export function initAmigos() {
   document.addEventListener('click', (e) => { if (!root.contains(e.target)) $('frSug').classList.remove('open'); });
   document.querySelector('.fafi16-tab-btn[data-tab="perfil"]')?.addEventListener('click', load);
   // refresco periódico mientras la pestaña de perfil está abierta (para ver solicitudes nuevas)
-  pollTimer = setInterval(() => { if (document.getElementById('fafi16-tab-perfil')?.classList.contains('active') && !document.hidden) load(); }, 20000);
+  pollTimer = setInterval(() => { if (online() && !document.hidden) load(true); }, 8000);     // refresco en segundo plano: solicitudes nuevas y quien esta en linea
   window.fafiRefreshFriends = load;
   const sideToggle = () => { const m = document.getElementById('menus'); m.classList.toggle('side-closed'); try { localStorage.setItem('fafi_side', m.classList.contains('side-closed') ? 'closed' : 'open'); } catch (e) {} };
   document.getElementById('fsToggle')?.addEventListener('click', sideToggle); document.getElementById('fsTab')?.addEventListener('click', sideToggle);
